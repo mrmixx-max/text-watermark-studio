@@ -18,6 +18,8 @@ dist/
 .pytest_cache/
 .ai_wm_jobs/
 output/
+*.report.json
+*_report.json
 data/audit.log
 data/audit_log.jsonl
 data/pdf_cache/
