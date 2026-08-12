@@ -17,7 +17,11 @@ def render_payload(payload):
 def respond(request: Request, payload):
     if wants_hx_html(request):
         return HTMLResponse(render_payload(payload))
-    return JSONResponse(payload, default=str)
+    # JSONResponse has no default= kwarg; pre-serialize non-JSON-safe values
+    # (dataclasses, UUIDs, Path, sets) via json.dumps with default=str.
+    if isinstance(payload, (str, int, float, bool, type(None))):
+        return JSONResponse(payload)
+    return JSONResponse(json.loads(json.dumps(payload, ensure_ascii=False, default=str)))
 
 
 def parse_metadata_field(metadata):
