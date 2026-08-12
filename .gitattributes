@@ -1,0 +1,11 @@
+# Normalize line endings: LF im Repo, native bei Checkout
+* text=auto
+
+# Binärdateien nie normalisieren
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.pdf binary

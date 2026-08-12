@@ -1,0 +1,41 @@
+{
+  "entity_types": [
+    "Agent",
+    "User",
+    "PromptTemplate",
+    "Document",
+    "Task",
+    "Tool",
+    "MemoryItem",
+    "Session",
+    "Provider",
+    "Model"
+  ],
+  "relation_types": [
+    "USES",
+    "REFINES",
+    "CRITIQUES",
+    "GENERATED_FROM",
+    "BELONGS_TO",
+    "RELATED_TO",
+    "MEMORIZED_IN",
+    "EXECUTED_WITH",
+    "DERIVED_FROM"
+  ],
+  "properties": {
+    "common": [
+      "id",
+      "label",
+      "type",
+      "created_at",
+      "updated_at"
+    ],
+    "edge": [
+      "source",
+      "target",
+      "relation",
+      "weight",
+      "evidence"
+    ]
+  }
+}

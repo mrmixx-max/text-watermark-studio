@@ -1,0 +1,485 @@
+{
+  "name": "text-watermark-studio-lab",
+  "version": "1.0.4",
+  "description": "MCP tools for Text Watermark Studio Lab API",
+  "tools": [
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/health",
+      "description": "Liveness probe"
+    },
+    {
+      "name": "ready",
+      "method": "GET",
+      "path": "/ready",
+      "description": "Readiness probe"
+    },
+    {
+      "name": "ops_status",
+      "method": "GET",
+      "path": "/api/ops/status",
+      "description": "JSON operations status"
+    },
+    {
+      "name": "ops_metrics",
+      "method": "GET",
+      "path": "/api/ops/metrics",
+      "description": "Prometheus metrics"
+    },
+    {
+      "name": "lab_families",
+      "method": "GET",
+      "path": "/api/lab/families",
+      "description": "List watermark families and capabilities"
+    },
+    {
+      "name": "lab_detect_all",
+      "method": "POST",
+      "path": "/api/lab/detect-all",
+      "description": "Run demo detection across all families",
+      "body_schema": {
+        "text": "string"
+      }
+    },
+    {
+      "name": "lab_embed",
+      "method": "POST",
+      "path": "/api/lab/embed",
+      "description": "Run demo embed for one family",
+      "body_schema": {
+        "family": "string",
+        "text": "string"
+      }
+    },
+    {
+      "name": "forensics_keys",
+      "method": "GET",
+      "path": "/api/forensics/keys",
+      "description": "List forensics keys"
+    },
+    {
+      "name": "forensics_add_key",
+      "method": "POST",
+      "path": "/api/forensics/keys",
+      "description": "Register a forensics key",
+      "body_schema": {
+        "key_id": "string",
+        "family": "string",
+        "trigger_phrase": "string"
+      }
+    },
+    {
+      "name": "forensics_detect",
+      "method": "POST",
+      "path": "/api/forensics/detect",
+      "description": "Run multi-key forensics detection",
+      "body_schema": {
+        "text": "string",
+        "operator": "string",
+        "window": "integer"
+      }
+    },
+    {
+      "name": "lab_pipeline",
+      "method": "POST",
+      "path": "/api/text/pipeline",
+      "description": "Run the text pipeline",
+      "body_schema": {
+        "text": "string",
+        "lang": "string",
+        "intensity": "string"
+      }
+    },
+    {
+      "name": "streams_enqueue",
+      "method": "POST",
+      "path": "/api/streams/enqueue",
+      "description": "Enqueue a Redis Streams job",
+      "body_schema": {
+        "text": "string",
+        "lang": "string",
+        "intensity": "string"
+      }
+    },
+    {
+      "name": "streams_metrics",
+      "method": "GET",
+      "path": "/api/streams/metrics",
+      "description": "Get stream metrics"
+    },
+    {
+      "name": "document_formats",
+      "method": "GET",
+      "path": "/api/documents/formats",
+      "description": "List supported document input and output formats"
+    },
+    {
+      "name": "document_load",
+      "method": "POST",
+      "path": "/api/documents/load",
+      "description": "Normalize a document payload into lab text",
+      "body_schema": {
+        "filename": "string",
+        "content": "string"
+      }
+    },
+    {
+      "name": "document_export",
+      "method": "POST",
+      "path": "/api/documents/export",
+      "description": "Export normalized text into a target document format",
+      "body_schema": {
+        "text": "string",
+        "target_format": "string"
+      }
+    },
+    {
+      "name": "pdf_strategy",
+      "method": "GET",
+      "path": "/api/pdf/strategy",
+      "description": "Return large-PDF optimization strategy"
+    },
+    {
+      "name": "pdf_extract_window",
+      "method": "POST",
+      "path": "/api/pdf/extract-window",
+      "description": "Extract a page window from a PDF",
+      "body_schema": {
+        "file": "binary",
+        "start_page": "integer",
+        "end_page": "integer|null"
+      }
+    },
+    {
+      "name": "rag_strategies",
+      "method": "GET",
+      "path": "/api/rag/strategies",
+      "description": "List available RAG chunking strategies and defaults"
+    },
+    {
+      "name": "rag_chunk",
+      "method": "POST",
+      "path": "/api/rag/chunk",
+      "description": "Chunk text for RAG ingestion",
+      "body_schema": {
+        "text": "string",
+        "strategy": "string",
+        "chunk_size": "integer",
+        "overlap": "integer"
+      }
+    },
+    {
+      "name": "llm_providers",
+      "method": "GET",
+      "path": "/api/llm/providers",
+      "description": "List supported LLM rewriting providers"
+    },
+    {
+      "name": "llm_rewrite",
+      "method": "POST",
+      "path": "/api/llm/rewrite",
+      "description": "Rewrite text through Ollama, OpenAI or Anthropic",
+      "body_schema": {
+        "provider": "string",
+        "model": "string|null",
+        "style": "string",
+        "instruction": "string|null",
+        "text": "string"
+      }
+    },
+    {
+      "name": "prompt_templates",
+      "method": "GET",
+      "path": "/api/prompts/templates",
+      "description": "List versioned prompt templates"
+    },
+    {
+      "name": "prompt_render",
+      "method": "POST",
+      "path": "/api/prompts/render",
+      "description": "Render a prompt template with variables",
+      "body_schema": {
+        "template_id": "string",
+        "version": "string|null",
+        "variables": "object"
+      }
+    },
+    {
+      "name": "prompt_create_version",
+      "method": "POST",
+      "path": "/api/prompts/create-version",
+      "description": "Create a new prompt template version",
+      "body_schema": {
+        "payload": "object"
+      }
+    },
+    {
+      "name": "llm_rewrite_from_template",
+      "method": "POST",
+      "path": "/api/llm/rewrite-from-template",
+      "description": "Render a versioned prompt template and run LLM rewriting",
+      "body_schema": {
+        "template_id": "string",
+        "version": "string|null",
+        "variables": "object",
+        "provider": "string|null",
+        "model": "string|null"
+      }
+    },
+    {
+      "name": "opt_baseline",
+      "method": "GET",
+      "path": "/api/optimization/baselines",
+      "description": "Show baseline metadata for a prompt template"
+    },
+    {
+      "name": "opt_candidates",
+      "method": "POST",
+      "path": "/api/optimization/candidates",
+      "description": "Generate optimizer candidate prompts",
+      "body_schema": {
+        "template_id": "string"
+      }
+    },
+    {
+      "name": "opt_score",
+      "method": "POST",
+      "path": "/api/optimization/score",
+      "description": "Score a candidate prompt",
+      "body_schema": {
+        "template_id": "string",
+        "candidate": "object"
+      }
+    },
+    {
+      "name": "opt_optimize",
+      "method": "POST",
+      "path": "/api/optimization/optimize",
+      "description": "Run prompt optimization and return the winner",
+      "body_schema": {
+        "template_id": "string"
+      }
+    },
+    {
+      "name": "opt_promote",
+      "method": "POST",
+      "path": "/api/optimization/promote",
+      "description": "Promote the winning optimized prompt into the registry",
+      "body_schema": {
+        "template_id": "string"
+      }
+    },
+    {
+      "name": "ma_spec",
+      "method": "GET",
+      "path": "/api/multi-agent/spec",
+      "description": "Show the feedback loop specification"
+    },
+    {
+      "name": "ma_run",
+      "method": "POST",
+      "path": "/api/multi-agent/run",
+      "description": "Run the multi-agent feedback loop",
+      "body_schema": {
+        "template_id": "string"
+      }
+    },
+    {
+      "name": "ma_promote",
+      "method": "POST",
+      "path": "/api/multi-agent/promote",
+      "description": "Promote an approved multi-agent loop result",
+      "body_schema": {
+        "template_id": "string"
+      }
+    },
+    {
+      "name": "graph_schema",
+      "method": "GET",
+      "path": "/api/graph/schema",
+      "description": "Return graph ontology/schema"
+    },
+    {
+      "name": "graph_all",
+      "method": "GET",
+      "path": "/api/graph/all",
+      "description": "Return the full graph snapshot"
+    },
+    {
+      "name": "graph_add_node",
+      "method": "POST",
+      "path": "/api/graph/node",
+      "description": "Add or upsert a graph node",
+      "body_schema": {
+        "node": "object"
+      }
+    },
+    {
+      "name": "graph_add_edge",
+      "method": "POST",
+      "path": "/api/graph/edge",
+      "description": "Add a graph edge",
+      "body_schema": {
+        "edge": "object"
+      }
+    },
+    {
+      "name": "graph_ingest_fact",
+      "method": "POST",
+      "path": "/api/graph/fact",
+      "description": "Ingest a fact as nodes and typed edge",
+      "body_schema": {
+        "subject": "string",
+        "relation": "string",
+        "object_": "string",
+        "subject_type": "string",
+        "object_type": "string",
+        "evidence": "array|null"
+      }
+    },
+    {
+      "name": "graph_query",
+      "method": "GET",
+      "path": "/api/graph/query",
+      "description": "Query graph nodes by label"
+    },
+    {
+      "name": "graph_neighbors",
+      "method": "GET",
+      "path": "/api/graph/neighbors",
+      "description": "Fetch adjacent nodes and edges"
+    },
+    {
+      "name": "graph_subgraph",
+      "method": "GET",
+      "path": "/api/graph/subgraph",
+      "description": "Fetch a depth-limited subgraph"
+    },
+    {
+      "name": "community_detect",
+      "method": "POST",
+      "path": "/api/community/detect",
+      "description": "Detect graph communities",
+      "body_schema": {
+        "min_size": "integer"
+      }
+    },
+    {
+      "name": "community_summarize",
+      "method": "POST",
+      "path": "/api/community/summarize",
+      "description": "Generate summaries for detected communities"
+    },
+    {
+      "name": "community_list",
+      "method": "GET",
+      "path": "/api/community/list",
+      "description": "List all detected communities"
+    },
+    {
+      "name": "community_get",
+      "method": "GET",
+      "path": "/api/community/get",
+      "description": "Get a single detected community"
+    },
+    {
+      "name": "rewrite_run",
+      "method": "POST",
+      "path": "/api/rewrite/run",
+      "description": "Run auto-correction and rewrite engine",
+      "body_schema": {
+        "text": "string",
+        "mode": "string",
+        "preserve": "boolean"
+      }
+    },
+    {
+      "name": "export_run",
+      "method": "POST",
+      "path": "/api/export/run",
+      "description": "Export content in multiple formats and styles",
+      "body_schema": {
+        "title": "string",
+        "text": "string",
+        "format": "string",
+        "style": "string",
+        "metadata": "object"
+      }
+    },
+    {
+      "name": "cloud_request_upload",
+      "method": "POST",
+      "path": "/api/cloud/request-upload",
+      "description": "Request a direct cloud upload URL",
+      "body_schema": {
+        "filename": "string",
+        "content_type": "string",
+        "size_bytes": "integer",
+        "provider": "string",
+        "purpose": "string"
+      }
+    },
+    {
+      "name": "cloud_confirm_upload",
+      "method": "POST",
+      "path": "/api/cloud/confirm-upload",
+      "description": "Confirm a completed direct upload",
+      "body_schema": {
+        "upload_id": "string",
+        "etag": "string"
+      }
+    },
+    {
+      "name": "cloud_list_uploads",
+      "method": "GET",
+      "path": "/api/cloud/uploads",
+      "description": "List direct cloud uploads"
+    },
+    {
+      "name": "llm_status",
+      "method": "GET",
+      "path": "/api/llm/status",
+      "description": "Get local EuroLLM GGUF configuration status"
+    },
+    {
+      "name": "llm_configure",
+      "method": "POST",
+      "path": "/api/llm/configure",
+      "description": "Configure local EuroLLM GGUF endpoint",
+      "body_schema": {
+        "server_base_url": "string",
+        "model_variant": "string",
+        "installed": "boolean"
+      }
+    },
+    {
+      "name": "routing_status",
+      "method": "GET",
+      "path": "/api/routing/status",
+      "description": "Get model routing profiles and last decision"
+    },
+    {
+      "name": "routing_decide",
+      "method": "POST",
+      "path": "/api/routing/decide",
+      "description": "Compute a model route with fallbacks",
+      "body_schema": {
+        "task": "string",
+        "profile": "string",
+        "need_large_context": "boolean",
+        "privacy_mode": "boolean"
+      }
+    },
+    {
+      "name": "routing_configure",
+      "method": "POST",
+      "path": "/api/routing/configure",
+      "description": "Configure a routing profile",
+      "body_schema": {
+        "profile": "string",
+        "config": "object"
+      }
+    }
+  ]
+}

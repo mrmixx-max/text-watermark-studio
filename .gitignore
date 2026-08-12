@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.venv-test/
+.eggs/
+
+# Env / secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Test / runtime artefacts
+.pytest_cache/
+.ai_wm_jobs/
+output/
+data/audit.log
+data/audit_log.jsonl
+data/pdf_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

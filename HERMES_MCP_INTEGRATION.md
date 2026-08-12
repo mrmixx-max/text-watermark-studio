@@ -1,0 +1,1 @@
+Hermes skill bundle + MCP manifest live under hermes/ and mcp/.

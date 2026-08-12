@@ -1,0 +1,38 @@
+{
+  "profiles": {
+    "default": {
+      "primary": {
+        "id": "local-eurollm",
+        "kind": "local",
+        "base_url": "http://127.0.0.1:8080/v1",
+        "model": "mradermacher/EuroLLM-9B-Instruct-2512-GGUF"
+      },
+      "fallbacks": [
+        {
+          "id": "cloud-mid",
+          "kind": "cloud",
+          "base_url": "https://api.example.com/v1",
+          "model": "mid-tier-chat"
+        },
+        {
+          "id": "cloud-mini",
+          "kind": "cloud",
+          "base_url": "https://api.example.com/v1",
+          "model": "mini-chat"
+        }
+      ],
+      "timeouts_ms": {
+        "local": 1200,
+        "cloud": 4000
+      },
+      "rules": {
+        "on_timeout": "fallback",
+        "on_5xx": "fallback",
+        "on_429": "fallback_immediate",
+        "on_context_overflow": "use_larger_context",
+        "on_invalid_output": "fallback"
+      }
+    }
+  },
+  "last_decision": null
+}

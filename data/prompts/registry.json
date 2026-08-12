@@ -1,0 +1,72 @@
+{
+  "templates": [
+    {
+      "id": "rewrite.clean",
+      "version": "1.0.0",
+      "channel": "stable",
+      "intent": "baseline",
+      "title": "Clean rewrite baseline",
+      "description": "Baseline rewrite prompt for clarity-preserving transformations.",
+      "provider": "ollama",
+      "model": "llama3.1",
+      "parameters": {
+        "temperature": 0.2,
+        "max_tokens": 1200
+      },
+      "system_prompt": "You rewrite user text while preserving meaning, facts, and structure unless instructed otherwise. Return plain text only.",
+      "user_template": "Rewrite the following text in a {{style}} style. Preserve meaning and important details.\n\n{{text}}",
+      "variables": [
+        "style",
+        "text"
+      ],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2026-08-12",
+          "what": "Initial stable baseline",
+          "why": "Establish clean rewrite default",
+          "risk": "low",
+          "approved_by": "system"
+        }
+      ]
+    },
+    {
+      "id": "rewrite.executive",
+      "version": "1.1.0",
+      "channel": "staging",
+      "intent": "format-change",
+      "title": "Executive rewrite",
+      "description": "Shorter executive summary rewrite prompt.",
+      "provider": "openai",
+      "model": "gpt-5.4-mini",
+      "parameters": {
+        "temperature": 0.3,
+        "max_tokens": 900
+      },
+      "system_prompt": "Rewrite text for executive readability. Keep facts. Remove fluff. Return plain text only.",
+      "user_template": "Turn the source into an executive-ready rewrite with tone={{style}}.\n\n{{text}}",
+      "variables": [
+        "style",
+        "text"
+      ],
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2026-08-11",
+          "what": "Initial version",
+          "why": "Pilot executive rewrite",
+          "risk": "medium",
+          "approved_by": "system"
+        },
+        {
+          "version": "1.1.0",
+          "date": "2026-08-12",
+          "what": "Tighter wording and explicit fluff removal",
+          "why": "Improve brevity",
+          "risk": "medium",
+          "approved_by": "system"
+        }
+      ]
+    }
+  ]
+}

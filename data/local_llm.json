@@ -1,0 +1,11 @@
+{
+  "provider": "llama.cpp-openai-compatible",
+  "model_family": "mradermacher/EuroLLM-9B-Instruct-2512-GGUF",
+  "model_variant": "Q4_K_M",
+  "server_base_url": "http://127.0.0.1:8080/v1",
+  "chat_endpoint": "/chat/completions",
+  "health_ui": "http://127.0.0.1:8080",
+  "download_hint": "llama-server -hf mradermacher/EuroLLM-9B-Instruct-2512-GGUF:Q4_K_M",
+  "installed": false,
+  "updated_at": null
+}

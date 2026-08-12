@@ -1,0 +1,29 @@
+{
+  "name": "prompt-feedback-loop",
+  "version": "1.0.0",
+  "agents": [
+    "generator",
+    "critic",
+    "refiner",
+    "judge",
+    "promoter"
+  ],
+  "stop_conditions": {
+    "max_iterations": 4,
+    "no_improvement_rounds": 2,
+    "min_score": 0.9
+  },
+  "rubrics": [
+    "instruction_adherence",
+    "constraint_coverage",
+    "brevity",
+    "safety"
+  ],
+  "flows": [
+    "generate",
+    "critique",
+    "refine",
+    "judge",
+    "promote"
+  ]
+}

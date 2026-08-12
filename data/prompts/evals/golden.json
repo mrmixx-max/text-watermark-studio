@@ -1,0 +1,23 @@
+{
+  "name": "rewrite-golden",
+  "task": "clarity_preserving_rewrite",
+  "metrics": [
+    "semantic_similarity",
+    "format_compliance",
+    "brevity"
+  ],
+  "examples": [
+    {
+      "input": "This draft is messy and too long.",
+      "target": "This draft is unclear and too long."
+    },
+    {
+      "input": "Please make this concise and professional.",
+      "target": "Please make this concise and professional."
+    },
+    {
+      "input": "We should improve the wording without changing meaning.",
+      "target": "We should improve the wording without changing meaning."
+    }
+  ]
+}

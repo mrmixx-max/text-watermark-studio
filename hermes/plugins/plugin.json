@@ -1,0 +1,14 @@
+{
+  "name": "text-watermark-studio-lab",
+  "version": "1.0.4",
+  "description": "Hermes-compatible plugin bundle for Text Watermark Studio Lab",
+  "entry": "../skills/text-watermark-studio-lab/SKILL.md",
+  "mcp": "../../mcp/mcp.json",
+  "tags": [
+    "watermarking",
+    "forensics",
+    "lab",
+    "mcp",
+    "hermes"
+  ]
+}

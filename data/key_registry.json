@@ -1,0 +1,20 @@
+{
+  "keys": [
+    {
+      "key_id": "demo-green-1",
+      "family": "greenlist_bias",
+      "status": "active",
+      "owner": "local",
+      "trigger_phrase": "",
+      "notes": "demo heuristic key"
+    },
+    {
+      "key_id": "demo-semantic-1",
+      "family": "semantic_pattern",
+      "status": "active",
+      "owner": "local",
+      "trigger_phrase": "furthermore",
+      "notes": "demo semantic key"
+    }
+  ]
+}
