@@ -6,6 +6,8 @@
 
 ![Text Watermark Studio — detect, clean, dilute, rewrite, fully local](docs/tws-hero-card.png)
 
+![Local AI Watermark Laboratory — workstation concept](docs/lab-workstation.png)
+
 Text Watermark Studio v8 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling/logit bias, semantic/structure, localized provenance and training-time ownership workflows.
 
 ## Quickstart
