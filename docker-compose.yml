@@ -10,10 +10,12 @@ services:
       retries: 5
   app:
     build: .
-    env_file:
-      - .env
     environment:
+      AI_WM_ENV: development
       AI_WM_REDIS_URL: redis://redis:6379/0
+      AI_WM_STREAM_KEY: tws:stream:jobs
+      AI_WM_DLQ_STREAM_KEY: tws:stream:jobs:dlq
+      AI_WM_QUEUE_NAME: tws:queue:jobs
     depends_on:
       redis:
         condition: service_healthy
@@ -22,10 +24,12 @@ services:
   worker:
     build: .
     command: ["python", "-m", "ai_watermark_toolkit.workers.streams_worker"]
-    env_file:
-      - .env
     environment:
+      AI_WM_ENV: development
       AI_WM_REDIS_URL: redis://redis:6379/0
+      AI_WM_STREAM_KEY: tws:stream:jobs
+      AI_WM_DLQ_STREAM_KEY: tws:stream:jobs:dlq
+      AI_WM_QUEUE_NAME: tws:queue:jobs
     depends_on:
       redis:
         condition: service_healthy

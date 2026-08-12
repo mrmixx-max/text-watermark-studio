@@ -6,6 +6,38 @@
 
 Text Watermark Studio v8 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling/logit bias, semantic/structure, localized provenance and training-time ownership workflows.
 
+## Quickstart
+
+Requires Python 3.10+.
+
+```bash
+# Local install (editable, with test deps)
+python -m venv .venv
+# Windows: .\.venv\Scripts\activate   |  macOS/Linux: source .venv/bin/activate
+pip install -e ".[dev]"
+
+# CLI
+ai-wm detect  sample.txt --lang auto
+ai-wm clean   sample.txt -o sample.clean.txt
+ai-wm dilute  sample.txt -o sample.diluted.txt --intensity standard
+ai-wm pipeline sample.txt -o sample.out.txt --report report.json
+ai-wm serve   --host 127.0.0.1 --port 8080
+
+# Tests
+pytest -q
+
+# API server
+uvicorn ai_watermark_toolkit.api.fastapi_app:app --host 127.0.0.1 --port 8080
+```
+
+Alternatively, run the whole stack via Docker:
+
+```bash
+docker compose up --build
+```
+
+Windows users: the Makefile detects `OS=Windows_NT` and uses `.venv\Scripts` paths automatically. `scripts/publish-check.ps1` runs the full check (venv, install, tests, build) in PowerShell. Desktop packaging for Windows lives in `desktop/packaging/windows/build.ps1`.
+
 ## Why a lab edition
 
 Recent taxonomies and surveys split text watermarking into multiple families with different assumptions, requirements and threat models. Existing-text methods, generation-time methods and model-level provenance do not collapse into one universal technique, so the product is structured as a lab with family plugins and capability axes rather than a single misleading detector.

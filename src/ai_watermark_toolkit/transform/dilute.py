@@ -39,7 +39,8 @@ def dilute_text(text: str, intensity: str = "standard") -> DiluteResult:
         out = re.sub(r"\bnot only\b(.*?)\bbut also\b", r"\1 and", out, flags=re.IGNORECASE | re.DOTALL)
         out = re.sub(r"\bNicht nur\b(.*?)\bsondern auch\b", r"\1 und", out, flags=re.IGNORECASE | re.DOTALL)
     if intensity == "aggressive":
-        out = re.sub(r"\b(seamlessly|ganzheitlich|nahtlos)\b", "", out, flags=re.IGNORECASE)
-        out = re.sub(r"\s{2,}", " ", out)
+        # Additional aggressive-only rewrite: split em-dash runs into periods.
+        out = re.sub(r"\s*—\s*", ". ", out)
+        out = re.sub(r"\.{2,}", ".", out)
     out = _unfreeze(out, blocks)
     return DiluteResult(text=out.strip(), intensity=intensity, changed=(out.strip() != text.strip()), frozen_blocks=len(blocks))
