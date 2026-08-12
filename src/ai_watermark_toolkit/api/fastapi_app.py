@@ -86,8 +86,6 @@ app.include_router(community_router)
 app.include_router(rewrite_router)
 app.include_router(exporting_router)
 app.include_router(cloud_router)
-app.include_router(llm_router)
-app.include_router(routing_router)
 
 
 @app.get('/health', tags=['system'])

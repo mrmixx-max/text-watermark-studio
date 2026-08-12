@@ -19,10 +19,10 @@ class ConfigureRequest(BaseModel):
                 data['installed'] = checkbox_to_bool(data.get('installed'))
         return data
 
-@router.get('/status')
+@router.get('/status', operation_id='llm_status')
 def status(request: Request):
     return respond(request, svc.status())
 
-@router.post('/configure')
+@router.post('/configure', operation_id='llm_configure')
 def configure(req: ConfigureRequest, request: Request):
     return respond(request, svc.configure(req.server_base_url, req.model_variant, req.installed))

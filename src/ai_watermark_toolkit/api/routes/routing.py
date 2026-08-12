@@ -25,14 +25,14 @@ class ConfigureRequest(BaseModel):
     profile: str = 'default'
     config: Dict[str, Any] = Field(default_factory=dict)
 
-@router.get('/status')
+@router.get('/status', operation_id='routing_status')
 def status(request: Request):
     return respond(request, svc.status())
 
-@router.post('/decide')
+@router.post('/decide', operation_id='routing_decide')
 def decide(req: DecideRequest, request: Request):
     return respond(request, svc.decide(req.task, req.profile, req.need_large_context, req.privacy_mode))
 
-@router.post('/configure')
+@router.post('/configure', operation_id='routing_configure')
 def configure(req: ConfigureRequest, request: Request):
     return respond(request, svc.configure(req.model_dump()))
