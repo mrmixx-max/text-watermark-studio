@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from statistics import mean
 
+from .kgw import detect_kgw, DEFAULT_GAMMA
+
 
 def segment_text(text: str, window: int = 400) -> list[str]:
     if not text:
@@ -13,6 +15,17 @@ def score_segment(text: str, key_meta: dict) -> dict:
     hints = []
     score = 0.0
     family = key_meta.get('family', 'unknown')
+    if family == 'kgw' and key_meta.get('secret'):
+        # Real KGW Z-score test per segment, normalized to [0, 1]:
+        # z >= 4 -> 0.95, z <= 0 -> ~0, linear-ish in between.
+        r = detect_kgw(text, key_meta['secret'], gamma=key_meta.get('gamma', DEFAULT_GAMMA))
+        z = r['z_score'] or 0.0
+        score = min(0.99, max(0.0, z / 4.0 * 0.95))
+        if r['verdict'] == 'watermark_detected':
+            hints.append('kgw_z_above_4')
+        elif r['verdict'] == 'weak_signal':
+            hints.append('kgw_z_above_2')
+        return {'score': round(score, 4), 'hints': hints, 'family': family, 'z_score': z}
     trigger = key_meta.get('trigger_phrase', '')
     if trigger and trigger.lower() in text.lower():
         score += 0.65
@@ -28,6 +41,16 @@ def ensemble_detect(text: str, keys: list[dict], window: int = 400) -> dict:
     segments = segment_text(text, window=window)
     per_key = []
     for key in keys:
+        if key.get('family') == 'kgw' and key.get('secret'):
+            # KGW: one Z-test over the WHOLE text (statistics need n), not per segment.
+            r = detect_kgw(text, key['secret'], gamma=key.get('gamma', DEFAULT_GAMMA))
+            per_key.append({
+                'key_id': key.get('key_id', 'unknown'),
+                'family': 'kgw',
+                'avg_score': round(r['z_score'] or 0.0, 4),
+                'segments': [r],
+            })
+            continue
         seg_scores = [score_segment(seg, key) for seg in segments] or [score_segment(text, key)]
         avg = mean([s['score'] for s in seg_scores]) if seg_scores else 0.0
         per_key.append({

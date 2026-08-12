@@ -44,13 +44,19 @@ Windows users: the Makefile detects `OS=Windows_NT` and uses `.venv\Scripts` pat
 
 Recent taxonomies and surveys split text watermarking into multiple families with different assumptions, requirements and threat models. Existing-text methods, generation-time methods and model-level provenance do not collapse into one universal technique, so the product is structured as a lab with family plugins and capability axes rather than a single misleading detector.
 
+## Statistical watermark detection (KGW)
+
+The forensics layer now includes a real KGW-style statistical detector (`src/ai_watermark_toolkit/forensics/kgw.py`): per token, a pseudorandom hash over `(key, previous_token, token)` decides greenlist membership, and a one-sided Z-test over the whole text separates a watermarked green-rate (~100% for text generated with the matching key) from the expected ~25% of normal text. Multi-key detection tests every registered `kgw`-family key and reports per-key Z-scores with a Bonferroni-style adjustment.
+
+What it detects, honestly: texts generated **with this exact scheme and key**. It is not a universal detector for unknown vendor schemes — key and hash scheme must match. Word-level tokens approximate model tokenizers. Behavioral tests (`tests/test_v113_kgw_detector.py`) include a mini KGW generator that shares the detector's PRF: correct key → Z ≥ 4, wrong key → no signal.
+
 ## Included families
 
 - Unicode / zero-width
 - Lexical choice
 - Syntactic pattern
 - Format / layout
-- Sampling / logit bias
+- Sampling / logit bias (KGW Z-score detector for registered keys)
 - Semantic / structure
 - Localized provenance
 - Training-time / ownership
