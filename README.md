@@ -104,6 +104,21 @@ The metadata layer strips AI provenance marks from files — stdlib-only, no ext
 
 API: `POST /api/metadata/inspect` and `POST /api/metadata/clean` (multipart upload). CLI: `ai-wm file-inspect <file>` and `ai-wm file-clean <file> -o <out>`. Verifiable actions are reported per removal; C2PA *soft binding* (in-content marks re-linking a remote manifest) and pixel-domain marks remain out of scope.
 
+### Embed and detect your own file watermark
+
+The metadata layer also works in the other direction: `POST /api/metadata/embed` inserts a **signed provenance mark** (key_id + HMAC-SHA256 signature) into PNG/JPEG/SVG/PDF/DOCX/ODT/HTML/MD, using the same key registry as the KGW text detector. `POST /api/metadata/detect` (CLI: `ai-wm file-embed` / `ai-wm file-detect`) extracts the mark and verifies the signature against registered secrets:
+
+- Same key → `valid: true` (HMAC over the original content)
+- Tampered content → mark found, `valid: false`
+- Unknown key → found but invalid
+- Stream formats (png/jpeg/svg/html/md) bind the whole content; container formats (docx/odt) bind the main content part (documented)
+
+Round-trip tested for every format (`tests/test_v116_file_provenance.py`).
+
+### SynthID pixel scoring (external adapter)
+
+Real SynthID detection needs the upstream research codebook (~220 MB, non-commercial Research License) from `aloshdenny/reverse-SynthID`. The studio ships an **adapter**, not the codebook: with a local checkout (env `REVERSE_SYNTHID_DIR`), `POST /api/metadata/synthid-score` runs the upstream scorer and returns its verdict; without one it reports `available: false` honestly. Detection/scoring only — pixel-domain watermark removal is out of scope.
+
 ## What removing a text watermark costs (honest disclaimer)
 
 Text watermarks live in **the wording itself**: the signal is spread across token choices, so nearly every sentence carries a little of it. Two consequences follow:

@@ -64,6 +64,15 @@ def main() -> int:
     fc.add_argument("-o", "--output", required=True, help="output path for cleaned file")
     fc.add_argument("--json", action="store_true")
 
+    fe = sub.add_parser("file-embed")
+    fe.add_argument("input", help="file to watermark")
+    fe.add_argument("--key", required=True, help="key_id (must carry a secret)")
+    fe.add_argument("-o", "--output", required=True)
+
+    fd = sub.add_parser("file-detect")
+    fd.add_argument("input", help="file to verify")
+    fd.add_argument("--json", action="store_true")
+
     pl = sub.add_parser("pipeline")
     pl.add_argument("input", nargs="?")
     pl.add_argument("--stdin", action="store_true")
@@ -186,6 +195,39 @@ def main() -> int:
                 print(f"{k}: {v}")
         print(f"# cleaned -> {args.output}", file=sys.stderr)
         return 0
+
+    if args.cmd == "file-embed":
+        from .forensics.key_registry import KeyRegistry
+        from .metadata.provenance import embed_provenance
+        registry = KeyRegistry('data/key_registry.json')
+        key = next((k for k in registry.list_keys() if k.get('key_id') == args.key), None)
+        if key is None:
+            print(f"ai-wm: error: key not found: {args.key}", file=sys.stderr)
+            return 2
+        if not key.get('secret'):
+            print(f"ai-wm: error: key {args.key} has no secret", file=sys.stderr)
+            return 2
+        data = Path(args.input).read_bytes()
+        result = embed_provenance(data, args.input, args.key, key['secret'])
+        if not result.embedded:
+            print(f"ai-wm: error: unsupported format: {result.format}", file=sys.stderr)
+            return 2
+        Path(args.output).write_bytes(result.data)
+        print(f"# embedded {args.key} mark ({result.mark_size} bytes) -> {args.output}", file=sys.stderr)
+        return 0
+
+    if args.cmd == "file-detect":
+        from .forensics.key_registry import KeyRegistry
+        from .metadata.provenance import detect_provenance
+        registry = KeyRegistry('data/key_registry.json')
+        secrets = {k.get('key_id'): k.get('secret') for k in registry.list_keys() if k.get('secret')}
+        data = Path(args.input).read_bytes()
+        result = detect_provenance(data, args.input, secrets)
+        if args.json:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(f"format: {result.format} | found: {result.found} | key_id: {result.key_id} | valid: {result.valid} | reason: {result.reason}")
+        return 0 if (result.found and result.valid) else 1
 
     if args.cmd == "pipeline":
         text = _read(args)
