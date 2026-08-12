@@ -29,6 +29,7 @@ def main() -> int:
     d.add_argument("--lang", default="auto", choices=["auto", "de", "en"])
     d.add_argument("--json", action="store_true")
     d.add_argument("--pretty", action="store_true")
+    d.add_argument("--aggressive", action="store_true", help="also flag script fillers (Braille blank, Hangul, ...)")
     d.add_argument("-o", "--output")
 
     sp = sub.add_parser("splash", help="Show the studio banner and system state")
@@ -118,7 +119,7 @@ def main() -> int:
 
     if args.cmd == "detect":
         text = _read(args)
-        result = detect_text(text, lang=args.lang)
+        result = detect_text(text, lang=args.lang, aggressive=getattr(args, "aggressive", False))
         rendered = json.dumps(result, ensure_ascii=False, indent=2) if args.json or args.output else json.dumps(result, ensure_ascii=False, indent=2)
         if args.output:
             Path(args.output).write_text(rendered, encoding="utf-8")

@@ -54,7 +54,7 @@ What it detects, honestly: texts generated **with this exact scheme and key**. I
 
 ## Included families
 
-- Unicode / zero-width
+- Unicode / zero-width — full bidi + zero-width family (ZWSP/ZWNJ/ZWJ, LRE/RLE/LRO/RLO/PDF, LRI/RLI/FSI/PDI, word joiner, BOM, Mongolian VS, deprecated format chars, tag block, variation selectors) **plus an opt-in aggressive mode** for script-specific fillers (Braille blank, Hangul fillers, object replacement) that standard mode deliberately leaves alone
 - Lexical choice
 - Syntactic pattern
 - Format / layout

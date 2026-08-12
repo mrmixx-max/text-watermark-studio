@@ -10,7 +10,20 @@ INVISIBLE_CPS = {
     0x202A, 0x202B, 0x202C, 0x202D, 0x202E,
     0x2060, 0x2061, 0x2062, 0x2063, 0x2064,
     0x2066, 0x2067, 0x2068, 0x2069,
+    0x206A, 0x206B, 0x206C, 0x206D, 0x206E, 0x206F,  # deprecated format chars
     0xFEFF, 0xFFF9, 0xFFFA, 0xFFFB,
+}
+
+# Aggressive-only fillers: script-specific, invisible in most fonts, and
+# legitimate in real text (Braille blank, Hangul fillers). Removing them
+# can damage genuine content, so they are opt-in via aggressive=True.
+AGGRESSIVE_CPS = {
+    0x115F, 0x1160,          # Hangul Choseong/Jungseong Filler
+    0x180B, 0x180C, 0x180D, 0x180F,  # Mongolian variation selectors / FVS1-4
+    0x2800,                  # Braille pattern blank
+    0x3164,                  # Hangul Filler
+    0xFFA0,                  # Halfwidth Hangul Filler
+    0xFFFC,                  # Object Replacement Character
 }
 
 CONFUSABLES = str.maketrans({
@@ -59,20 +72,23 @@ def _cp_name(cp: int) -> str:
         return f"U+{cp:04X}"
 
 
-def analyze(text: str) -> list[Finding]:
+def analyze(text: str, *, aggressive: bool = False) -> list[Finding]:
     out: list[Finding] = []
     for i, ch in enumerate(text):
         o = ord(ch)
         cat = unicodedata.category(ch)
         if o in INVISIBLE_CPS or (cat in {"Cf", "Cc"} and ch not in "\t\n\r"):
             out.append(Finding(i, f"U+{o:04X}", _cp_name(o), "invisible"))
+        elif aggressive and o in AGGRESSIVE_CPS:
+            out.append(Finding(i, f"U+{o:04X}", _cp_name(o), "aggressive_filler"))
         elif 0xE0001 <= o <= 0xE007F or 0xE0100 <= o <= 0xE01EF:
             out.append(Finding(i, f"U+{o:04X}", _cp_name(o), "tag_or_vs"))
     return out
 
 
-def sanitize(text: str, *, nfkc: bool = False, fold_confusables: bool = False) -> SanitizeResult:
-    findings = analyze(text)
+def sanitize(text: str, *, nfkc: bool = False, fold_confusables: bool = False,
+             aggressive: bool = False) -> SanitizeResult:
+    findings = analyze(text, aggressive=aggressive)
     drop = {f.index for f in findings}
     s = "".join(ch for i, ch in enumerate(text) if i not in drop)
     folds = 0

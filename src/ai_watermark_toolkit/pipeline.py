@@ -10,8 +10,8 @@ from .transform.clean import clean_text
 from .transform.dilute import dilute_text
 
 
-def detect_text(text: str, lang: str = "auto") -> dict:
-    unicode_findings = [asdict(x) for x in analyze(text)]
+def detect_text(text: str, lang: str = "auto", aggressive: bool = False) -> dict:
+    unicode_findings = [asdict(x) for x in analyze(text, aggressive=aggressive)]
     markers = [m.to_dict() for m in scan_markers(text, lang=lang)]
     style = compute_style_features(text).to_dict()
     ngram = heuristic_ngram_bias(text).to_dict()
@@ -35,11 +35,11 @@ def detect_text(text: str, lang: str = "auto") -> dict:
     }
 
 
-def run_pipeline(text: str, *, lang: str = "auto", nfkc: bool = False, fold_confusables: bool = False, intensity: str = "standard") -> tuple[str, dict]:
-    before = detect_text(text, lang=lang)
-    cleaned = clean_text(text, nfkc=nfkc, fold_confusables=fold_confusables)
+def run_pipeline(text: str, *, lang: str = "auto", nfkc: bool = False, fold_confusables: bool = False, intensity: str = "standard", aggressive: bool = False) -> tuple[str, dict]:
+    before = detect_text(text, lang=lang, aggressive=aggressive)
+    cleaned = clean_text(text, nfkc=nfkc, fold_confusables=fold_confusables, aggressive=aggressive)
     diluted = dilute_text(cleaned.text, intensity=intensity)
-    after = detect_text(diluted.text, lang=lang)
+    after = detect_text(diluted.text, lang=lang, aggressive=aggressive)
     report = {
         "before": before,
         "clean": cleaned.to_dict(),
