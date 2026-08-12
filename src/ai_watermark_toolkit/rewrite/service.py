@@ -44,6 +44,42 @@ class RewriteService:
         except Exception as e:
             raise RuntimeError(f'Local LLM call failed: {e}') from e
 
+    def _llm_backtranslate(self, text: str) -> str:
+        """Backtranslate: text -> English -> original language (2 LLM calls).
+
+        The most literature-standard paraphrase attack on sampling watermarks
+        (Kirchenbauer et al.). Two hops break the token-choice statistics far
+        more than a single paraphrase pass.
+        """
+        if httpx is None:
+            raise RuntimeError('httpx not installed — cannot use LLM backend')
+        intermediate = self._llm_rewrite(text, mode='backtranslate_phase1')
+        return self._llm_rewrite(intermediate, mode='backtranslate_phase2')
+
+    def _structural(self, text: str) -> str:
+        """Rule-based structural shuffle: reorder sentence chunks, vary openings.
+
+        Meaning-preserving: sentence boundaries are detected, the middle
+        sentences are rotated and clause-openers varied. Facts/numbers survive
+        via the protect/restore layer. This is the honest no-LLM fallback for
+        'structural' and 'backtranslate' modes.
+        """
+        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+        if len(sentences) < 4:
+            # too few sentences to reorder — vary openings only
+            openings = ['Additionally', 'In other words', 'Importantly', 'Notably']
+            out = []
+            for i, s in enumerate(sentences):
+                if i > 0 and s and s[0].isalpha() and len(s.split()) > 4:
+                    prefix = openings[i % len(openings)]
+                    s = f"{prefix}, {s[0].lower()}{s[1:]}"
+                out.append(s)
+            return ' '.join(out)
+        # rotate the middle block (keep first + last stable for coherence)
+        middle = sentences[1:-1]
+        rotated = middle[1:] + middle[:1]
+        return ' '.join([sentences[0]] + rotated + [sentences[-1]])
+
     def _protect(self, text: str):
         protected: Dict[str, str] = {}
         patterns = [
@@ -110,8 +146,15 @@ class RewriteService:
         original = text
         use_llm = self.llm_backend if use_llm is None else use_llm
         if use_llm:
-            llm_out = self._llm_rewrite(text, mode)
+            if mode == 'backtranslate':
+                llm_out = self._llm_backtranslate(text)
+            else:
+                llm_out = self._llm_rewrite(text, mode)
             similarity = round(SequenceMatcher(None, original, llm_out).ratio(), 4)
+            steps = [f'Local LLM rewrite via {self.llm_model} ({self.llm_base}).',
+                     f'Applied rewrite mode: {mode}.']
+            if mode == 'backtranslate':
+                steps.append('Two-hop backtranslation (original -> English -> original).')
             return {
                 'original': original,
                 'rewritten': llm_out,
@@ -124,10 +167,7 @@ class RewriteService:
                     'word_count_rewritten': len(llm_out.split()),
                     'similarity_ratio': similarity,
                 },
-                'change_log': [
-                    f'Local LLM rewrite via {self.llm_model} ({self.llm_base}).',
-                    f'Applied rewrite mode: {mode}.',
-                ],
+                'change_log': steps,
             }
         protected = {}
         if preserve:
@@ -136,10 +176,20 @@ class RewriteService:
         if mode in {'clarity', 'concise', 'plain', 'formal'}:
             text = self._clarify(text)
             text = self._tone(text, mode)
+        elif mode in {'structural', 'backtranslate'}:
+            text = self._structural(text)
         text = self._grammar_light(text)
         if preserve:
             text = self._restore(text, protected)
         similarity = round(SequenceMatcher(None, original, text).ratio(), 4)
+        steps = [
+            'Normalized whitespace and punctuation.',
+            'Applied light grammar correction.',
+            f'Applied rewrite mode: {mode}.',
+            'Protected tokens preserved.' if preserve else 'Protection disabled.',
+        ]
+        if mode == 'backtranslate':
+            steps.append('No-LLM path: used structural shuffle (true backtranslation needs the LLM backend).')
         return {
             'original': original,
             'rewritten': text,
@@ -151,10 +201,5 @@ class RewriteService:
                 'word_count_rewritten': len(text.split()),
                 'similarity_ratio': similarity,
             },
-            'change_log': [
-                'Normalized whitespace and punctuation.',
-                'Applied light grammar correction.',
-                f'Applied rewrite mode: {mode}.',
-                'Protected tokens preserved.' if preserve else 'Protection disabled.'
-            ]
+            'change_log': steps,
         }

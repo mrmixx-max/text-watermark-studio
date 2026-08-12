@@ -139,7 +139,9 @@ PyMuPDF is widely documented as a high-performance PDF engine and recent benchma
 
 Current retrieval guidance consistently recommends recursive chunking as the pragmatic default for general corpora, commonly around 400–512 tokens with 10–20% overlap, because it preserves structure better than fixed-size cutting without semantic-chunking cost. Newer playbooks then layer in document-aware, semantic, hierarchical or late/contextual methods when eval results justify extra complexity. This edition adds fixed, recursive, markdown-aware, page-aware and semantic-lite chunking through the API, UI and MCP manifests.
 
-## LLM text rewriting
+### LLM text rewriting
+
+The rewrite service (`POST /api/rewrite/run`) supports **clarity, concise, plain, formal, structural and backtranslate** modes. `structural` reorders paragraphs/sentences while keeping facts, numbers and names identical. `backtranslate` is the literature-standard two-hop attack on sampling watermarks (text → English → original language, two LLM calls) — with an honest rule-based structural fallback when no LLM backend is configured.
 
 Ollama exposes local generation and chat APIs over HTTP, including `/api/generate` and `/api/chat`, making it a straightforward local backend for rewriting workflows. OpenAI recommends the Responses API for direct model requests in newer GPT generations, while Anthropic's Messages API is the standard text-generation interface for Claude models. This edition adds a provider abstraction and rewriting routes for Ollama, OpenAI and Anthropic, plus MCP exposure and UI controls.
 
