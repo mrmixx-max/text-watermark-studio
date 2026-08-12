@@ -34,5 +34,70 @@
       }
     }
   },
-  "last_decision": null
+  "last_decision": {
+    "profile": "default",
+    "task": "detect",
+    "selected": {
+      "id": "local-eurollm",
+      "kind": "local",
+      "base_url": "http://127.0.0.1:8080/v1",
+      "model": "mradermacher/EuroLLM-9B-Instruct-2512-GGUF"
+    },
+    "fallback_chain": [
+      {
+        "id": "cloud-mid",
+        "kind": "cloud",
+        "base_url": "https://api.example.com/v1",
+        "model": "mid-tier-chat"
+      },
+      {
+        "id": "cloud-mini",
+        "kind": "cloud",
+        "base_url": "https://api.example.com/v1",
+        "model": "mini-chat"
+      }
+    ],
+    "timeouts_ms": {
+      "local": 1200,
+      "cloud": 4000
+    },
+    "reason": [
+      "primary_default"
+    ],
+    "decided_at": "2026-08-12T21:08:17.966892+00:00"
+  },
+  "history": [
+    {
+      "profile": "default",
+      "task": "detect",
+      "selected": {
+        "id": "local-eurollm",
+        "kind": "local",
+        "base_url": "http://127.0.0.1:8080/v1",
+        "model": "mradermacher/EuroLLM-9B-Instruct-2512-GGUF"
+      },
+      "fallback_chain": [
+        {
+          "id": "cloud-mid",
+          "kind": "cloud",
+          "base_url": "https://api.example.com/v1",
+          "model": "mid-tier-chat"
+        },
+        {
+          "id": "cloud-mini",
+          "kind": "cloud",
+          "base_url": "https://api.example.com/v1",
+          "model": "mini-chat"
+        }
+      ],
+      "timeouts_ms": {
+        "local": 1200,
+        "cloud": 4000
+      },
+      "reason": [
+        "primary_default"
+      ],
+      "decided_at": "2026-08-12T21:08:17.966892+00:00"
+    }
+  ]
 }

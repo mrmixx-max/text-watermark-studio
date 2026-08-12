@@ -1,0 +1,87 @@
+{
+  "before": {
+    "version": 1,
+    "input_hash": "sha256:d904e9eeb9a782a850f8f01e9b912d90d511cadbe8d0c1f57e353bf965166bbc",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 5,
+        "avg_sentence_length": 14.8,
+        "sentence_length_stddev": 4.45,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0137,
+          "top_bigram": "security policy",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  },
+  "clean": {
+    "text": "# Security Policy\n\n## Supported versions\n\nThe latest published version is supported with security fixes.\n\n## Reporting a vulnerability\n\nPlease do not open public issues for sensitive vulnerabilities. Report them privately to the maintainer before public disclosure.\n\n## Scope\n\nThis project processes text and may expose user content to external services only when explicitly configured by the user. Keep API keys out of source control and avoid sending confidential text to third-party APIs unless you have consent.\n",
+    "unicode_removed": 0,
+    "confusable_folds": 0,
+    "comments_removed": 0,
+    "hidden_spans_removed": 0
+  },
+  "dilute": {
+    "text": "# Security Policy ## Supported versions The latest published version is supported with security fixes. ## Reporting a vulnerability Please do not open public issues for sensitive vulnerabilities. Report them privately to the maintainer before public disclosure. ## Scope This project processes text and may expose user content to external services only when explicitly configured by the user. Keep API keys out of source control and avoid sending confidential text to third-party APIs unless you have consent.",
+    "intensity": "standard",
+    "changed": true,
+    "frozen_blocks": 0
+  },
+  "after": {
+    "version": 1,
+    "input_hash": "sha256:102ea9f7d95e2712d6d2b1560669eaec544577f6b65f6cdd9e45ab6495376def",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 5,
+        "avg_sentence_length": 14.8,
+        "sentence_length_stddev": 4.45,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0137,
+          "top_bigram": "security policy",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  }
+}

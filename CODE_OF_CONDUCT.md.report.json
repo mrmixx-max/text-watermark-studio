@@ -1,0 +1,87 @@
+{
+  "before": {
+    "version": 1,
+    "input_hash": "sha256:59295e32d9c501f66f3eb2eb4471dae2a7034427b2643d62ece6eb2c9aed41d4",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 6,
+        "avg_sentence_length": 7.67,
+        "sentence_length_stddev": 4.38,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0444,
+          "top_bigram": "be respectful",
+          "top_bigram_count": 2,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  },
+  "clean": {
+    "text": "# Code of Conduct\n\n## Our Pledge\n\nWe want this project to be respectful, constructive, and technically honest.\n\n## Standards\n\n- Be respectful.\n- Discuss ideas, not people.\n- Prefer evidence and reproducible examples.\n- Avoid misleading claims about detection or guaranteed watermark removal.\n\n## Enforcement\n\nProject maintainers may remove abusive or harmful contributions.\n",
+    "unicode_removed": 0,
+    "confusable_folds": 0,
+    "comments_removed": 0,
+    "hidden_spans_removed": 0
+  },
+  "dilute": {
+    "text": "# Code of Conduct ## Our Pledge We want this project to be respectful, constructive, and technically honest. ## Standards - Be respectful.\n- Discuss ideas, not people.\n- Prefer evidence and reproducible examples.\n- Avoid misleading claims about detection or guaranteed watermark removal. ## Enforcement Project maintainers may remove abusive or harmful contributions.",
+    "intensity": "standard",
+    "changed": true,
+    "frozen_blocks": 0
+  },
+  "after": {
+    "version": 1,
+    "input_hash": "sha256:a1be636cdac6450902441bb1d56d8a90643fce5ff0716c265b6c6c886a9c4d07",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 6,
+        "avg_sentence_length": 7.67,
+        "sentence_length_stddev": 4.38,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0444,
+          "top_bigram": "be respectful",
+          "top_bigram_count": 2,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  }
+}

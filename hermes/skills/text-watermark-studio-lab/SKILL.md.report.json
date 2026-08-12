@@ -1,0 +1,87 @@
+{
+  "before": {
+    "version": 1,
+    "input_hash": "sha256:888771ca033eb7bbf71429afe5cfea016f9a3e3362fed3e7d7db94e3cf9b27a5",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 60,
+        "avg_sentence_length": 11.03,
+        "sentence_length_stddev": 6.14,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0136,
+          "top_bigram": "to inspect",
+          "top_bigram_count": 9,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  },
+  "clean": {
+    "text": "---\nname: text-watermark-studio-lab\nversion: 1.0.2\ndescription: Hermes-compatible skill bundle for the Text Watermark Studio Lab, including API-guided MCP tools.\n---\n\n# Text Watermark Studio Lab\n\nUse this skill to operate the lab, detect across families, inspect the key registry, and run the API-backed MCP tools.\n\n## Primary capabilities\n- Run pipeline actions.\n- Inspect forensics families and key registry.\n- Execute multi-key detection.\n- Query operations status and metrics.\n- Enqueue or inspect stream jobs.\n\n## MCP tools\nThe following tools are available via the companion MCP manifest:\n- health\n- ready\n- ops_status\n- ops_metrics\n- lab_families\n- lab_detect_all\n- lab_embed\n- forensics_keys\n- forensics_add_key\n- forensics_detect\n- lab_pipeline\n- streams_enqueue\n- streams_metrics\n\n## Notes\n- Treat sampling/logit-bias and training-time families as capability reports unless the backend has the required model or decoder access.\n- Use the lab to inspect family behavior, not to claim universal proof.\n\n\n## Document formats\n- Import/normalize: docx, md, txt, rtf, odt, pdf, epub.\n- Export: txt, md, rtf, docx, odt, pdf, epub.\n- Use MCP tools `document_formats`, `document_load`, and `document_export` for agent-driven conversion flows.\n\n\n## Large PDF optimization\n- Use `pdf_strategy` for planning large-file handling.\n- Use `pdf_extract_window` for page-window extraction instead of full-document scans.\n- Prefer PyMuPDF-first extraction, with pypdf as fallback.\n\n\n## RAG chunking\n- Use `rag_strategies` to inspect defaults.\n- Use `rag_chunk` for fixed, recursive, markdown, page and semantic-lite chunking.\n- Recommended baseline: recursive 512-token chunks with light overlap.\n\n\n## LLM rewriting\n- Use `llm_providers` to inspect available backends.\n- Use `llm_rewrite` for provider-routed text rewriting.\n- Ollama is the default local path; OpenAI and Anthropic are available through hosted APIs.\n\n\n## Prompt templates\n- Use `prompt_templates` to inspect the registry.\n- Use `prompt_render` to render variables into a versioned asset.\n- Use `prompt_create_version` to add immutable prompt variants.\n- Use `llm_rewrite_from_template` to combine versioned prompts with provider-routed rewriting.\n\n\n## Automatic prompt optimization\n- Use `opt_baseline` to capture the current prompt state.\n- Use `opt_candidates` and `opt_score` to search prompt variants.\n- Use `opt_optimize` to pick the winner against the golden set.\n- Use `opt_promote` to write the optimized winner back into the registry.\n\n\n## Multi-agent feedback loop\n- Generator creates candidate prompt variants.\n- Critic flags weak constraints and brittle instructions.\n- Refiner rewrites the prompt using critique.\n- Judge scores the refined result and determines approval.\n- Promoter writes the approved result back to the registry.\n\n\n## Graph knowledge representation\n- Use `graph_schema` to inspect entity and relation types.\n- Use `graph_ingest_fact` to convert facts into nodes and typed edges.\n- Use `graph_neighbors` and `graph_subgraph` for relational retrieval.\n- Combine graph memory with prompt, optimization and agent workflows for structured context.\n\n\n## Community detection and summarization\n- Use `community_detect` to group graph nodes into thematic clusters.\n- Use `community_summarize` to create short summaries for each cluster.\n- Use `community_list` and `community_get` to inspect detected communities.\n- Community summaries can be used as high-level context for global graph questions.\n\n\n## Auto-correction and rewrite engine\n- Use `rewrite_run` to correct grammar and rewrite text in clarity, concise, plain, or formal mode.\n- Protected preservation keeps numbers, names, and quotes stable during rewriting.\n- Review similarity and change-log outputs before publishing.\n\n\n## Export module\n- Use `export_run` to generate Markdown, HTML, JSON, CSV, or TXT exports.\n- Choose among clean, report, and terminal styles for HTML-oriented exports.\n- Include metadata to preserve provenance and context across downstream systems.\n\n\n## Direct cloud storage upload\n- Use `cloud_request_upload` to create short-lived direct-upload credentials for object storage.\n- Use `cloud_confirm_upload` after the client uploads bytes to storage.\n- Use `cloud_list_uploads` to inspect pending and confirmed uploads.\n- Validate filename, content type, size, and tenant/purpose before signing URLs in production.\n\n\n## Local EuroLLM GGUF integration\n- Use `llm_status` to inspect the configured local model endpoint.\n- Use `llm_configure` to point the toolkit at a local OpenAI-compatible llama.cpp server.\n- Default model family: `mradermacher/EuroLLM-9B-Instruct-2512-GGUF`.\n- Recommended startup: `llama-server -hf mradermacher/EuroLLM-9B-Instruct-2512-GGUF:Q4_K_M --port 8080`.\n\n\n## Automatic model fallback routing\n- Use `routing_decide` to choose the active model and fallback chain.\n- Use `routing_status` to inspect configured profiles and the last routing decision.\n- Use `routing_configure` to define primary, fallbacks, timeouts, and failure rules.\n- Recommended default: local EuroLLM primary, cloud mid-tier fallback, cloud mini tertiary fallback.\n",
+    "unicode_removed": 0,
+    "confusable_folds": 0,
+    "comments_removed": 0,
+    "hidden_spans_removed": 0
+  },
+  "dilute": {
+    "text": "---\nname: text-watermark-studio-lab\nversion: 1.0.2\ndescription: Hermes-compatible skill bundle for the Text Watermark Studio Lab, including API-guided MCP tools.\n--- # Text Watermark Studio Lab Use this skill to operate the lab, detect across families, inspect the key registry, and run the API-backed MCP tools. ## Primary capabilities\n- Run pipeline actions.\n- Inspect forensics families and key registry.\n- Execute multi-key detection.\n- Query operations status and metrics.\n- Enqueue or inspect stream jobs. ## MCP tools\nThe following tools are available via the companion MCP manifest:\n- health\n- ready\n- ops_status\n- ops_metrics\n- lab_families\n- lab_detect_all\n- lab_embed\n- forensics_keys\n- forensics_add_key\n- forensics_detect\n- lab_pipeline\n- streams_enqueue\n- streams_metrics ## Notes\n- Treat sampling/logit-bias and training-time families as capability reports unless the backend has the required model or decoder access.\n- Use the lab to inspect family behavior, not to claim universal proof. ## Document formats\n- Import/normalize: docx, md, txt, rtf, odt, pdf, epub.\n- Export: txt, md, rtf, docx, odt, pdf, epub.\n- Use MCP tools `document_formats`, `document_load`, and `document_export` for agent-driven conversion flows. ## Large PDF optimization\n- Use `pdf_strategy` for planning large-file handling.\n- Use `pdf_extract_window` for page-window extraction instead of full-document scans.\n- Prefer PyMuPDF-first extraction, with pypdf as fallback. ## RAG chunking\n- Use `rag_strategies` to inspect defaults.\n- Use `rag_chunk` for fixed, recursive, markdown, page and semantic-lite chunking.\n- Recommended baseline: recursive 512-token chunks with light overlap. ## LLM rewriting\n- Use `llm_providers` to inspect available backends.\n- Use `llm_rewrite` for provider-routed text rewriting.\n- Ollama is the default local path; OpenAI and Anthropic are available through hosted APIs. ## Prompt templates\n- Use `prompt_templates` to inspect the registry.\n- Use `prompt_render` to render variables into a versioned asset.\n- Use `prompt_create_version` to add immutable prompt variants.\n- Use `llm_rewrite_from_template` to combine versioned prompts with provider-routed rewriting. ## Automatic prompt optimization\n- Use `opt_baseline` to capture the current prompt state.\n- Use `opt_candidates` and `opt_score` to search prompt variants.\n- Use `opt_optimize` to pick the winner against the golden set.\n- Use `opt_promote` to write the optimized winner back into the registry. ## Multi-agent feedback loop\n- Generator creates candidate prompt variants.\n- Critic flags weak constraints and brittle instructions.\n- Refiner rewrites the prompt using critique.\n- Judge scores the refined result and determines approval.\n- Promoter writes the approved result back to the registry. ## Graph knowledge representation\n- Use `graph_schema` to inspect entity and relation types.\n- Use `graph_ingest_fact` to convert facts into nodes and typed edges.\n- Use `graph_neighbors` and `graph_subgraph` for relational retrieval.\n- Combine graph memory with prompt, optimization and agent workflows for structured context. ## Community detection and summarization\n- Use `community_detect` to group graph nodes into thematic clusters.\n- Use `community_summarize` to create short summaries for each cluster.\n- Use `community_list` and `community_get` to inspect detected communities.\n- Community summaries can be used as high-level context for global graph questions. ## Auto-correction and rewrite engine\n- Use `rewrite_run` to correct grammar and rewrite text in clarity, concise, plain, or formal mode.\n- Protected preservation keeps numbers, names, and quotes stable during rewriting.\n- Review similarity and change-log outputs before publishing. ## Export module\n- Use `export_run` to generate Markdown, HTML, JSON, CSV, or TXT exports.\n- Choose among clean, report, and terminal styles for HTML-oriented exports.\n- Include metadata to preserve provenance and context across downstream systems. ## Direct cloud storage upload\n- Use `cloud_request_upload` to create short-lived direct-upload credentials for object storage.\n- Use `cloud_confirm_upload` after the client uploads bytes to storage.\n- Use `cloud_list_uploads` to inspect pending and confirmed uploads.\n- Validate filename, content type, size, and tenant/purpose before signing URLs in production. ## Local EuroLLM GGUF integration\n- Use `llm_status` to inspect the configured local model endpoint.\n- Use `llm_configure` to point the toolkit at a local OpenAI-compatible llama.cpp server.\n- Default model family: `mradermacher/EuroLLM-9B-Instruct-2512-GGUF`.\n- Recommended startup: `llama-server -hf mradermacher/EuroLLM-9B-Instruct-2512-GGUF:Q4_K_M --port 8080`. ## Automatic model fallback routing\n- Use `routing_decide` to choose the active model and fallback chain.\n- Use `routing_status` to inspect configured profiles and the last routing decision.\n- Use `routing_configure` to define primary, fallbacks, timeouts, and failure rules.\n- Recommended default: local EuroLLM primary, cloud mid-tier fallback, cloud mini tertiary fallback.",
+    "intensity": "standard",
+    "changed": true,
+    "frozen_blocks": 0
+  },
+  "after": {
+    "version": 1,
+    "input_hash": "sha256:4f030c2bfa24f9eb624fe37d482234e46c4dea9ab391f746b76120516e2742d6",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 60,
+        "avg_sentence_length": 11.03,
+        "sentence_length_stddev": 6.14,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0136,
+          "top_bigram": "to inspect",
+          "top_bigram_count": 9,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  }
+}

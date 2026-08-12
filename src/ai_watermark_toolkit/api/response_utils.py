@@ -35,6 +35,20 @@ def parse_metadata_field(metadata):
         return {'raw_metadata': str(metadata)}
 
 
+def get_redis(request: Request):
+    """Return app.state.redis or raise a clean 503 when Redis is unavailable.
+
+    The API uses an async Redis client for queues/streams/ops. Without a
+    configured Redis service these endpoints have no backend; a bare
+    AttributeError would surface as a 500, which is misleading.
+    """
+    redis = getattr(request.app.state, 'redis', None)
+    if redis is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail='Redis backend unavailable')
+    return redis
+
+
 def checkbox_to_bool(value):
     if isinstance(value, bool):
         return value

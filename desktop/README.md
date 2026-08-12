@@ -1,18 +1,4 @@
-# Desktop GUI Packaging
-
-This folder adds a cross-platform Python desktop GUI using Tkinter and packaging scripts for Windows, macOS, and Linux.
-
-## Why this approach
-
-PyInstaller is a common way to package Python GUI applications into native executables, but you must build on each target operating system separately. Current packaging guidance also recommends `--windowed`/`--noconsole` for GUI apps and platform-specific output like `.app` bundles on macOS. [web:138][web:139][web:143][web:144][web:146][web:151]
-
-## Included
-
-- `python_gui/app.py`: native Tkinter desktop GUI
+# Desktop GUI Packaging This folder adds a cross-platform Python desktop GUI using Tkinter and packaging scripts for Windows, macOS, and Linux. ## Why this approach PyInstaller is a common way to package Python GUI applications into native executables, but you must build on each target operating system separately. Current packaging guidance also recommends `--windowed`/`--noconsole` for GUI apps and platform-specific output like `.app` bundles on macOS. [web:138][web:139][web:143][web:144][web:146][web:151] ## Included - `python_gui/app.py`: native Tkinter desktop GUI
 - `packaging/windows/build.ps1`
 - `packaging/macos/build.sh`
-- `packaging/linux/build.sh`
-
-## Notes
-
-This desktop layer talks to the local FastAPI service over HTTP. It is intentionally lightweight and easier to ship with the existing Python backend than a full Electron/Tauri rewrite. Tauri is often favored for new lean desktop apps because of smaller bundles and lower memory use, while Electron still wins on ecosystem maturity; here, the Python-native route is the fastest way to add GUIs for all major systems without replatforming the whole app. [web:137][web:140][web:142][web:145][web:147][web:148]
+- `packaging/linux/build.sh` ## Notes This desktop layer talks to the local FastAPI service over HTTP. It is intentionally lightweight and easier to ship with the existing Python backend than a full Electron/Tauri rewrite. Tauri is often favored for new lean desktop apps because of smaller bundles and lower memory use, while Electron still wins on ecosystem maturity; here, the Python-native route is the fastest way to add GUIs for all major systems without replatforming the whole app. [web:137][web:140][web:142][web:145][web:147][web:148]

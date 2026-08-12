@@ -1,0 +1,87 @@
+{
+  "before": {
+    "version": 1,
+    "input_hash": "sha256:3675a7ca5e39787b00659f9191c5a30146caeafa4f57fa87be5ab1e65de5c276",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 15,
+        "avg_sentence_length": 13,
+        "sentence_length_stddev": 7.94,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0052,
+          "top_bigram": "changelog 0",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  },
+  "clean": {
+    "text": "# Changelog\n\n## 0.9.2\n\n- Taxonomy-driven watermarking lab: plugin families for Unicode, lexical,\nsyntactic, format/layout, sampling/logit bias, semantic/structure,\nlocalized provenance and training-time ownership workflows.\n- Document layer: txt, markdown, rtf, docx, odt, pdf, epub workflows with\nPyMuPDF-first extraction path, page-window extraction and result caching.\n- RAG chunking: fixed, recursive, markdown-aware, page-aware, semantic-lite.\n- LLM text rewriting: provider abstraction for Ollama, OpenAI, Anthropic.\n- Prompt registry with versioned templates; automatic prompt optimization\nwith candidate generation, scoring and winner promotion.\n- Multi-agent feedback loop (generator → critic → refiner → judge → promoter).\n- Graph knowledge representation, community detection and summarization.\n- Auto-correction and rewrite engine with protected-token preservation.\n- Unified export service (Markdown, HTML, JSON, CSV, TXT).\n- Direct cloud-storage upload with pseudo-presigned URLs.\n- Local LLM integration for EuroLLM GGUF (llama.cpp OpenAI-compatible API).\n- Automatic model fallback routing with deterministic fallback ladder.\n- MCP tool manifest (`mcp/tools.json`) and Hermes plugin bundle (`hermes/`).\n- Desktop Python GUI (Tkinter) and packaging scripts.\n\n## 0.1.0\n\n- Initial publishing-ready release\n- CLI commands: detect, clean, dilute, pipeline, batch, serve\n- FastAPI app and local web UI\n- Docker and GitHub Actions setup\n- Tests, issue templates, release workflow, and MIT license\n",
+    "unicode_removed": 0,
+    "confusable_folds": 0,
+    "comments_removed": 0,
+    "hidden_spans_removed": 0
+  },
+  "dilute": {
+    "text": "# Changelog ## 0.9.2 - Taxonomy-driven watermarking lab: plugin families for Unicode, lexical,\nsyntactic, format/layout, sampling/logit bias, semantic/structure,\nlocalized provenance and training-time ownership workflows.\n- Document layer: txt, markdown, rtf, docx, odt, pdf, epub workflows with\nPyMuPDF-first extraction path, page-window extraction and result caching.\n- RAG chunking: fixed, recursive, markdown-aware, page-aware, semantic-lite.\n- LLM text rewriting: provider abstraction for Ollama, OpenAI, Anthropic.\n- Prompt registry with versioned templates; automatic prompt optimization\nwith candidate generation, scoring and winner promotion.\n- Multi-agent feedback loop (generator → critic → refiner → judge → promoter).\n- Graph knowledge representation, community detection and summarization.\n- Auto-correction and rewrite engine with protected-token preservation.\n- Unified export service (Markdown, HTML, JSON, CSV, TXT).\n- Direct cloud-storage upload with pseudo-presigned URLs.\n- Local LLM integration for EuroLLM GGUF (llama.cpp OpenAI-compatible API).\n- Automatic model fallback routing with deterministic fallback ladder.\n- MCP tool manifest (`mcp/tools.json`) and Hermes plugin bundle (`hermes/`).\n- Desktop Python GUI (Tkinter) and packaging scripts. ## 0.1.0 - Initial publishing-ready release\n- CLI commands: detect, clean, dilute, pipeline, batch, serve\n- FastAPI app and local web UI\n- Docker and GitHub Actions setup\n- Tests, issue templates, release workflow, and MIT license",
+    "intensity": "standard",
+    "changed": true,
+    "frozen_blocks": 0
+  },
+  "after": {
+    "version": 1,
+    "input_hash": "sha256:f43515599bbfb85bb16c9ec223a859e7eab07adf53d6f3e7f58fd1c694ad5245",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 15,
+        "avg_sentence_length": 13,
+        "sentence_length_stddev": 7.94,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0052,
+          "top_bigram": "changelog 0",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  }
+}

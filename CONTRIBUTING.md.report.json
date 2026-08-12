@@ -1,0 +1,87 @@
+{
+  "before": {
+    "version": 1,
+    "input_hash": "sha256:3b57adf54759ec607c7e4303430e242fa52b0eeba156f0af8c26738e13187a9e",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 11,
+        "avg_sentence_length": 5.18,
+        "sentence_length_stddev": 5.24,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0357,
+          "top_bigram": "pytest q",
+          "top_bigram_count": 2,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  },
+  "clean": {
+    "text": "# Contributing\n\n## Development setup\n\n```bash\npython -m venv .venv\nsource .venv/bin/activate\npip install -e .[dev]\npytest -q\n```\n\n## Workflow\n\n1. Create a branch.\n2. Add or update tests.\n3. Run `pytest -q`.\n4. Open a pull request with a clear summary.\n\n## Style\n\n- Keep the stdlib-first approach where practical.\n- Prefer small, testable modules.\n- Document capability limits honestly.\n",
+    "unicode_removed": 0,
+    "confusable_folds": 0,
+    "comments_removed": 0,
+    "hidden_spans_removed": 0
+  },
+  "dilute": {
+    "text": "# Contributing ## Development setup ```bash\npython -m venv .venv\nsource .venv/bin/activate\npip install -e .[dev]\npytest -q\n``` ## Workflow 1. Create a branch.\n2. Add or update tests.\n3. Run `pytest -q`.\n4. Open a pull request with a clear summary. ## Style - Keep the stdlib-first approach where practical.\n- Prefer small, testable modules.\n- Document capability limits honestly.",
+    "intensity": "standard",
+    "changed": true,
+    "frozen_blocks": 1
+  },
+  "after": {
+    "version": 1,
+    "input_hash": "sha256:37d3a295706c6c02130c22fbb4d32b28c28e85ee7597c2bda5c7485162ea0af8",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 11,
+        "avg_sentence_length": 5.18,
+        "sentence_length_stddev": 5.24,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0357,
+          "top_bigram": "pytest q",
+          "top_bigram_count": 2,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  }
+}

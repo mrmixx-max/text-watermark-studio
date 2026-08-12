@@ -1,13 +1,1 @@
-# Security Policy
-
-## Supported versions
-
-The latest published version is supported with security fixes.
-
-## Reporting a vulnerability
-
-Please do not open public issues for sensitive vulnerabilities. Report them privately to the maintainer before public disclosure.
-
-## Scope
-
-This project processes text and may expose user content to external services only when explicitly configured by the user. Keep API keys out of source control and avoid sending confidential text to third-party APIs unless you have consent.
+# Security Policy ## Supported versions The latest published version is supported with security fixes. ## Reporting a vulnerability Please do not open public issues for sensitive vulnerabilities. Report them privately to the maintainer before public disclosure. ## Scope This project processes text and may expose user content to external services only when explicitly configured by the user. Keep API keys out of source control and avoid sending confidential text to third-party APIs unless you have consent.

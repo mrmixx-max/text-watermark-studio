@@ -5,13 +5,14 @@ from fastapi import APIRouter, Request, Response
 from ...core.config import settings
 from ...observability.metrics import render_metrics, STREAM_PENDING_GAUGE, STREAM_DEAD_LETTER_GAUGE, DLQ_REPLAYS_TOTAL
 from ...streams.redis_streams import RedisStreamsService
+from ..response_utils import get_redis
 
 router = APIRouter(prefix='/api/ops', tags=['ops'])
 
 
 @router.get('/metrics', summary='Prometheus metrics endpoint')
 async def metrics(request: Request):
-    svc = RedisStreamsService(request.app.state.redis)
+    svc = RedisStreamsService(get_redis(request))
     info = await svc.stream_info()
     pending = info.get('pending', {}).get('pending', 0) if isinstance(info.get('pending'), dict) else 0
     STREAM_PENDING_GAUGE.set(pending)
@@ -22,7 +23,7 @@ async def metrics(request: Request):
 
 @router.get('/status', summary='JSON operations status')
 async def status(request: Request):
-    svc = RedisStreamsService(request.app.state.redis)
+    svc = RedisStreamsService(get_redis(request))
     info = await svc.stream_info()
     return {
         'service': settings.app_name,
@@ -36,7 +37,7 @@ async def status(request: Request):
 
 @router.post('/dlq/replay/{job_id}', summary='Replay a DLQ job back into the main stream')
 async def replay_dlq(job_id: str, request: Request):
-    svc = RedisStreamsService(request.app.state.redis)
+    svc = RedisStreamsService(get_redis(request))
     job = await svc.get_job(job_id)
     if not job:
         return {'error': 'not_found'}

@@ -1,0 +1,100 @@
+{
+  "before": {
+    "version": 1,
+    "input_hash": "sha256:f40a54264f26fd5e93f3bac46ca891315142b87c898e4d520f9dd2f870273d51",
+    "layers": {
+      "unicode": {
+        "count": 2,
+        "items": [
+          {
+            "index": 5,
+            "cp": "U+200B",
+            "name": "ZERO WIDTH SPACE",
+            "category": "invisible"
+          },
+          {
+            "index": 11,
+            "cp": "U+202E",
+            "name": "RIGHT-TO-LEFT OVERRIDE",
+            "category": "invisible"
+          }
+        ]
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 1,
+        "avg_sentence_length": 3,
+        "sentence_length_stddev": 0.0,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.5,
+          "top_bigram": "hello world",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  },
+  "clean": {
+    "text": "HelloWorld hidden",
+    "unicode_removed": 2,
+    "confusable_folds": 0,
+    "comments_removed": 0,
+    "hidden_spans_removed": 0
+  },
+  "dilute": {
+    "text": "HelloWorld hidden",
+    "intensity": "standard",
+    "changed": false,
+    "frozen_blocks": 0
+  },
+  "after": {
+    "version": 1,
+    "input_hash": "sha256:6accf6585c83746a30c4c1fea0423f4b2fc7252dae2d51b6ff69d9a015026abf",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 0,
+        "mid": 0,
+        "low": 0,
+        "spans": []
+      },
+      "style": {
+        "sentence_count": 1,
+        "avg_sentence_length": 2,
+        "sentence_length_stddev": 0.0,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 1.0,
+          "top_bigram": "helloworld hidden",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  }
+}

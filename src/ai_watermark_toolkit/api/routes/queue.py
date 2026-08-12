@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 from ...queue.redis_queue import RedisQueueService, QUEUE_KEY, BACKPRESSURE_KEY
 from ...core.config import settings
+from ..response_utils import get_redis
 
 router = APIRouter(prefix='/api/queue', tags=['queue'])
 
@@ -19,7 +20,7 @@ class QueuePayload(BaseModel):
 
 
 def get_queue(request: Request) -> RedisQueueService:
-    return RedisQueueService(request.app.state.redis)
+    return RedisQueueService(get_redis(request))
 
 
 @router.post('/enqueue')
@@ -38,4 +39,4 @@ async def get_job(job_id: str, request: Request):
 @router.get('/depth')
 async def depth(request: Request):
     queue = get_queue(request)
-    return {'depth': await queue.queue_depth(), 'backpressure': bool(await request.app.state.redis.get(BACKPRESSURE_KEY))}
+    return {'depth': await queue.queue_depth(), 'backpressure': bool(await get_redis(request).get(BACKPRESSURE_KEY))}

@@ -1,0 +1,129 @@
+{
+  "before": {
+    "version": 1,
+    "input_hash": "sha256:be34a4eb49e4a0a9ddfe0a3b76dd40374216db4fcf1ec081f9d2c82d85635d80",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 3,
+        "mid": 1,
+        "low": 0,
+        "spans": [
+          {
+            "lang": "en",
+            "severity": 3,
+            "note": "stock opener",
+            "start": 0,
+            "end": 24,
+            "snippet": "In today's digital world"
+          },
+          {
+            "lang": "en",
+            "severity": 3,
+            "note": "filler",
+            "start": 26,
+            "end": 49,
+            "snippet": "it is important to note"
+          },
+          {
+            "lang": "en",
+            "severity": 3,
+            "note": "leverage",
+            "start": 64,
+            "end": 72,
+            "snippet": "leverage"
+          },
+          {
+            "lang": "en",
+            "severity": 2,
+            "note": "furthermore",
+            "start": 85,
+            "end": 96,
+            "snippet": "Furthermore"
+          }
+        ]
+      },
+      "style": {
+        "sentence_count": 2,
+        "avg_sentence_length": 10,
+        "sentence_length_stddev": 5.0,
+        "transition_density": 0.05,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0526,
+          "top_bigram": "in today",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  },
+  "clean": {
+    "text": "In today's digital world, it is important to note that AI tools leverage automation. Furthermore, they seamlessly improve workflows.\n",
+    "unicode_removed": 0,
+    "confusable_folds": 0,
+    "comments_removed": 0,
+    "hidden_spans_removed": 0
+  },
+  "dilute": {
+    "text": "In today's digital world, AI tools use automation. Also, they smoothly improve workflows.",
+    "intensity": "standard",
+    "changed": true,
+    "frozen_blocks": 0
+  },
+  "after": {
+    "version": 1,
+    "input_hash": "sha256:5509db0765252d2dece8593ab2920f9ecffcacf73a147e0f9870f1cbd7f90a1f",
+    "layers": {
+      "unicode": {
+        "count": 0,
+        "items": []
+      },
+      "markup": {
+        "count": 0
+      },
+      "markers": {
+        "high": 1,
+        "mid": 0,
+        "low": 0,
+        "spans": [
+          {
+            "lang": "en",
+            "severity": 3,
+            "note": "stock opener",
+            "start": 0,
+            "end": 24,
+            "snippet": "In today's digital world"
+          }
+        ]
+      },
+      "style": {
+        "sentence_count": 2,
+        "avg_sentence_length": 7,
+        "sentence_length_stddev": 2.0,
+        "transition_density": 0.0,
+        "em_dash_count": 0
+      },
+      "statistical": [
+        {
+          "repeated_bigram_ratio": 0.0769,
+          "top_bigram": "in today",
+          "top_bigram_count": 1,
+          "note": "heuristic anomaly score; not a keyed detector"
+        }
+      ]
+    },
+    "actions_applied": [],
+    "residual_risk": "Heuristic only for statistical signals; not a keyed watermark detector."
+  }
+}

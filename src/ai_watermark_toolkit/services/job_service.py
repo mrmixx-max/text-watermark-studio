@@ -5,6 +5,8 @@ import uuid
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
+from fastapi import HTTPException
+
 from ..batch import process_batch
 
 
@@ -46,4 +48,6 @@ class JobService:
 
     def get_job(self, job_id: str) -> dict:
         job_path = self.state_dir / f'{job_id}.json'
+        if not job_path.exists():
+            raise HTTPException(status_code=404, detail=f'Job {job_id} not found')
         return json.loads(job_path.read_text(encoding='utf-8'))

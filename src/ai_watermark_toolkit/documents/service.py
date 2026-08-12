@@ -1,11 +1,40 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Any
+from dataclasses import dataclass, field, asdict
+from typing import Dict, Any, List
+
+SUPPORTED_FORMATS = ['md', 'markdown', 'txt', 'text']
+
+
+@dataclass
+class LoadedDocument:
+    filename: str
+    content: str
+    normalized: str
+    format: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 @dataclass
 class DocumentService:
+    def supported(self) -> List[str]:
+        return SUPPORTED_FORMATS
+
+    def load_text(self, filename: str, content: str) -> LoadedDocument:
+        fmt = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'txt'
+        if fmt not in SUPPORTED_FORMATS:
+            fmt = 'txt'
+        return LoadedDocument(
+            filename=filename,
+            content=content,
+            normalized=content.strip(),
+            format=fmt,
+            metadata={'chars': len(content)},
+        )
+
     def export_markdown(self, title: str, body: str, metadata: Dict[str, Any] | None = None) -> str:
         metadata = metadata or {}
         meta_lines = ['---'] + [f'{k}: {v}' for k, v in metadata.items()] + ['---', ''] if metadata else []
