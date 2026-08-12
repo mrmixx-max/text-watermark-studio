@@ -133,5 +133,25 @@ def main() -> int:
     return 2
 
 
+def main_entry() -> int:
+    """Wrapper that turns unexpected errors into clean stderr messages.
+
+    Raw Python tracebacks on the CLI are unprofessional and confuse
+    scripts that parse stderr. Exit codes stay meaningful: 0 = ok,
+    1 = findings/processing result, 2 = usage/input error.
+    """
+    try:
+        return main()
+    except FileNotFoundError as e:
+        print(f"ai-wm: error: file not found: {e.filename or e}", file=sys.stderr)
+        return 2
+    except IsADirectoryError as e:
+        print(f"ai-wm: error: expected a file, got a directory: {e.filename}", file=sys.stderr)
+        return 2
+    except ValueError as e:
+        print(f"ai-wm: error: {e}", file=sys.stderr)
+        return 2
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main_entry())

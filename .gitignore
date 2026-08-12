@@ -23,6 +23,9 @@ output/
 data/audit.log
 data/audit_log.jsonl
 data/pdf_cache/
+data/uploads.json
+data/graph/graph.json
+data/graph/communities.json
 
 # OS / editor
 .DS_Store

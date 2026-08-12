@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from ...prompts.service import PromptRegistryService
 
@@ -25,9 +25,15 @@ def templates():
 
 @router.post('/render', summary='Render a prompt template with variables')
 def render(req: RenderRequest):
-    return svc.render(req.template_id, req.variables, req.version)
+    try:
+        return svc.render(req.template_id, req.variables, req.version)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post('/create-version', summary='Create a new prompt template version')
 def create_version(req: CreateTemplateRequest):
-    return svc.create_version(req.payload)
+    try:
+        return svc.create_version(req.payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e

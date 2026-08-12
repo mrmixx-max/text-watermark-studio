@@ -41,11 +41,21 @@ WEB_ROOT = Path(__file__).resolve().parents[1] / 'web'
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    try:
+        # Probe connectivity so Redis-dependent routes fail with a clean 503
+        # (state.redis = None -> get_redis() raises HTTPException) instead of
+        # a raw 500 from a connection error on first use.
+        await redis.ping()
+        app.state.redis = redis
+    except Exception:
+        app.state.redis = None
+        await redis.aclose()
     try:
         yield
     finally:
-        await app.state.redis.close()
+        if app.state.redis is not None:
+            await app.state.redis.close()
 
 
 app = FastAPI(

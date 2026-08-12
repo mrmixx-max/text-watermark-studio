@@ -17,11 +17,15 @@ class GraphMemoryService:
     def schema(self): return self._load_schema()
     def graph(self): return self._load_graph()
     def add_node(self, node: dict):
+        if not node.get('id'):
+            raise ValueError('node_id_required')
         g = self._load_graph(); now = datetime.utcnow().isoformat()
         node.setdefault('created_at', now); node['updated_at'] = now
-        g['nodes'] = [n for n in g['nodes'] if n['id'] != node['id']] + [node]
+        g['nodes'] = [n for n in g['nodes'] if n.get('id') != node['id']] + [node]
         self._save_graph(g); return node
     def add_edge(self, edge: dict):
+        if not edge.get('source') or not edge.get('target'):
+            raise ValueError('edge_source_target_required')
         g = self._load_graph(); edge.setdefault('weight', 1.0); edge.setdefault('evidence', []); edge['created_at'] = datetime.utcnow().isoformat()
         g['edges'].append(edge); self._save_graph(g); return edge
     def ingest_fact(self, subject: str, relation: str, object_: str, subject_type='Entity', object_type='Entity', evidence=None):

@@ -21,9 +21,9 @@ class PromptRegistryService:
         return self._load()['templates']
 
     def get_template(self, template_id: str, version: str | None = None):
-        matches = [t for t in self.list_templates() if t['id'] == template_id]
+        matches = [t for t in self.list_templates() if t.get('id') == template_id]
         if version:
-            matches = [t for t in matches if t['version'] == version]
+            matches = [t for t in matches if t.get('version') == version]
         if not matches:
             raise ValueError('template_not_found')
         if version:
@@ -49,6 +49,10 @@ class PromptRegistryService:
         }
 
     def create_version(self, payload: dict):
+        if not payload.get('id'):
+            raise ValueError('template_id_required')
+        if not payload.get('version'):
+            raise ValueError('template_version_required')
         data = self._load()
         data['templates'].append(payload)
         self._save(data)

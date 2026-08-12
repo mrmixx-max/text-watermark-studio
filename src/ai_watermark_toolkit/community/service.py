@@ -51,7 +51,7 @@ class CommunityService:
     def summarize(self):
         g = self._load_graph()
         data = self._load_communities()
-        node_map = {n['id']: n for n in g['nodes']}
+        node_map = {n['id']: n for n in g['nodes'] if n.get('id')}
         summaries = []
         for c in data['communities']:
             members = [node_map[m] for m in c['members'] if m in node_map]

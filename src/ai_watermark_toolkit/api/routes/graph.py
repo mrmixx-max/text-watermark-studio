@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from ...graph_memory.service import GraphMemoryService
 router = APIRouter(prefix='/api/graph', tags=['graph'])
@@ -17,9 +17,17 @@ def schema(): return svc.schema()
 @router.get('/all')
 def all_graph(): return svc.graph()
 @router.post('/node')
-def add_node(req: NodeRequest): return svc.add_node(req.node)
+def add_node(req: NodeRequest):
+    try:
+        return svc.add_node(req.node)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 @router.post('/edge')
-def add_edge(req: EdgeRequest): return svc.add_edge(req.edge)
+def add_edge(req: EdgeRequest):
+    try:
+        return svc.add_edge(req.edge)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 @router.post('/fact')
 def fact(req: FactRequest): return svc.ingest_fact(req.subject, req.relation, req.object_, req.subject_type, req.object_type, req.evidence)
 @router.get('/query')
