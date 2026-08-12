@@ -2,7 +2,6 @@
 
 ![CI](https://github.com/mrmixx-max/text-watermark-studio/actions/workflows/python-ci.yml/badge.svg)
 ![Release](https://github.com/mrmixx-max/text-watermark-studio/actions/workflows/release.yml/badge.svg)
-![PyPI publish](https://github.com/mrmixx-max/text-watermark-studio/actions/workflows/pypi-publish.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 Text Watermark Studio v8 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling/logit bias, semantic/structure, localized provenance and training-time ownership workflows.
