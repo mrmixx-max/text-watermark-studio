@@ -17,10 +17,10 @@ python -m venv .venv
 pip install -e ".[dev]"
 
 # CLI
-ai-wm detect  sample.txt --lang auto
-ai-wm clean   sample.txt -o sample.clean.txt
-ai-wm dilute  sample.txt -o sample.diluted.txt --intensity standard
-ai-wm pipeline sample.txt -o sample.out.txt --report report.json
+ai-wm detect  tests/fixtures/ai_sample_de.txt --lang de
+ai-wm clean   tests/fixtures/stego_zwsp.txt -o clean.txt
+ai-wm dilute  tests/fixtures/ai_sample_en.txt -o diluted.txt --intensity standard
+ai-wm pipeline tests/fixtures/ai_sample_de.txt -o out.txt --report report.json
 ai-wm serve   --host 127.0.0.1 --port 8080
 
 # Tests
