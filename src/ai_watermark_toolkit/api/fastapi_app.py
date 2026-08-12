@@ -32,6 +32,7 @@ from .routes.community import router as community_router
 from .routes.rewrite import router as rewrite_router
 from .routes.exporting import router as exporting_router
 from .routes.cloud import router as cloud_router
+from .routes.metadata import router as metadata_router
 from .routes.llm import router as llm_router
 from .routes.routing import router as routing_router
 
@@ -96,6 +97,7 @@ app.include_router(community_router)
 app.include_router(rewrite_router)
 app.include_router(exporting_router)
 app.include_router(cloud_router)
+app.include_router(metadata_router)
 
 
 @app.get('/health', tags=['system'])

@@ -87,6 +87,35 @@ Install into Hermes with `hermes skill install <path>` or copy the folder under 
 
 The v8.2 edition adds a document layer for txt, markdown, rtf, docx, odt, pdf and epub workflows. Pandoc is widely used as a universal document converter for docx, rtf, odt, epub, markdown and pdf-oriented flows, while specialized libraries like pypdf, python-docx, odfpy, EbookLib and striprtf cover format-specific extraction and manipulation use cases. Current API support focuses on normalization and export pathways through `/api/documents/*`, with Hermes/MCP exposure for agent use.
 
+## File metadata cleaning (C2PA / EXIF / XMP)
+
+The metadata layer strips AI provenance marks from files — stdlib-only, no external tools required:
+
+| Format | What it removes |
+| --- | --- |
+| PNG | `eXIf` EXIF chunk, XMP hint chunks (`iTXt`/`zTXt`/`tEXt`), C2PA/JUMBF detection |
+| JPEG | `APP1` EXIF + XMP segments, `APP11` XMP/AI metadata, C2PA/JUMBF detection |
+| SVG | `<metadata>`/RDF blocks, `data-ai-*` provenance attributes |
+| PDF | XMP metadata streams (byte-level), Producer/Creator Info entries (best-effort; exiftool remains stronger) |
+| DOCX | `customXml/` parts, docProps scrub (creator, lastModifiedBy, revision) |
+| ODT | `meta.xml` generator entries |
+| HTML | AI `<meta>` tags, JSON-LD provenance blocks, `data-ai*` attributes |
+| Markdown | YAML frontmatter AI keys (generated_by, model_name, ...) |
+
+API: `POST /api/metadata/inspect` and `POST /api/metadata/clean` (multipart upload). CLI: `ai-wm file-inspect <file>` and `ai-wm file-clean <file> -o <out>`. Verifiable actions are reported per removal; C2PA *soft binding* (in-content marks re-linking a remote manifest) and pixel-domain marks remain out of scope.
+
+## What removing a text watermark costs (honest disclaimer)
+
+Text watermarks live in **the wording itself**: the signal is spread across token choices, so nearly every sentence carries a little of it. Two consequences follow:
+
+1. **Removal means rewording, not restructuring.** Shuffling paragraphs, changing headings, or light touch-ups barely move the signal. Stripping a statistical mark requires rewriting a substantial fraction of the text — sentence by sentence, not section by section.
+
+2. **Rewording degrades the copy.** Any rewrite replaces the original word choices with the rewriting model's, which flattens tone, voice, and precision. On production copy (SEO, marketing, client work) that degradation is real and often visible to the people who care most about the writing.
+
+The full-circle question worth asking: if the plan is to rewrite the text with a cheaper model anyway, why pay for a premium model in the first place? Generating directly with the cheaper model is simpler, cheaper, and produces the same — or better — end result.
+
+Layer B makes sense when you specifically want the premium model's **thinking and drafting** and accept a rewrite pass to satisfy a hygiene or privacy requirement — not as a cheap route to mark-free text. When quality matters more than hygiene, use the lossless path: the Unicode scrub plus the file metadata cleaners, and keep the original prose.
+
 ## Large PDF performance
 
 PyMuPDF is widely documented as a high-performance PDF engine and recent benchmarks report faster plain-text extraction than pypdf on large documents, while PyMuPDF documentation also recommends excluding images and using the simplest text extraction modes for speed. Large-file FastAPI guidance likewise recommends `UploadFile`, chunked streaming, running byte limits and page-scoped processing instead of bulk in-memory ingestion. This edition therefore adds a PyMuPDF-first extraction path, page-window extraction, result caching and PDF-specific MCP tools.

@@ -55,6 +55,15 @@ def main() -> int:
     em.add_argument("--gamma", type=float, default=None)
     em.add_argument("-o", "--output")
 
+    fi = sub.add_parser("file-inspect")
+    fi.add_argument("input", help="file to inspect (png/jpg/svg/pdf/docx/odt/html/md)")
+    fi.add_argument("--json", action="store_true")
+
+    fc = sub.add_parser("file-clean")
+    fc.add_argument("input", help="file to clean")
+    fc.add_argument("-o", "--output", required=True, help="output path for cleaned file")
+    fc.add_argument("--json", action="store_true")
+
     pl = sub.add_parser("pipeline")
     pl.add_argument("input", nargs="?")
     pl.add_argument("--stdin", action="store_true")
@@ -152,6 +161,30 @@ def main() -> int:
         else:
             print(out)
         print(f"# embedded: {result['replacements']} replacements, green_rate {result['green_rate_after']}", file=sys.stderr)
+        return 0
+
+    if args.cmd == "file-inspect":
+        from .metadata.service import inspect
+        data = Path(args.input).read_bytes()
+        report = inspect(data, args.input)
+        if args.json:
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        else:
+            for k, v in report.items():
+                print(f"{k}: {v}")
+        return 0
+
+    if args.cmd == "file-clean":
+        from .metadata.service import clean
+        data = Path(args.input).read_bytes()
+        cleaned, report = clean(data, args.input)
+        Path(args.output).write_bytes(cleaned)
+        if args.json:
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        else:
+            for k, v in report.items():
+                print(f"{k}: {v}")
+        print(f"# cleaned -> {args.output}", file=sys.stderr)
         return 0
 
     if args.cmd == "pipeline":
