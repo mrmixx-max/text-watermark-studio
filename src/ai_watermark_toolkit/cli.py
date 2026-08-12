@@ -28,7 +28,11 @@ def main() -> int:
     d.add_argument("--stdin", action="store_true")
     d.add_argument("--lang", default="auto", choices=["auto", "de", "en"])
     d.add_argument("--json", action="store_true")
+    d.add_argument("--pretty", action="store_true")
     d.add_argument("-o", "--output")
+
+    sp = sub.add_parser("splash", help="Show the studio banner and system state")
+    sp.add_argument("--plain", action="store_true", help="no ANSI colors")
 
     c = sub.add_parser("clean")
     c.add_argument("input", nargs="?")
@@ -43,6 +47,13 @@ def main() -> int:
     dl.add_argument("--stdin", action="store_true")
     dl.add_argument("--intensity", default="standard", choices=["light", "standard", "aggressive"])
     dl.add_argument("-o", "--output")
+
+    em = sub.add_parser("embed")
+    em.add_argument("input", nargs="?")
+    em.add_argument("--stdin", action="store_true")
+    em.add_argument("--key", required=True, help="key_id from data/key_registry.json (must carry a secret)")
+    em.add_argument("--gamma", type=float, default=None)
+    em.add_argument("-o", "--output")
 
     pl = sub.add_parser("pipeline")
     pl.add_argument("input", nargs="?")
@@ -68,12 +79,34 @@ def main() -> int:
 
     args = p.parse_args()
 
+    if args.cmd == "splash":
+        from .ui import render_banner
+        print(render_banner(color=not args.plain))
+        try:
+            from .forensics.key_registry import KeyRegistry
+            registry = KeyRegistry('data/key_registry.json')
+            keys = registry.list_keys()
+            kgw = [k for k in keys if k.get('family') == 'kgw' and k.get('secret')]
+            print(f"  keys registered : {len(keys)} ({len(kgw)} KGW)")
+        except Exception:
+            pass
+        try:
+            import json as _json
+            llm = _json.loads(open('data/local_llm.json', encoding='utf-8').read())
+            print(f"  local llm       : {llm.get('model_variant', llm.get('model_family', 'unconfigured'))} @ {llm.get('server_base_url', 'unconfigured')}")
+        except Exception:
+            print("  local llm       : unconfigured")
+        return 0
+
     if args.cmd == "detect":
         text = _read(args)
         result = detect_text(text, lang=args.lang)
         rendered = json.dumps(result, ensure_ascii=False, indent=2) if args.json or args.output else json.dumps(result, ensure_ascii=False, indent=2)
         if args.output:
             Path(args.output).write_text(rendered, encoding="utf-8")
+        elif args.pretty:
+            from .ui import render_detect_report
+            print(render_detect_report(result, color=True))
         else:
             print(rendered)
         high = result["layers"]["markers"]["high"]
@@ -98,6 +131,27 @@ def main() -> int:
             Path(args.output).write_text(result.text, encoding="utf-8")
         else:
             print(result.text)
+        return 0
+
+    if args.cmd == "embed":
+        from .forensics.key_registry import KeyRegistry
+        from .forensics.kgw import embed_kgw, DEFAULT_GAMMA
+        text = _read(args)
+        registry = KeyRegistry('data/key_registry.json')
+        key = next((k for k in registry.list_keys() if k.get('key_id') == args.key), None)
+        if key is None:
+            print(f"ai-wm: error: key not found: {args.key}", file=sys.stderr)
+            return 2
+        if not key.get('secret'):
+            print(f"ai-wm: error: key {args.key} has no secret", file=sys.stderr)
+            return 2
+        result = embed_kgw(text, key['secret'], gamma=args.gamma or key.get('gamma') or DEFAULT_GAMMA)
+        out = result['text']
+        if args.output:
+            Path(args.output).write_text(out, encoding="utf-8")
+        else:
+            print(out)
+        print(f"# embedded: {result['replacements']} replacements, green_rate {result['green_rate_after']}", file=sys.stderr)
         return 0
 
     if args.cmd == "pipeline":

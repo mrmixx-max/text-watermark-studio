@@ -19,6 +19,7 @@ import random
 from ai_watermark_toolkit.forensics.kgw import (
     detect_kgw,
     detect_multi_key,
+    embed_kgw,
     green_token,
     tokenize,
     DEFAULT_GAMMA,
@@ -109,3 +110,57 @@ class TestKgwDetector:
     def test_tokenizer_word_level(self):
         tokens = tokenize("Hello, world! It's a test-case.")
         assert tokens == ["hello", "world", "it's", "a", "test-case"], tokens
+
+
+class TestKgwEmbed:
+    def _rich_text(self) -> str:
+        """Prose heavy in lexicon words so the rewrite has enough coverage."""
+        return (
+            "This report is an important review of our work. "
+            "We need to find a better way to show the results. "
+            "The team can make a good case and help people understand the change. "
+            "It is a big problem with a small fix, a new idea that gives real value. "
+            "We can take the time to build the right approach and reduce the risk. "
+            "Leaders say we must improve how we use the data, start early and stop guessing. "
+            "The key point is to create a strong result and write a clear summary. "
+            "Every part of this process is a question worth asking. "
+            "We know the world is fast and hard, but the easy path is not always the best one. "
+            "Good people give their time to make the whole thing work better every day."
+        )
+
+    def test_embed_then_detect_same_key(self):
+        text = self._rich_text()
+        emb = embed_kgw(text, KEY_A, seed=42)
+        assert emb["replacements"] > 0, emb
+        r = detect_kgw(emb["text"], KEY_A)
+        assert r["verdict"] == "watermark_detected", (emb, r)
+        assert r["z_score"] >= 4.0, r
+
+    def test_embedded_text_wrong_key_no_signal(self):
+        text = self._rich_text()
+        emb = embed_kgw(text, KEY_A, seed=42)
+        r = detect_kgw(emb["text"], KEY_B)
+        assert r["verdict"] in ("no_signal", "weak_signal"), r
+        assert r["z_score"] < 2.0, r
+
+    def test_embed_preserves_meaning_roughly(self):
+        """The rewrite stays readable: most tokens unchanged."""
+        text = self._rich_text()
+        emb = embed_kgw(text, KEY_A, seed=42)
+        t_orig = tokenize(text)
+        t_new = tokenize(emb["text"])
+        assert len(t_new) == len(t_orig), (len(t_orig), len(t_new))
+        same = sum(1 for a, b in zip(t_orig, t_new) if a == b)
+        assert same / len(t_orig) > 0.6, (same, len(t_orig))
+
+    def test_original_unwatermarked_text_no_signal(self):
+        text = self._rich_text()
+        r = detect_kgw(text, KEY_A)
+        assert r["verdict"] in ("no_signal", "weak_signal"), r
+        assert r["z_score"] < 2.0, r
+
+    def test_embed_deterministic_with_seed(self):
+        text = self._rich_text()
+        a = embed_kgw(text, KEY_A, seed=7)["text"]
+        b = embed_kgw(text, KEY_A, seed=7)["text"]
+        assert a == b

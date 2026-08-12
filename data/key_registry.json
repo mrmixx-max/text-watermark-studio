@@ -15,6 +15,16 @@
       "owner": "local",
       "trigger_phrase": "furthermore",
       "notes": "demo semantic key"
+    },
+    {
+      "key_id": "demo-kgw-1",
+      "family": "kgw",
+      "status": "active",
+      "owner": "local",
+      "trigger_phrase": "",
+      "notes": "demo KGW key — public demo secret, replace for real use",
+      "secret": "demo-kgw-secret-0001",
+      "gamma": 0.25
     }
   ]
 }

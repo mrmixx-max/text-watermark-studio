@@ -18,7 +18,7 @@ def score_segment(text: str, key_meta: dict) -> dict:
     if family == 'kgw' and key_meta.get('secret'):
         # Real KGW Z-score test per segment, normalized to [0, 1]:
         # z >= 4 -> 0.95, z <= 0 -> ~0, linear-ish in between.
-        r = detect_kgw(text, key_meta['secret'], gamma=key_meta.get('gamma', DEFAULT_GAMMA))
+        r = detect_kgw(text, key_meta['secret'], gamma=key_meta.get('gamma') or DEFAULT_GAMMA)
         z = r['z_score'] or 0.0
         score = min(0.99, max(0.0, z / 4.0 * 0.95))
         if r['verdict'] == 'watermark_detected':
@@ -43,11 +43,13 @@ def ensemble_detect(text: str, keys: list[dict], window: int = 400) -> dict:
     for key in keys:
         if key.get('family') == 'kgw' and key.get('secret'):
             # KGW: one Z-test over the WHOLE text (statistics need n), not per segment.
-            r = detect_kgw(text, key['secret'], gamma=key.get('gamma', DEFAULT_GAMMA))
+            # Normalize z to the [0,1] score scale the verdict thresholds assume.
+            r = detect_kgw(text, key['secret'], gamma=key.get('gamma') or DEFAULT_GAMMA)
+            z = r['z_score'] or 0.0
             per_key.append({
                 'key_id': key.get('key_id', 'unknown'),
                 'family': 'kgw',
-                'avg_score': round(r['z_score'] or 0.0, 4),
+                'avg_score': round(min(0.99, z / 4.0), 4),
                 'segments': [r],
             })
             continue
