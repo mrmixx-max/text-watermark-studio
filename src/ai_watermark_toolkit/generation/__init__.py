@@ -3,7 +3,7 @@
 This package holds the EXPERIMENTAL generation-time half of the KGW
 watermark. The standard, production path for text watermarking in this
 project remains the post-hoc text rewrite in ``forensics/kgw.py``
-(``mark_greenlist`` / ``embed_kgw``).
+(``mark_greenlist``).
 """
 
 from .kgw_sampler import (  # noqa: F401

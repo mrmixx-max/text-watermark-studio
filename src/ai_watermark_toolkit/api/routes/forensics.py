@@ -62,12 +62,17 @@ def add_key(req: KeyCreateRequest,
 @router.post('/detect', summary='Run ensemble multi-key forensic detection')
 def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
     registry = keys.list_keys()
-    result = ensemble_detect(req.text, registry, window=req.window,
-                             level=req.level, context=req.context)
-    # Real KGW multi-key detection (sign-preserving |Z| + Bonferroni) so a
-    # redlist watermark (negative z) surfaces instead of being clamped to
-    # "no_reliable_signal" by the ensemble's positive-only score scale.
+    # ONE KGW pass: detect_multi_key returns the full per-key detect_kgw
+    # results; the ensemble reuses them instead of re-hashing every key
+    # (audit 2026-08-13: was 2x tokenize+hash per request).
     kgw = detect_multi_key(req.text, registry, level=req.level, context=req.context)
+    kgw_keys = [k for k in registry
+                if k.get('family') == 'kgw' and k.get('secret')]
+    kgw_results = {k['key_id']: r
+                   for k, r in zip(kgw_keys, kgw.get('results', []))}
+    result = ensemble_detect(req.text, registry, window=req.window,
+                             level=req.level, context=req.context,
+                             kgw_results=kgw_results)
     top_verdict = result['verdict']
     best = kgw.get('best')
     # The best |Z| key carries the authoritative two-sided verdict; surface it

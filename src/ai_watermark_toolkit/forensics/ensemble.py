@@ -43,7 +43,8 @@ def score_segment(text: str, key_meta: dict) -> dict:
 
 
 def ensemble_detect(text: str, keys: list[dict], window: int = 400,
-                    level: str = "word", context: int = 1) -> dict:
+                    level: str = "word", context: int = 1,
+                    kgw_results: dict[str, dict] | None = None) -> dict:
     segments = segment_text(text, window=window)
     per_key = []
     for key in keys:
@@ -51,8 +52,12 @@ def ensemble_detect(text: str, keys: list[dict], window: int = 400,
             # KGW: one Z-test over the WHOLE text (statistics need n), not per segment.
             # Normalize z to the [-0.99, 0.99] score scale; the SIGN must survive
             # so a redlist watermark (z < 0) is not silently clamped to zero.
-            r = detect_kgw(text, key['secret'], gamma=key.get('gamma') or DEFAULT_GAMMA,
-                           level=level, context=context)
+            # `kgw_results` (optional, keyed by key_id) lets callers reuse a
+            # single detect_multi_key pass instead of re-hashing every key.
+            r = (kgw_results or {}).get(key.get('key_id'))
+            if r is None:
+                r = detect_kgw(text, key['secret'], gamma=key.get('gamma') or DEFAULT_GAMMA,
+                               level=level, context=context)
             z = r['z_score'] or 0.0
             per_key.append({
                 'key_id': key.get('key_id', 'unknown'),

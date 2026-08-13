@@ -153,12 +153,46 @@ class StudioTUI(App):
         the action must fail loudly instead of embedding under a hardcoded
         secret the user never chose.
         """
+        keys = self._kgw_keys()
+        return keys[0] if keys else None
+
+    def _kgw_keys(self) -> list[dict]:
+        """All registered KGW keys that carry a secret (keyed-detect path)."""
         from ..forensics.key_registry import KeyRegistry
         registry = KeyRegistry('data/key_registry.json')
-        for k in registry.list_keys():
-            if k.get('family') == 'kgw' and k.get('secret'):
-                return k
-        return None
+        return [k for k in registry.list_keys()
+                if k.get('family') == 'kgw' and k.get('secret')]
+
+    def _provenance_secrets(self) -> dict[str, str]:
+        """key_id -> secret for every registered key with a secret.
+
+        Used by file-detect so a mark signed under ANY registered key
+        verifies — the previous hardcoded demo secret reported real user
+        keys as hmac_invalid (F5).
+        """
+        from ..forensics.key_registry import KeyRegistry
+        registry = KeyRegistry('data/key_registry.json')
+        return {k.get('key_id'): k.get('secret')
+                for k in registry.list_keys() if k.get('secret')}
+
+    @staticmethod
+    def _parse_level_context(raw: str) -> tuple[str, int]:
+        """Parse optional `--level word|bpe` and `--context <n>` from the
+        Path field (defaults: word / 1 — identical to CLI and API defaults).
+
+        The remaining text is the plain path; unknown tokens are ignored so
+        existing Path-field formats keep working.
+        """
+        import re as _re
+        level = "word"
+        context = 1
+        m = _re.search(r"--level\s+(\w+)", raw)
+        if m and m.group(1) in ("word", "bpe"):
+            level = m.group(1)
+        m = _re.search(r"--context\s+(\d+)", raw)
+        if m:
+            context = max(1, int(m.group(1)))
+        return level, context
 
     # ---- actions ----------------------------------------------------------
 
@@ -171,6 +205,19 @@ class StudioTUI(App):
             text = open(p, encoding="utf-8").read()
         except OSError as e:
             self._out(f"[red]{e}[/]")
+            return
+        # Keyed verification first: if KGW keys with secrets are registered,
+        # run the real multi-key detection (redlist sign + Bonferroni).
+        keys = self._kgw_keys()
+        if keys:
+            from ..forensics.kgw import detect_multi_key
+            level, context = self._parse_level_context(p)
+            r = detect_multi_key(text, keys, level=level, context=context)
+            best = r.get("best", {})
+            self._out(f"[green]Keyed detect ({r.get('tested_keys', 0)} keys).[/] "
+                      f"best={best.get('key_id')} z={best.get('z_score')} "
+                      f"verdict={best.get('verdict')}")
+            self._report(detect_text(text))
             return
         self._report(detect_text(text))
 
@@ -219,9 +266,12 @@ class StudioTUI(App):
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
+        level, context = self._parse_level_context(p)
         emb = mark_greenlist(text, key['secret'],
-                             gamma=key.get('gamma') or DEFAULT_GAMMA)
-        self._out(f"[green]Embedded (key {key['key_id']}).[/] "
+                             gamma=key.get('gamma') or DEFAULT_GAMMA,
+                             level=level, context=context)
+        self._out(f"[green]Embedded (key {key['key_id']}, level={level}, "
+                  f"context={context}).[/] "
                   f"{emb.get('replacements', 0)} replacements, "
                   f"green_rate {emb.get('green_rate_after')}.")
         self._out(emb["text"][:2000])
@@ -255,7 +305,10 @@ class StudioTUI(App):
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
-        html_out = build_report(text, key['secret'])
+        level, context = self._parse_level_context(p)
+        html_out = build_report(text, key['secret'],
+                                key_label=key['key_id'],
+                                level=level, context=context)
         out_path = "tws-report-tui.html"
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(html_out)
@@ -312,14 +365,20 @@ class StudioTUI(App):
         p = self._need_path()
         if not p:
             return
+        key = self._kgw_key()
+        if key is None:
+            self._out("[red]No KGW key with a secret registered — add one via the "
+                      "API/CLI first, then retry.[/]")
+            return
         src = P(p)
         data = src.read_bytes()
         try:
-            emb = embed_provenance(data, src.name, "demo-kgw-1", "demo-kgw-secret-0001")
+            emb = embed_provenance(data, src.name, key["key_id"], key["secret"])
             out = src.with_name(src.stem + "-signed" + src.suffix)
             out.write_bytes(emb.data)
             self._out(f"[green]Signed file written:[/] {out} "
-                        f"(mark {emb.mark_size} bytes, format {emb.format}).")
+                        f"(mark {emb.mark_size} bytes, format {emb.format}, "
+                        f"key {key['key_id']}).")
         except Exception as e:
             self._out(f"[red]{type(e).__name__}: {e}[/]")
 
@@ -329,9 +388,14 @@ class StudioTUI(App):
         p = self._need_path()
         if not p:
             return
+        secrets = self._provenance_secrets()
+        if not secrets:
+            self._out("[red]No provenance keys with secrets registered — a "
+                      "signed file can't be verified without them.[/]")
+            return
         src = P(p)
         data = src.read_bytes()
-        det = detect_provenance(data, src.name, secrets={"demo-kgw-1": "demo-kgw-secret-0001"})
+        det = detect_provenance(data, src.name, secrets=secrets)
         self._report({"found": getattr(det, "found", None),
                       "valid": getattr(det, "valid", None),
                       "key_id": getattr(det, "key_id", None)})

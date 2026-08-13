@@ -408,12 +408,19 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
 
 def embed_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
               lexicon: dict[str, list[str]] | None = None, seed: int | None = None) -> dict:
-    """KGW-embed a text via lexicon rewrite: replace content words with
-    synonyms that land in the greenlist of (key, previous_token).
+    """DEPRECATED — use :func:`mark_greenlist` instead.
+
+    Legacy KGW-embed via lexicon rewrite: replaces content words with
+    synonyms in the greenlist of (key, previous_token). Best-effort only:
+    detection "may stay below the threshold" when few replacements are
+    possible. ``mark_greenlist`` deterministically imposes the greenlist
+    (guaranteed z > 4 with context/BPE support) and is the product path.
 
     Returns {'text': ..., 'replacements': n, 'total_tokens': n,
              'replaceable': k, 'green_rate_estimate': ...}.
     The first token is never replaced (no predecessor to score against).
+    Kept for backward compatibility (tests/benchmarks); new callers must
+    use mark_greenlist.
     """
     lex = lexicon if lexicon is not None else EMBED_LEXICON
     rng = random.Random(seed)

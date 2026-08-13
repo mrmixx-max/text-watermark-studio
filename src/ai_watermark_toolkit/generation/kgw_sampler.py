@@ -28,7 +28,7 @@ What this is NOT
 Honest limits
 -------------
 - This is a MECHANICS PROOF, not a production generator. The post-hoc
-  text-rewrite path (``mark_greenlist`` / ``embed_kgw``) remains the
+  text-rewrite path (``mark_greenlist``) remains the
   DEFAULT embedding method in the ``sampling_bias`` family. Measured
   2026-08-13: the real Ollama generator itself shows no greenlist bias
   (green_rate 0.49 ~= gamma) and Ollama's HTTP API exposes no logit_bias.
