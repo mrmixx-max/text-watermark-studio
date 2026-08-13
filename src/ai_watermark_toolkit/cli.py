@@ -74,6 +74,15 @@ def main() -> int:
     fd.add_argument("input", help="file to verify")
     fd.add_argument("--json", action="store_true")
 
+    rw = sub.add_parser("rewrite")
+    rw.add_argument("input", nargs="?")
+    rw.add_argument("--stdin", action="store_true")
+    rw.add_argument("--mode", default="clarity", choices=["clarity", "concise", "plain", "formal", "structural", "backtranslate"])
+    rw.add_argument("--use-llm", action="store_true", help="force the local LLM backend")
+    rw.add_argument("--no-preserve", action="store_true", help="disable protected-token preservation")
+    rw.add_argument("--json", action="store_true")
+    rw.add_argument("-o", "--output")
+
     pl = sub.add_parser("pipeline")
     pl.add_argument("input", nargs="?")
     pl.add_argument("--stdin", action="store_true")
@@ -229,6 +238,21 @@ def main() -> int:
         else:
             print(f"format: {result.format} | found: {result.found} | key_id: {result.key_id} | valid: {result.valid} | reason: {result.reason}")
         return 0 if (result.found and result.valid) else 1
+
+    if args.cmd == "rewrite":
+        import os as _os
+        from .rewrite.service import RewriteService
+        text = _read(args)
+        svc = RewriteService(llm_backend=bool(_os.getenv('LOCAL_LLM_ENABLED', '0') == '1'))
+        use_llm = True if getattr(args, 'use_llm', False) else None
+        result = svc.rewrite(text, mode=args.mode, preserve=not getattr(args, 'no_preserve', False), use_llm=use_llm)
+        if args.json:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            print(result['rewritten'])
+        if args.output:
+            Path(args.output).write_text(result['rewritten'], encoding='utf-8')
+        return 0
 
     if args.cmd == "pipeline":
         text = _read(args)
