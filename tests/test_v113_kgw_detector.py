@@ -74,7 +74,11 @@ class TestKgwDetector:
     def test_wrong_key_cannot_explain_pattern(self):
         text = generate_watermarked("start", KEY_A)
         r = detect_kgw(text, KEY_B)
-        assert r["verdict"] == "no_signal", r
+        # Two-sided redlist detection (v132) lets a wrong key land in the
+        # negative tail ("weak_redlist_signal", z in [-4,-2)) purely by
+        # sampling noise; the invariant that matters is that it never reaches
+        # a POSITIVE greenlist detection.
+        assert r["verdict"] != "watermark_detected", r
         assert r["z_score"] < 2.0, r
 
     def test_too_short_text_reports_too_short(self):

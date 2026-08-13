@@ -26,6 +26,7 @@ Honest limits (documented, not hidden):
 
 from __future__ import annotations
 
+import collections
 import hashlib
 import math
 import random
@@ -139,51 +140,83 @@ def _unit_interval(h: str) -> float:
     return int(h[:8], 16) / 0xFFFFFFFF
 
 
-def green_token(token: str, prev_token: str, key: str, gamma: float = DEFAULT_GAMMA) -> bool:
-    """KGW greenlist membership: PRF(key, prev, token) < gamma."""
-    digest = hashlib.sha256(f"{key}:{prev_token}:{token}".encode("utf-8")).hexdigest()
+def green_token(token: str, context, key: str, gamma: float = DEFAULT_GAMMA) -> bool:
+    """KGW greenlist membership over a context window: PRF(key, *context, token) < gamma.
+
+    `context` is either a single previous token (backward-compatible) or a
+    list/tuple of the c preceding tokens (context-window scheme). The PRF
+    hashes (key, *context, token). For a single-token context the digest is
+    byte-identical to the historical (key, prev, token) hash, so all existing
+    c=1 call sites keep producing the exact same greenlist decisions.
+    """
+    ctx = list(context) if isinstance(context, (list, tuple)) else [context]
+    digest = hashlib.sha256(
+        (f"{key}:" + ":".join(ctx) + f":{token}").encode("utf-8")
+    ).hexdigest()
     return _unit_interval(digest) < gamma
 
 
+def _summarize_z(green: int, n: int, gamma: float) -> dict:
+    """Summarize a green-count Z-test into a detector result dict.
+
+    Two-sided p-value (|z|). The SIGN of z carries the watermark semantics:
+    z > 0 means the greenlist is over-represented (a greenlist watermark that
+    FAVOURS a hash-derived token set); z < 0 means it is under-represented —
+    the signature of a REDLIST watermark that AVOIDS a hash-derived token set.
+    The verdict + signal fields encode that sign explicitly.
+    """
+    mu = gamma * n
+    sigma = math.sqrt(n * gamma * (1 - gamma))
+    z = (green - mu) / sigma
+    p_value = math.erfc(abs(z) / math.sqrt(2))  # two-sided instead of upper-tail
+    rate = green / n
+    if z >= 4.0:
+        verdict, signal = "watermark_detected", "greenlist"
+    elif z <= -4.0:
+        verdict, signal = "redlist_detected", "redlist"
+    elif z >= 2.0:
+        verdict, signal = "weak_signal", "greenlist"
+    elif z <= -2.0:
+        verdict, signal = "weak_redlist_signal", "redlist"
+    else:
+        verdict, signal = "no_signal", None
+    return {
+        "z_score": round(z, 4), "p_value": round(p_value, 10),
+        "green_count": green, "n_tokens": n, "green_rate": round(rate, 4),
+        "verdict": verdict, "signal": signal,
+    }
+
+
 def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
-               level: str = "word") -> dict:
+               level: str = "word", context: int = 1) -> dict:
     """Z-score test for one key. Returns None-ish fields if text too short.
 
     level="bpe" runs the greenlist over BPE subword tokens at WORD BOUNDARIES:
     the pair scored is (last subword of word i-1, first subword of word i).
     This matches exactly what text-only rewriting can impose — a rewrite can
     choose a whole word, not a mid-word subword. level="word" keeps the fast
-    word-level approximation (default).
+    word-level approximation (default). The BPE path always uses a context
+    window of 1 (single predecessor word).
+
+    `context` (word level only) is the greenlist window size c: each token is
+    hashed against the c preceding tokens. c=1 is the historical single-
+    predecessor scheme and is byte-identical to previous releases.
     """
     if level == "bpe":
         return _detect_bpe_boundaries(text, key, gamma)
     tokens = tokenize(text, level=level)
-    n = len(tokens) - 1  # number of scored tokens (each scored against its predecessor)
+    n = len(tokens) - 1  # number of scored tokens (each scored against its predecessors)
     if n < 10:
         return {
             "z_score": None, "p_value": None, "green_count": 0,
             "n_tokens": n, "green_rate": None, "verdict": "too_short",
+            "signal": None,
         }
     green = sum(
         1 for i in range(1, len(tokens))
-        if green_token(tokens[i], tokens[i - 1], key, gamma)
+        if green_token(tokens[i], tokens[max(0, i - context):i], key, gamma)
     )
-    mu = gamma * n
-    sigma = math.sqrt(n * gamma * (1 - gamma))
-    z = (green - mu) / sigma
-    p_value = 0.5 * math.erfc(z / math.sqrt(2))  # one-sided upper tail
-    rate = green / n
-    if z >= 4.0:
-        verdict = "watermark_detected"
-    elif z >= 2.0:
-        verdict = "weak_signal"
-    else:
-        verdict = "no_signal"
-    return {
-        "z_score": round(z, 4), "p_value": round(p_value, 10),
-        "green_count": green, "n_tokens": n, "green_rate": round(rate, 4),
-        "verdict": verdict,
-    }
+    return _summarize_z(green, n, gamma)
 
 
 def _bpe_word_subwords(text: str) -> list[list[str]]:
@@ -217,30 +250,21 @@ def _detect_bpe_boundaries(text: str, key: str, gamma: float) -> dict:
         return {
             "z_score": None, "p_value": None, "green_count": 0,
             "n_tokens": n, "green_rate": None, "verdict": "too_short",
+            "signal": None,
         }
-    mu = gamma * n
-    sigma = math.sqrt(n * gamma * (1 - gamma))
-    z = (green - mu) / sigma
-    p_value = 0.5 * math.erfc(z / math.sqrt(2))
-    rate = green / n
-    if z >= 4.0:
-        verdict = "watermark_detected"
-    elif z >= 2.0:
-        verdict = "weak_signal"
-    else:
-        verdict = "no_signal"
-    return {
-        "z_score": round(z, 4), "p_value": round(p_value, 10),
-        "green_count": green, "n_tokens": n, "green_rate": round(rate, 4),
-        "verdict": verdict,
-    }
+    return _summarize_z(green, n, gamma)
 
 
 def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA) -> dict:
-    """Test all KGW-family keys. Best Z-score wins; report all.
+    """Test all KGW-family keys. Best |Z|-score wins; report all.
 
     keys: list of dicts with at least {'key_id': str, 'secret': str}.
     Only keys with family 'kgw' (or carrying a 'secret') are tested.
+
+    Selection is by Z MAGNITUDE with sign preserved: a redlist watermark shows
+    a strongly NEGATIVE z (greenlist under-represented) that must still win
+    over near-zero wrong keys, while a greenlist watermark shows a strongly
+    POSITIVE z. Raw `max(z_score)` would wrongly skip the redlist key.
     """
     results = []
     for k in keys:
@@ -253,7 +277,7 @@ def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA) 
         results.append(r)
     if not results:
         return {"tested_keys": 0, "best": None, "results": [], "note": "no_kgw_keys_registered"}
-    best = max(results, key=lambda r: r["z_score"] if r["z_score"] is not None else -1)
+    best = max(results, key=lambda r: abs(r["z_score"]) if r["z_score"] is not None else -1)
     # Bonferroni-style adjustment: multiple keys inflate false positives.
     m = len(results)
     best_p_adj = min(1.0, (best.get("p_value") or 1.0) * m)
@@ -276,19 +300,23 @@ def _restore_case(word: str, template: str) -> str:
 
 def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
                    vocab: dict[str, list[str]] | None = None,
-                   seed: int | None = None, level: str = "word") -> dict:
+                   seed: int | None = None, level: str = "word",
+                   context: int = 1) -> dict:
     """Directly greenlist-mark a text so the detector finds it (embed path).
 
     Unlike embed_kgw (lexicon-synonym rewrite, best-effort), this imposes the
-    greenlist: for every scored token whose (key, prev, token) hash is NOT
+    greenlist: for every scored token whose (key, *context, token) hash is NOT
     green, it substitutes a green word from the provided pool, so the final
     green ratio is pushed well above gamma and the Z-score clears 4.0.
 
-    level="word" (default): words are scored as units (hash over lowercase
-    word + predecessor word). level="bpe": a candidate word is green when its
-    FIRST BPE subword token hashes green against the LAST BPE subword of the
-    previous word — the same surface detect_kgw(level="bpe") scores, so
-    mark→detect round-trips on the same token level.
+    `context` (word level only) is the greenlist window size c: each word is
+    scored against the c preceding words, mirroring detect_kgw(..., context=c)
+    exactly. c=1 is the historical single-predecessor scheme and is
+    byte-identical to previous releases. level="bpe" always uses c=1: a
+    candidate word is green when its FIRST BPE subword token hashes green
+    against the LAST BPE subword of the single previous word — the same
+    surface detect_kgw(level="bpe") scores, so mark→detect round-trips on the
+    same token level.
 
     Substitutions are drawn from `vocab` (default: FREQUENT_VOCAB), a
     frequency pool, NOT synonyms — semantics are not preserved word-for-word;
@@ -307,45 +335,49 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     def _last_bpe(word: str) -> str:
         return bpe_tokenize(word)[-1]
 
-    def _is_green(cand: str, prev_word: str) -> bool:
+    def _is_green(cand: str, ctx: list[str]) -> bool:
         if level == "bpe":
-            return green_token(_first_bpe(cand), _last_bpe(prev_word), key, gamma)
-        return green_token(cand.lower(), prev_word.lower(), key, gamma)
+            return green_token(_first_bpe(cand), _last_bpe(ctx[-1]), key, gamma)
+        # word level: hash over the (up to c) preceding lowercased words
+        return green_token(cand.lower(), [w.lower() for w in ctx], key, gamma)
 
     parts = _SPLIT_RE.split(text)
     replaced = 0
-    prev = ""
+    # Rolling window of the last `context` finalized (post-substitution) words.
+    # BPE keeps a window of 1 (single predecessor word).
+    win = collections.deque(maxlen=context if level == "word" else 1)
     for i, part in enumerate(parts):
         if i % 2 == 0:
             continue
         token = part
         lower = token.lower()
-        if not prev:
-            prev = lower
+        if not win:
+            win.append(lower)
             continue
-        if _is_green(token, prev):
-            prev = lower
+        ctx = list(win)
+        if _is_green(token, ctx):
+            win.append(lower)
             continue
         # not green -> substitute a green word (prefer a same-class word)
         cands = pool.get(lower, [])
         green_pick = None
         for c in cands:
-            if _is_green(c, prev):
+            if _is_green(c, ctx):
                 green_pick = c
                 break
         if green_pick is None:
-            # any fallback word that is green for (prev, key)
+            # any fallback word that is green for (context, key)
             rng.shuffle(fallback)
             for c in fallback:
-                if _is_green(c, prev):
+                if _is_green(c, ctx):
                     green_pick = c
                     break
         if green_pick is not None:
             parts[i] = _restore_case(green_pick, token)
             replaced += 1
-            prev = green_pick
+            win.append(green_pick.lower())
         else:
-            prev = lower
+            win.append(lower)
     new_text = "".join(parts)
     if level == "bpe":
         # Report the SAME green rate the detector sees: word-boundary pairs
@@ -359,7 +391,7 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         n = max(0, len(tokens_after) - 1)
         green_now = sum(
             1 for i in range(1, len(tokens_after))
-            if green_token(tokens_after[i], tokens_after[i - 1], key, gamma)
+            if green_token(tokens_after[i], tokens_after[max(0, i - context):i], key, gamma)
         ) if n else 0
         total_tokens = len(tokens_after)
     return {
