@@ -65,12 +65,17 @@ print(f'OK: {{n}} files compiled, {{m}} modules imported')
 """])
     stage("Compile + Import-Scan", "OK:" in out, out.strip().splitlines()[-1] if out.strip() else "no output")
 
-    # 2. full suite sequential -------------------------------------------------
-    out = run([PY, "-m", "pytest", "tests/", "-q", "--timeout=120"])
-    last = [l for l in out.splitlines() if "passed" in l or "failed" in l]
-    last_line = (last[-1].strip() if last else out.strip()[-120:])
-    detail = last_line.replace("warning", "").replace("warnings", "").strip()
-    stage("Testsuite (sequenziell)", " passed" in last_line and " failed" not in last_line, detail)
+    # 2. full suite sequential x3 (stability under repetition) ---------------------
+    seq_ok = True
+    seq_lines = []
+    for i in range(3):
+        out = run([PY, "-m", "pytest", "tests/", "-q", "--timeout=120"])
+        last = [l for l in out.splitlines() if "passed" in l or "failed" in l]
+        last_line = (last[-1].strip() if last else out.strip()[-120:])
+        if " passed" not in last_line or " failed" in last_line:
+            seq_ok = False
+        seq_lines.append(last_line.replace("warning", "").replace("warnings", "").strip())
+    stage("Testsuite (3x sequenziell)", seq_ok, " | ".join(seq_lines))
 
     # 3. full suite x2 parallel ------------------------------------------------
     procs = [
@@ -94,24 +99,15 @@ print(f'OK: {{n}} files compiled, {{m}} modules imported')
     stage("TUI Burn-in (18 Aktionen)", "BURN-IN PASSED" in out,
           "18/18" if "BURN-IN PASSED" in out else out.strip()[-150:])
 
-    # 5. prompt-optimizer loop ---------------------------------------------------
-    out = run([PY, "-c", f"""
-import sys, json
-sys.path.insert(0, {str(REPO / 'src')!r})
-from ai_watermark_toolkit.optimization.service import PromptOptimizationService
-r = PromptOptimizationService().optimize(
-    'Rewrite the given text so it no longer reads like AI output. Keep all facts, numbers and names exactly as they are.')
-w = r['winner']
-print(json.dumps({{'baseline': r['baseline_score'], 'winner': w['candidate']['variant'],
-                   'winner_score': w['avg_score'], 'guardrail': w['guardrail_passed']}}))
-"""])
+    # 5. prompt-optimizer loop (full: optimize -> promote -> history -> rollback) --
+    out = run([PY, str(REPO / "benchmarks" / "optimizer_loop.py")])
     try:
         opt = json.loads(out.strip().splitlines()[-1])
-        opt_ok = opt["winner_score"] > opt["baseline"] and opt["guardrail"]
-        stage("Prompt-Optimizer-Loop", opt_ok,
-              f"winner={opt['winner']} {opt['winner_score']} > baseline {opt['baseline']}")
+        stage("Prompt-Optimizer-Loop (optimize+promote+rollback)", opt.get("ok", False),
+              f"winner={opt.get('winner')} {opt.get('winner_score')} > {opt.get('baseline')}, "
+              f"versions={opt.get('versions')}, rollback={opt.get('rollback')}")
     except Exception:
-        stage("Prompt-Optimizer-Loop", False, out.strip()[-200:])
+        stage("Prompt-Optimizer-Loop (optimize+promote+rollback)", False, out.strip()[-200:])
 
     # 6. deterministic benchmarks -----------------------------------------------
     am = run([PY, str(REPO / "benchmarks" / "attack_matrix.py")])
@@ -127,11 +123,38 @@ print(json.dumps({{'baseline': r['baseline_score'], 'winner': w['candidate']['va
         run([PY, "-m", "ai_watermark_toolkit.cli", "--help"], cwd=REPO)
     expected = ["detect", "clean", "dilute", "embed", "pipeline", "report",
                 "watch", "rewrite", "image-score", "batch", "serve", "tui",
-                "llm", "file-inspect", "file-clean", "file-embed",
+                "llm", "similarity", "file-inspect", "file-clean", "file-embed",
                 "file-detect", "splash"]
     missing = [c for c in expected if c not in help_out]
     stage("CLI-Smoke (Subcommands)", not missing,
           "alle registriert" if not missing else f"fehlt: {missing}")
+
+    # 7b. CLI execution smoke (real fixture, real exit codes) ----------------------
+    fixture = REPO / "tests" / "fixtures" / "ai_sample_en.txt"
+    sim_corpus = REPO / "tests" / "fixtures" / "ai_sample_de.txt"
+    exec_cases = [
+        (["detect", str(fixture), "--json"], None, {0, 1}),
+        (["clean", str(fixture)], None, {0}),
+        (["dilute", str(fixture)], None, {0}),
+        (["pipeline", str(fixture)], None, {0}),
+        (["report", str(fixture), "--key", "test"], None, {0}),
+        (["watch", str(fixture.parent), "--once"], None, {0}),
+        (["similarity", str(fixture), "--corpus", str(sim_corpus)], None, {0, 1}),
+        (["rewrite", str(fixture), "--mode", "structural"], None, {0}),
+    ]
+    results = []
+    for args, _, allowed in exec_cases:
+        p = subprocess.run([str(REPO / ".venv" / "Scripts" / "ai-wm.exe")] + args,
+                           capture_output=True, text=True, timeout=180,
+                           encoding="utf-8", errors="replace")
+        results.append(f"{args[0]}={p.returncode}")
+        if p.returncode not in allowed:
+            stage(f"CLI-Ausführung {args[0]}", False,
+                  f"exit {p.returncode} (erwartet {allowed}): {p.stderr[-120:]}")
+            break
+    else:
+        stage("CLI-Ausführung (8 Subcommands, echte Fixture)", True,
+              " ".join(results))
 
     # 8. local LLM backend against real Ollama ------------------------------------
     out = run([PY, "-c", f"""
@@ -154,7 +177,12 @@ print(f"models={{len(models)}}")
         stage("KGW E2E (echtes Modell)", "watermark_detected" in out,
               [l for l in out.splitlines() if "z" in l.lower()][-1] if out.strip() else "")
 
-    # 10. version consistency + git -----------------------------------------------
+    # 10. API smoke (FastAPI TestClient) -------------------------------------------
+    out = run([PY, str(REPO / "benchmarks" / "api_smoke.py")])
+    stage("API-Smoke (Health/Detect/Optimierung/LLM)", "OK" in out,
+          out.strip().splitlines()[-1] if out.strip() else "no output")
+
+    # 11. version consistency + git -----------------------------------------------
     out = run(["git", "status", "--porcelain"], cwd=REPO)
     dirty = [l for l in out.splitlines() if l.strip()]
     out2 = run(["git", "log", "--oneline", "-1"], cwd=REPO)
