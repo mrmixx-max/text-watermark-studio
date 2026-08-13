@@ -600,6 +600,21 @@
       }
     },
     {
+      "name": "forensics_finding",
+      "method": "POST",
+      "path": "/api/forensics/finding",
+      "description": "KI-Erklärungs-Befund (C5, Blaupause dissertation-ai-authorship-audit): Evidenzklassen A-D (A = reproduzierbares keyed-Artefakt, B = Vergleichsbefund, C = technischer Indikator — nie allein beweisend), Prüfpriorität 0-5 statt Schuld-Scoring, ehrlicher verdict_text (Herkunft nicht bestimmbar ist legitim), optional signiert (Registry-Secret)",
+      "body_schema": {
+        "text": "string",
+        "key_id": "string",
+        "level": "string",
+        "context": "integer",
+        "e_value": "boolean",
+        "delta_z": "object|null",
+        "sign": "boolean"
+      }
+    },
+    {
       "name": "metadata_formats",
       "method": "GET",
       "path": "/api/metadata/formats",

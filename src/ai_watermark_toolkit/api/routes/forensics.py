@@ -75,6 +75,31 @@ class DeltaZRequest(BaseModel):
     sign: bool = False
 
 
+class FindingDeltaZOption(BaseModel):
+    """ΔZ option inside the finding request (C5): two-text OR transform mode."""
+    text_after: str | None = None
+    transform: str | None = None
+    text: str | None = None
+    truncate_fraction: float = 0.6
+    seed: int = 42
+
+
+class FindingRequest(BaseModel):
+    """KI-Erklärungs-Befund (C5): Evidenzklassen A-D, Prüfpriorität 0-5.
+
+    The key is always a REGISTERED key_id — the secret is resolved
+    server-side from the KeyRegistry and never travels in the request body.
+    ``sign=True`` signs the report with the key's registry secret (HMAC).
+    """
+    text: str
+    key_id: str
+    level: str = 'word'
+    context: int = 1
+    e_value: bool = False
+    delta_z: FindingDeltaZOption | None = None
+    sign: bool = False
+
+
 @router.get('/keys', summary='List registered forensic keys')
 def list_keys(_auth: None = Depends(require_api_key)):
     # strip the secret field — a registry key's secret must never be
@@ -238,3 +263,63 @@ def delta_z_endpoint(req: DeltaZRequest, _auth: None = Depends(require_api_key))
                  'transform': req.transform, 'removed': result.get('removed'),
                  'delta_z': result.get('delta_z')})
     return result
+
+
+@router.post('/finding', summary='KI-Erklärungs-Befund: Evidenzklassen A-D, Prüfpriorität 0-5, ehrlicher verdict_text (C5)')
+def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)):
+    """KI-Erklärungs-Befund als Service (C5, Blaupause:
+    dissertation-ai-authorship-audit).
+
+    Bündelt server-side: KGW-Detektion (detect_multi_key, Pflicht) +
+    optional E-Wert-Prozess (``e_value=true``) + optional ΔZ-Vergleich
+    (``delta_z``: two-text ``{text_after}`` oder Transform-Modus
+    ``{transform, text}``). Jedes Modul wird in einen Einzelbefund mit
+    Evidenzklasse (A = reproduzierbares keyed-Artefakt, B = Vergleichsbefund,
+    C = technischer Indikator — nie allein beweisend) übersetzt;
+    ``priority`` (0-5) ist PRÜFbedarf, kein Schuld-Scoring; ``verdict_text``
+    formuliert ehrlich („Herkunft nicht bestimmbar" ist legitim) und
+    stellt NIE „KI-generiert" als Feststellung fest.
+
+    Das Schlüssel-Secret wird immer server-side aus der KeyRegistry
+    aufgelöst — ein Roh-Secret im Body wird nie akzeptiert. ``sign=true``
+    signiert den Report mit dem Registry-Secret des Schlüssels (HMAC).
+    """
+    key = next((k for k in keys.list_keys() if k.get('key_id') == req.key_id), None)
+    if key is None:
+        raise HTTPException(status_code=404, detail=f'key_not_found: {req.key_id}')
+    if not key.get('secret'):
+        raise HTTPException(status_code=400, detail='key_has_no_secret')
+    from ...forensics.finding import build_finding_report
+    from ...forensics.kgw import detect_multi_key
+    from ...forensics.e_value import e_detect
+    from ...forensics.delta_z import delta_z, delta_z_transform
+    gamma = key.get('gamma') or 0.25
+    results = {}
+    results['detect'] = detect_multi_key(
+        req.text, [key], gamma=gamma, level=req.level, context=req.context)
+    if req.e_value:
+        results['e_value'] = e_detect(
+            req.text, key['secret'], gamma=gamma,
+            level=req.level, context=req.context)
+    if req.delta_z is not None:
+        if req.delta_z.transform:
+            # Transform-Modus: Quelle ist der Top-Level-Text (Pflichtfeld).
+            results['delta_z'] = delta_z_transform(
+                req.text, req.key_id, method=req.delta_z.transform,
+                level=req.level, context=req.context, registry=keys,
+                seed=req.delta_z.seed,
+                truncate_fraction=req.delta_z.truncate_fraction)
+        else:
+            if req.delta_z.text_after is None:
+                raise HTTPException(status_code=400,
+                                    detail='text_after_required')
+            results['delta_z'] = delta_z(
+                req.text, req.delta_z.text_after, req.key_id,
+                level=req.level, context=req.context, registry=keys)
+    report = build_finding_report(
+        results, key_id=req.key_id,
+        sign_secret=key['secret'] if req.sign else None)
+    audit.write({'event': 'finding', 'key_id': req.key_id,
+                 'e_value': req.e_value, 'delta_z': bool(req.delta_z),
+                 'priority': report.get('priority'), 'signed': req.sign})
+    return report

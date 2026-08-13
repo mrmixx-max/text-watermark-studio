@@ -244,6 +244,19 @@ def main() -> int:
     dz.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
     dz.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
 
+    fi = sub.add_parser("finding", help="KI-Erklärungs-Befund (C5): Evidenzklassen A-D, Prüfpriorität 0-5, ehrlicher verdict_text — nie 'KI-generiert' als Feststellung")
+    fi.add_argument("input", nargs="?")
+    fi.add_argument("--stdin", action="store_true")
+    fi.add_argument("--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret")
+    fi.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
+    fi.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
+    fi.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
+    fi.add_argument("--e-value", action="store_true", help="also run the anytime-valid e-process (E-Wert-Befund, Klasse C)")
+    fi.add_argument("--delta-z", metavar="FILE_AFTER", default=None, help="also run the ΔZ comparison against FILE_AFTER (Vergleichsbefund, Klasse B)")
+    fi.add_argument("--sign", default=None, help="HMAC secret: sign the finding report (signed_report)")
+    fi.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
+    fi.add_argument("-o", "--output", default=None, help="write the JSON report to a file instead of stdout")
+
     args = p.parse_args()
 
     if args.cmd == "splash":
@@ -755,6 +768,65 @@ def main() -> int:
         if sign_secret:
             result = delta_z_report(result, sign_secret, key_id=result.get("key_id"))
         rendered = json.dumps(result, ensure_ascii=False, indent=2)
+        if args.output:
+            Path(args.output).write_text(rendered, encoding="utf-8")
+        else:
+            print(rendered)
+        return 0
+
+    if args.cmd == "finding":
+        # KI-Erklärungs-Befund (C5): der Befund IST das Ergebnis — Exit 0 bei
+        # jeder erfolgreichen Erstellung (auch bei priority 5; priority ist
+        # Prüfbedarf, kein Fehler). Exit 2 = Input-/Usage-Fehler.
+        from .forensics.finding import build_finding_report
+        from .forensics.key_registry import KeyRegistry
+        from .forensics.kgw import detect_multi_key, DEFAULT_GAMMA
+        from .forensics.e_value import e_detect
+        from .forensics.delta_z import delta_z
+        if args.stdin:
+            text = read_text(stdin_text=sys.stdin.read()).text
+        elif args.input:
+            text = read_text(path=args.input).text
+        else:
+            print("ai-wm: error: finding requires an input file (or --stdin)", file=sys.stderr)
+            return 2
+        key_arg = _resolve_key_arg(args)
+        if not key_arg:
+            print("ai-wm: error: finding requires --key (key_id or raw secret)", file=sys.stderr)
+            return 2
+        registry = KeyRegistry('data/key_registry.json')
+        key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
+        if key is None:
+            key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+        if not key.get('secret'):
+            print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
+            return 2
+        gamma = key.get('gamma') or DEFAULT_GAMMA
+        results = {}
+        results["detect"] = detect_multi_key(
+            text, [key], gamma=gamma,
+            level=args.level, context=args.context,
+        )
+        if args.e_value:
+            results["e_value"] = e_detect(
+                text, key["secret"], gamma=gamma,
+                level=args.level, context=args.context,
+            )
+        if args.delta_z:
+            results["delta_z"] = delta_z(
+                text, read_text(path=args.delta_z).text, key_arg,
+                level=args.level, context=args.context, registry=registry,
+            )
+        sign_secret = None
+        if args.sign_file:
+            sign_secret = Path(args.sign_file).read_text(encoding="utf-8").strip()
+        elif args.sign:
+            sign_secret = args.sign
+        report = build_finding_report(
+            results, key_id=key.get("key_id", key_arg),
+            sign_secret=sign_secret,
+        )
+        rendered = json.dumps(report, ensure_ascii=False, indent=2)
         if args.output:
             Path(args.output).write_text(rendered, encoding="utf-8")
         else:
