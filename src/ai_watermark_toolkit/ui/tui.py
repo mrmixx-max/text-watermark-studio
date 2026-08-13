@@ -39,6 +39,7 @@ MENU: list[tuple[str, str]] = [
     ("16 System state", "splash"),
     ("17 Update studio (check + upgrade)", "update"),
     ("18 Install local model (Ollama pull)", "llm-install"),
+    ("19 Prompt optimizer (locked evals)", "optimizer"),
 ]
 
 SHORT_HELP: dict[str, str] = {
@@ -60,6 +61,7 @@ SHORT_HELP: dict[str, str] = {
     "splash": "studio banner + system state",
     "update": "check PyPI for a newer release, then upgrade",
     "llm-install": "pull a local model via the Ollama API (name in Path field)",
+    "optimizer": "run the prompt-optimizer evaluator loop against the locked evals",
 }
 
 
@@ -406,6 +408,29 @@ class StudioTUI(App):
             self._out(f"[red]{e}[/]")
             return
         self._out(f"[green]Installed and selected:[/] {result['model']}")
+
+    def action_optimizer(self) -> None:
+        """Run the prompt-optimizer evaluator loop against the locked eval
+        set and show baseline, ranking and winner (read-only; promotion
+        happens through the API/CLI to keep the registry safe)."""
+        from ..optimization.service import PromptOptimizationService
+        base = ("Rewrite the given text so it no longer reads like AI output. "
+                "Keep all facts, numbers and names exactly as they are.")
+        self._out("[cyan]Prompt-Optimizer-Loop (locked evals, read-only):[/]")
+        try:
+            r = PromptOptimizationService().optimize(base)
+        except Exception as e:
+            self._out(f"[red]{e}[/]")
+            return
+        self._out(f"Backend: {r['backend']} · Evals: {r['eval_count']} · "
+                  f"Baseline: {r['baseline_score']} ({r['baseline_hash'][:8]})")
+        for row in r["ranking"]:
+            g = "OK" if row["guardrail_passed"] else "VERLETZT"
+            self._out(f"  {row['variant']:<20} {row['avg_score']:<6} "
+                      f"guardrail={g}")
+        w = r["winner"]
+        self._out(f"[green]Gewinner:[/] {w['candidate']['variant']} "
+                  f"({w['avg_score']}) — {w['candidate']['changed_variable']}")
 
     def action_splash(self) -> None:
         from ..ui.banner import render_banner

@@ -143,18 +143,20 @@ print(f'OK: {{n}} files compiled, {{m}} modules imported')
         (["rewrite", str(fixture), "--mode", "structural"], None, {0}),
     ]
     results = []
-    for args, _, allowed in exec_cases:
-        p = subprocess.run([str(REPO / ".venv" / "Scripts" / "ai-wm.exe")] + args,
-                           capture_output=True, text=True, timeout=180,
-                           encoding="utf-8", errors="replace")
-        results.append(f"{args[0]}={p.returncode}")
-        if p.returncode not in allowed:
-            stage(f"CLI-Ausführung {args[0]}", False,
-                  f"exit {p.returncode} (erwartet {allowed}): {p.stderr[-120:]}")
-            break
-    else:
-        stage("CLI-Ausführung (8 Subcommands, echte Fixture)", True,
-              " ".join(results))
+    import tempfile as _tmp
+    with _tmp.TemporaryDirectory() as td:
+        for args, _, allowed in exec_cases:
+            p = subprocess.run([str(REPO / ".venv" / "Scripts" / "ai-wm.exe")] + args,
+                               capture_output=True, text=True, timeout=180,
+                               encoding="utf-8", errors="replace", cwd=td)
+            results.append(f"{args[0]}={p.returncode}")
+            if p.returncode not in allowed:
+                stage(f"CLI-Ausführung {args[0]}", False,
+                      f"exit {p.returncode} (erwartet {allowed}): {p.stderr[-120:]}")
+                break
+        else:
+            stage("CLI-Ausführung (8 Subcommands, echte Fixture)", True,
+                  " ".join(results))
 
     # 8. local LLM backend against real Ollama ------------------------------------
     out = run([PY, "-c", f"""

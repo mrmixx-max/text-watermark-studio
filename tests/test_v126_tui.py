@@ -14,8 +14,8 @@ from ai_watermark_toolkit.ui.tui import MENU, SHORT_HELP, StudioTUI  # noqa: E40
 
 
 class TestMenu:
-    def test_menu_has_18_entries(self):
-        assert len(MENU) == 18
+    def test_menu_has_19_entries(self):
+        assert len(MENU) == 19
 
     def test_every_entry_maps_to_action_method(self):
         app = StudioTUI()
@@ -29,7 +29,7 @@ class TestMenu:
 
     def test_labels_are_numbered_sequentially(self):
         numbers = [label.split()[0] for label, _ in MENU]
-        assert numbers == [str(i) for i in range(1, 19)]
+        assert numbers == [str(i) for i in range(1, 20)]
 
 
 class TestCompose:
