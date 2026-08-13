@@ -11,10 +11,12 @@ def test_forensics_files_exist():
 
 
 def test_demo_key_registry_present(tmp_path):
-    # Registry-Bootstrap erzeugt Demo-Keys — die Datei selbst ist bewusst
-    # untracked (data/ im .gitignore), also über die API testen, nicht über
-    # die Datei-Existenz im Checkout.
+    # P0-3-Semantik: Demo-Keys nur mit explizitem seed_demo=True (bzw. am
+    # kanonischen Registry-Pfad); explizite Test-Pfade starten leer — sonst
+    # fälschen öffentlich bekannte Demo-Secrets frische Installationen.
     from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
-    reg = KeyRegistry(str(tmp_path / "keys.json"))
-    keys = reg.list_keys()
+    reg_empty = KeyRegistry(str(tmp_path / "keys.json"))
+    assert reg_empty.list_keys() == []
+    reg_demo = KeyRegistry(str(tmp_path / "demo.json"), seed_demo=True)
+    keys = reg_demo.list_keys()
     assert len(keys) >= 2
