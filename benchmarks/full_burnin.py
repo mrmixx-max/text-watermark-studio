@@ -11,6 +11,12 @@ Runs, in order:
   8. local-LLM backend against the real Ollama (list + known model)
   9. optional KGW end-to-end proof against a real model (--with-e2e)
  10. version consistency + clean git state
+ 11. optional Blackbox-E2E v2 (attack matrix v2, cached-only, no Ollama):
+     runs benchmarks/attack_matrix_v2.py --samples 5 --skip-generation.
+     Deterministic fast mode from the %TEMP% cache — the full generation
+     run is NOT repeated per burn-in. Requires the v2 cache to exist:
+     run `python benchmarks/attack_matrix_v2.py --samples 5` once.
+     (--with-e2e)
 
 Usage: python benchmarks/full_burnin.py [--with-e2e]
 
@@ -22,6 +28,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -190,6 +197,26 @@ print(f"models={{len(models)}}")
     dirty = [l for l in out.splitlines() if l.strip()]
     out2 = run(["git", "log", "--oneline", "-1"], cwd=REPO)
     stage("Git sauber", not dirty, out2.strip().split(" ", 1)[0] if out2.strip() else "")
+
+    # 12. optional Blackbox-E2E v2 (attack matrix, cached-only, no Ollama) ---------
+    if with_e2e:
+        v2 = REPO / "benchmarks" / "attack_matrix_v2.py"
+        v2_out = Path(tempfile.gettempdir()) / "tws-e2e-blackbox-v2" / "burnin-n5"
+        p = subprocess.run([PY, str(v2), "--samples", "5", "--skip-generation",
+                            "--out", str(v2_out)],
+                           cwd=str(REPO), capture_output=True, text=True,
+                           timeout=300, encoding="utf-8", errors="replace")
+        out = (p.stdout or "") + (p.stderr or "")
+        if p.returncode == 0:
+            detail = [l for l in out.splitlines() if "Artefakte" in l or "REPORT" in l]
+            stage("Blackbox-E2E v2 (Attack-Matrix, Cache)", True,
+                  detail[-1].strip() if detail else f"exit 0, {len(out.strip())} bytes")
+        else:
+            hint = [l for l in out.splitlines() if "FEHLER" in l or "skip-generation" in l]
+            stage("Blackbox-E2E v2 (Attack-Matrix, Cache)", False,
+                  "Cache fehlt → einmalig generieren: "
+                  "python benchmarks/attack_matrix_v2.py --samples 5" if p.returncode == 2
+                  else (hint[-1].strip() if hint else out.strip()[-150:]))
 
     print()
     failed = [r for r in RESULTS if not r[1]]

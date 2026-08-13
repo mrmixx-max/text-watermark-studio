@@ -438,6 +438,7 @@ LLM needed):
 | Script | What it measures |
 |---|---|
 | `attack_matrix.py` | Z-score drop per attack: structural, dilute (3 intensities), unicode spam, word shuffle |
+| `attack_matrix_v2.py` | Blackbox v2: N real EuroLLM generations + post-hoc KGW mark (γ=0.25), attack matrix with ΔZ, 100-token window analysis; cached in %TEMP%, reproducible without Ollama via `--skip-generation` |
 | `synthid_sweep.py` | Detection curve: gamma × paraphrase-rate grid |
 | `kgw_e2e_proof.py` | Full round-trip against a real local model |
 

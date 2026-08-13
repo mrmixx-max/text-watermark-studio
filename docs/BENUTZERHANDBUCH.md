@@ -453,6 +453,7 @@ deterministisch, kein LLM nötig):
 | Skript | Was es misst |
 |---|---|
 | `attack_matrix.py` | Z-Score-Abfall pro Attacke: structural, dilute (3 Intensitäten), Unicode-Spam, Wort-Shuffle |
+| `attack_matrix_v2.py` | Blackbox v2: N echte EuroLLM-Generierungen + post-hoc KGW-Markierung (γ=0.25), Angriffs-Matrix mit ΔZ, 100-Token-Fenster-Analyse; Cache in %TEMP%, ohne Ollama reproduzierbar via `--skip-generation` |
 | `synthid_sweep.py` | Detektions-Kurve: Gamma × Paraphrase-Rate-Raster |
 | `kgw_e2e_proof.py` | Voller Roundtrip gegen ein echtes lokales Modell |
 
