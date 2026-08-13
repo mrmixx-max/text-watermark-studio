@@ -6,7 +6,7 @@
 
 ![Text Watermark Studio 2.0.0 — detect, remove, prove, protect. BPE token level. 100% local, no cloud, zero telemetry, MIT.](docs/tws-infographic.png)
 
-Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling/logit bias, semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
+Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias approximation (post-hoc text rewrite — no generation-time logit control), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
 
 📖 **Documentation:** [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md) · [Measurement First — Manifest](docs/measurement-first.md)
 
@@ -72,7 +72,7 @@ What it detects, honestly: texts generated **with this exact scheme and key**. I
 - Lexical choice
 - Syntactic pattern
 - Format / layout
-- Sampling / logit bias (KGW Z-score detector for registered keys)
+- Sampling / logit bias **approximation** (post-hoc text-rewrite KGW Z-score detector for registered keys; no generation-time logit control — measured 2026-08-13: real generator shows no greenlist bias)
 - Semantic / structure
 - Localized provenance
 - Training-time / ownership
