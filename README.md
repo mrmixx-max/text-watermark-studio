@@ -119,6 +119,26 @@ Round-trip tested for every format (`tests/test_v116_file_provenance.py`).
 
 Real SynthID detection needs the upstream research codebook (~220 MB, non-commercial Research License) from `aloshdenny/reverse-SynthID`. The studio ships an **adapter**, not the codebook: with a local checkout (env `REVERSE_SYNTHID_DIR`), `POST /api/metadata/synthid-score` runs the upstream scorer and returns its verdict; without one it reports `available: false` honestly. Detection/scoring only — pixel-domain watermark removal is out of scope.
 
+**Bootstrap (one command):**
+
+```bash
+# Clones upstream, creates a venv, installs scorer-only deps.
+scripts/setup_synthid.sh
+
+# Score an image (or via the API endpoint).
+export REVERSE_SYNTHID_DIR=~/reverse-SynthID
+ai-wm image-score shot.png --synthid-dir ~/reverse-SynthID
+```
+
+**Or run it in Docker (builds from upstream source, no redistribution):**
+
+```bash
+docker build -f Dockerfile.synthid -t text-watermark-studio-synthid .
+docker run --rm -v "$(pwd):/data" text-watermark-studio-synthid /data/shot.png
+```
+
+`setup_synthid.sh` accepts `--dir PATH`, `--ref REF`, and `--full` (installs the full upstream requirements, which adds torch/diffusers for the VAE bypass this project does not use). The upstream code remains under its own Research License and is never bundled.
+
 ## What removing a text watermark costs (honest disclaimer)
 
 Text watermarks live in **the wording itself**: the signal is spread across token choices, so nearly every sentence carries a little of it. Two consequences follow:

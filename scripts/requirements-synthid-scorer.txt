@@ -1,0 +1,4 @@
+# Scorer-only dependencies for the reverse-SynthID adapter.
+# The upstream project's full requirements.txt adds torch/diffusers for the
+# VAE bypass we do NOT use; this keeps the scorer path lightweight.
+numpy>=1.26

@@ -83,6 +83,11 @@ def main() -> int:
     rw.add_argument("--json", action="store_true")
     rw.add_argument("-o", "--output")
 
+    ims = sub.add_parser("image-score")
+    ims.add_argument("input", help="image to score for SynthID pixel marks")
+    ims.add_argument("--synthid-dir", default=None, help="reverse-SynthID checkout path")
+    ims.add_argument("--json", action="store_true")
+
     pl = sub.add_parser("pipeline")
     pl.add_argument("input", nargs="?")
     pl.add_argument("--stdin", action="store_true")
@@ -255,6 +260,22 @@ def main() -> int:
         if args.output:
             Path(args.output).write_text(result['rewritten'], encoding='utf-8')
         return 0
+
+    if args.cmd == "image-score":
+        from .metadata.synthid import score_synthid
+        result = score_synthid(args.input, synthid_dir=getattr(args, "synthid_dir", None))
+        if args.json:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            if not result.get("available"):
+                print(f"synthid: unavailable — {result.get('reason', 'unknown')}")
+                print(f"hint: {result.get('hint', 'run scripts/setup_synthid.sh')}")
+                return 1
+            if "error" in result:
+                print(f"synthid: {result['error']}")
+                return 1
+            print(json.dumps(result, ensure_ascii=False))
+        return 0 if result.get("available") and "error" not in result else 1
 
     if args.cmd == "pipeline":
         text = _read(args)
