@@ -37,6 +37,35 @@ DEFAULT_GAMMA = 0.25
 _TOKEN_RE = re.compile(r"[A-Za-z0-9\u00C0-\u024F]+(?:['-][A-Za-z0-9\u00C0-\u024F]+)*")
 _SPLIT_RE = re.compile(r"([A-Za-z0-9\u00C0-\u024F]+(?:['-][A-Za-z0-9\u00C0-\u024F]+)*)")
 
+_BPE_ENC = None
+
+
+def _bpe_encoding():
+    """Lazily load the tiktoken cl100k_base encoding (cached per process)."""
+    global _BPE_ENC
+    if _BPE_ENC is None:
+        try:
+            import tiktoken
+        except ImportError as e:  # pragma: no cover - dependency hint path
+            raise ImportError(
+                "BPE-level detection needs tiktoken: pip install text-watermark-studio[bpe]"
+            ) from e
+        _BPE_ENC = tiktoken.get_encoding("cl100k_base")
+    return _BPE_ENC
+
+
+def bpe_tokenize(text: str) -> list[str]:
+    """Byte-pair-encode the text into subword tokens (model-grade surface).
+
+    cl100k prefixes continuation tokens with spaces (" word"); we strip that
+    for the hash surface so mark and detect hash the SAME subword form in
+    both isolated-word and running-text contexts. Case is preserved. This is
+    the documented approximation: subword granularity is BPE-exact, the
+    space-prefix is normalized for consistency.
+    """
+    enc = _bpe_encoding()
+    return [t for t in (enc.decode([tok]).strip() for tok in enc.encode(text)) if t]
+
 # Small built-in rewrite lexicon: content word -> synonyms. Demo-scale by
 # design; plug in WordNet or a domain lexicon for stronger coverage.
 EMBED_LEXICON: dict[str, list[str]] = {
@@ -94,12 +123,14 @@ EMBED_LEXICON: dict[str, list[str]] = {
 }
 
 
-def tokenize(text: str) -> list[str]:
-    """Word-level tokenization approximating a model tokenizer.
+def tokenize(text: str, level: str = "word") -> list[str]:
+    """Tokenize at word level (default) or BPE subword level.
 
-    Lowercased, because most KGW-style deployments greenlist on the
-    tokenizer surface form, and mixed case doubles the effective vocab.
+    Word level lowercases; BPE level preserves case (the greenlist hashes
+    over the exact subword surface a real tokenizer would see).
     """
+    if level == "bpe":
+        return bpe_tokenize(text)
     return [m.group(0).lower() for m in _TOKEN_RE.finditer(text)]
 
 
@@ -114,9 +145,19 @@ def green_token(token: str, prev_token: str, key: str, gamma: float = DEFAULT_GA
     return _unit_interval(digest) < gamma
 
 
-def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA) -> dict:
-    """Z-score test for one key. Returns None-ish fields if text too short."""
-    tokens = tokenize(text)
+def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
+               level: str = "word") -> dict:
+    """Z-score test for one key. Returns None-ish fields if text too short.
+
+    level="bpe" runs the greenlist over BPE subword tokens at WORD BOUNDARIES:
+    the pair scored is (last subword of word i-1, first subword of word i).
+    This matches exactly what text-only rewriting can impose — a rewrite can
+    choose a whole word, not a mid-word subword. level="word" keeps the fast
+    word-level approximation (default).
+    """
+    if level == "bpe":
+        return _detect_bpe_boundaries(text, key, gamma)
+    tokens = tokenize(text, level=level)
     n = len(tokens) - 1  # number of scored tokens (each scored against its predecessor)
     if n < 10:
         return {
@@ -131,6 +172,38 @@ def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA) -> dict:
     sigma = math.sqrt(n * gamma * (1 - gamma))
     z = (green - mu) / sigma
     p_value = 0.5 * math.erfc(z / math.sqrt(2))  # one-sided upper tail
+    rate = green / n
+    if z >= 4.0:
+        verdict = "watermark_detected"
+    elif z >= 2.0:
+        verdict = "weak_signal"
+    else:
+        verdict = "no_signal"
+    return {
+        "z_score": round(z, 4), "p_value": round(p_value, 10),
+        "green_count": green, "n_tokens": n, "green_rate": round(rate, 4),
+        "verdict": verdict,
+    }
+
+
+def _detect_bpe_boundaries(text: str, key: str, gamma: float) -> dict:
+    """BPE-level detection scored at word boundaries (see detect_kgw)."""
+    words = [m.group(0) for m in _TOKEN_RE.finditer(text)]
+    subs = [s for s in (bpe_tokenize(w) for w in words) if s]
+    n = len(subs) - 1
+    if n < 10:
+        return {
+            "z_score": None, "p_value": None, "green_count": 0,
+            "n_tokens": n, "green_rate": None, "verdict": "too_short",
+        }
+    green = sum(
+        1 for i in range(1, len(subs))
+        if green_token(subs[i][0], subs[i - 1][-1], key, gamma)
+    )
+    mu = gamma * n
+    sigma = math.sqrt(n * gamma * (1 - gamma))
+    z = (green - mu) / sigma
+    p_value = 0.5 * math.erfc(z / math.sqrt(2))
     rate = green / n
     if z >= 4.0:
         verdict = "watermark_detected"
@@ -185,7 +258,7 @@ def _restore_case(word: str, template: str) -> str:
 
 def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
                    vocab: dict[str, list[str]] | None = None,
-                   seed: int | None = None) -> dict:
+                   seed: int | None = None, level: str = "word") -> dict:
     """Directly greenlist-mark a text so the detector finds it (embed path).
 
     Unlike embed_kgw (lexicon-synonym rewrite, best-effort), this imposes the
@@ -193,17 +266,34 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     green, it substitutes a green word from the provided pool, so the final
     green ratio is pushed well above gamma and the Z-score clears 4.0.
 
-    Used by the end-to-end proof where the input is foreign model text and we
-    must guarantee detectability. Substitutions are drawn from `vocab`
-    (default: FREQUENT_VOCAB), a frequency pool, NOT synonyms — semantics are
-    not preserved word-for-word; this is the honest signal-imposition
-    approximation of token-sampling watermarking.
+    level="word" (default): words are scored as units (hash over lowercase
+    word + predecessor word). level="bpe": a candidate word is green when its
+    FIRST BPE subword token hashes green against the LAST BPE subword of the
+    previous word — the same surface detect_kgw(level="bpe") scores, so
+    mark→detect round-trips on the same token level.
+
+    Substitutions are drawn from `vocab` (default: FREQUENT_VOCAB), a
+    frequency pool, NOT synonyms — semantics are not preserved word-for-word;
+    this is the honest signal-imposition approximation of token-sampling
+    watermarking.
     """
     from .frequent_vocab import FREQUENT_VOCAB
     pool = vocab if vocab is not None else FREQUENT_VOCAB
     rng = random.Random(seed)
     # flat list of green candidates across the pool for fallback substitution
     fallback = [w for ws in pool.values() for w in ws]
+
+    def _first_bpe(word: str) -> str:
+        return bpe_tokenize(word)[0]
+
+    def _last_bpe(word: str) -> str:
+        return bpe_tokenize(word)[-1]
+
+    def _is_green(cand: str, prev_word: str) -> bool:
+        if level == "bpe":
+            return green_token(_first_bpe(cand), _last_bpe(prev_word), key, gamma)
+        return green_token(cand.lower(), prev_word.lower(), key, gamma)
+
     parts = _SPLIT_RE.split(text)
     replaced = 0
     prev = ""
@@ -215,21 +305,21 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         if not prev:
             prev = lower
             continue
-        if green_token(lower, prev, key, gamma):
+        if _is_green(token, prev):
             prev = lower
             continue
         # not green -> substitute a green word (prefer a same-class word)
         cands = pool.get(lower, [])
         green_pick = None
         for c in cands:
-            if green_token(c, prev, key, gamma):
+            if _is_green(c, prev):
                 green_pick = c
                 break
         if green_pick is None:
             # any fallback word that is green for (prev, key)
             rng.shuffle(fallback)
             for c in fallback:
-                if green_token(c, prev, key, gamma):
+                if _is_green(c, prev):
                     green_pick = c
                     break
         if green_pick is not None:
@@ -239,7 +329,7 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         else:
             prev = lower
     new_text = "".join(parts)
-    tokens_after = tokenize(new_text)
+    tokens_after = tokenize(new_text, level=level)
     n = max(0, len(tokens_after) - 1)
     green_now = sum(
         1 for i in range(1, len(tokens_after))

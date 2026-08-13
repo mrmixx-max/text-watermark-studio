@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-watermark-studio"
-version = "1.0.0"
+version = "2.0.0"
 description = "Detect, clean, and dilute AI text markers and unicode/stego signals"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,7 +22,8 @@ classifiers = [
 dependencies = ["fastapi>=0.115", "uvicorn>=0.30", "python-dotenv>=1.0", "redis>=5.0", "arq>=0.26", "prometheus-client>=0.20", "python-multipart>=0.0.9"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "httpx>=0.27", "build>=1.2", "twine>=5.1", "pytest-timeout>=2.2"]
+dev = ["pytest>=8.0", "httpx>=0.27", "build>=1.2", "twine>=5.1", "pytest-timeout>=2.2", "tiktoken>=0.7"]
+bpe = ["tiktoken>=0.7"]
 
 [project.scripts]
 ai-wm = "ai_watermark_toolkit.cli:main"

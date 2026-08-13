@@ -74,6 +74,19 @@ def main() -> int:
     fd.add_argument("input", help="file to verify")
     fd.add_argument("--json", action="store_true")
 
+    rp = sub.add_parser("report")
+    rp.add_argument("input", nargs="?")
+    rp.add_argument("--stdin", action="store_true")
+    rp.add_argument("--key", required=True, help="key_id / secret for the KGW test")
+    rp.add_argument("--lang", default="en", choices=["en", "de"])
+    rp.add_argument("--pdf", action="store_true", help="render to PDF via Edge headless (Windows)")
+    rp.add_argument("-o", "--output", default=None, help="output path (default: tws-report-<ts>.html)")
+
+    wc = sub.add_parser("watch")
+    wc.add_argument("directory")
+    wc.add_argument("--once", action="store_true", help="single scan pass, then exit")
+    wc.add_argument("--interval", type=float, default=5.0, help="poll seconds (default 5)")
+
     rw = sub.add_parser("rewrite")
     rw.add_argument("input", nargs="?")
     rw.add_argument("--stdin", action="store_true")
@@ -276,6 +289,42 @@ def main() -> int:
                 return 1
             print(json.dumps(result, ensure_ascii=False))
         return 0 if result.get("available") and "error" not in result else 1
+
+    if args.cmd == "report":
+        import time as _time
+        from .forensics.report import build_report, render_pdf
+        from .sanitize_unicode import analyze as _uni_analyze
+        from .pipeline import detect_text as _detect_text
+        text = _read(args)
+        uni = _uni_analyze(text)
+        # marker hits from the detect pipeline (unicode excluded — those are uni above)
+        d = _detect_text(text, lang=args.lang)
+        marker_hits = d.get("layers", {}).get("lexical", {}).get("score", 0) if isinstance(d, dict) else 0
+        html_out = build_report(text, args.key, lang=args.lang,
+                                unicode_findings=[asdict(x) for x in uni],
+                                marker_hits=marker_hits)
+        out_path = args.output or f"tws-report-{int(_time.time())}.html"
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(html_out)
+        print(f"Befund geschrieben: {out_path}")
+        if args.pdf:
+            pdf = render_pdf(__import__('pathlib').Path(out_path).resolve())
+            if pdf:
+                print(f"PDF gerendert: {pdf}")
+            else:
+                print("PDF-Rendering übersprungen (Edge nicht gefunden) — HTML liegt vor.")
+        return
+
+    if args.cmd == "watch":
+        from .forensics.watcher import watch_dir
+        try:
+            n = watch_dir(args.directory, once=args.once, interval=args.interval)
+        except NotADirectoryError as e:
+            print(f"error: not a directory: {e}", file=sys.stderr)
+            return 2
+        if args.once:
+            print(f"watch --once: {n} Datei(en) gemeldet.")
+        return 0
 
     if args.cmd == "pipeline":
         text = _read(args)

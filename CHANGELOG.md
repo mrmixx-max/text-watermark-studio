@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.0.0 — Model-grade detection + the measurement suite
+
+The major bump closes the detector's documented approximation gap and adds
+the measurement/forensics tooling around it.
+
+- **BPE token level** (`forensics/kgw.py`): `detect_kgw`, `mark_greenlist`
+  and `tokenize` accept `level="word"|"bpe"`. BPE runs the greenlist over
+  cl100k subword tokens at word boundaries — the exact surface a real
+  tokenizer feeds sampling watermarks. Mark and detect round-trip on the
+  same level. `tiktoken` is an optional extra: `pip install
+  text-watermark-studio[bpe]`.
+- **Attack matrix** (`benchmarks/attack_matrix.py`): structural, dilute
+  (light/standard/aggressive), unicode spam, and word shuffle against a
+  marked text — measures the Z-score drop per attack, prints the table,
+  writes `attack_matrix.json`. Honest finding: style attacks do not break
+  the mark; word permutation does.
+- **SynthID-style sweep** (`benchmarks/synthid_sweep.py`): gamma ×
+  paraphrase-rate grid producing the detection curve (Z vs. rewording
+  strength), writes `synthid_sweep.json`.
+- **Findings report** (`forensics/report.py` + `ai-wm report`): one-command
+  self-contained HTML forensics report (KGW stats, unicode table, text,
+  recommendation) with optional `--pdf` rendering via Edge headless.
+- **Directory watcher** (`forensics/watcher.py` + `ai-wm watch`): stdlib
+  polling scan of a folder, JSON lines with metadata + provenance findings
+  per file, `--once` for scripts/tests, `--interval` for continuous runs.
+
 ## 1.0.0 — Keyed forensics: detect AND embed, on text AND files
 
 The major release. The studio gained what no comparable tool ships: proof,

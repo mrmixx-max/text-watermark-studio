@@ -159,6 +159,14 @@ The detector isn't just tested against its own mini-generator. `benchmarks/kgw_e
 
 The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectability but lifts the control baseline variance — documented, not hidden). The marker substitutes from a frequency vocabulary (`forensics/frequent_vocab.py`), not synonyms, and does not preserve word-for-word nuance — this is the honest signal-imposition approximation of token-sampling watermarks.
 
+## v2.0.0: model-grade detection + measurement suite
+
+- **BPE token level**: `detect_kgw(text, key, level="bpe")` runs the greenlist over cl100k subword tokens at word boundaries — the surface a real tokenizer feeds sampling watermarks. Mark + detect round-trip on the same level. Needs `tiktoken` (`pip install text-watermark-studio[bpe]`).
+- **Attack matrix**: `python benchmarks/attack_matrix.py` — structural, dilute (all intensities), unicode spam and word shuffle against a marked text; measures the Z-score drop per attack.
+- **SynthID-style sweep**: `python benchmarks/synthid_sweep.py` — gamma × paraphrase-rate grid producing the detection curve.
+- **Findings report**: `ai-wm report file.txt --key <key> [--pdf]` — self-contained HTML forensics report, optional PDF via Edge headless.
+- **Directory watcher**: `ai-wm watch ./docs --once|--interval 5` — JSON lines with metadata + provenance findings per file.
+
 ## What removing a text watermark costs (honest disclaimer)
 
 Text watermarks live in **the wording itself**: the signal is spread across token choices, so nearly every sentence carries a little of it. Two consequences follow:

@@ -32,3 +32,5 @@ data/graph/communities.json
 Thumbs.db
 .idea/
 .vscode/
+attack_matrix.json
+synthid_sweep.json
