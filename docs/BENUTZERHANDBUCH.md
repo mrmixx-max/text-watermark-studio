@@ -46,6 +46,9 @@ pip install text-watermark-studio
 
 # Mit BPE-Token-Ebene (cl100k via tiktoken)
 pip install text-watermark-studio[bpe]
+
+# Mit menügesteuerter Terminal-Oberfläche (textual)
+pip install text-watermark-studio[tui]
 ```
 
 Aus dem Quellcode:
@@ -119,8 +122,9 @@ Score.
 
 ## 5. CLI-Referenz
 
-16 Subcommands. Exit-Codes: `0` sauber, `1` Funde/Fehler/nicht verfügbar,
-`2` Eingabefehler.
+17 Subcommands. Exit-Codes: `0` sauber, `1` Funde/Fehler/nicht verfügbar,
+`2` Eingabefehler. `ai-wm tui` startet die menügesteuerte
+Terminal-Oberfläche (siehe §6).
 
 ### detect
 ```bash
@@ -227,7 +231,39 @@ Studio-Banner + Systemstatus.
 
 ---
 
-## 6. KGW-Erkennung statistischer Wasserzeichen
+## 6. Menügesteuerte Terminal-Oberfläche
+
+```bash
+ai-wm tui
+```
+
+Eine menügesteuerte Textual-Oberfläche (Installation mit
+`pip install text-watermark-studio[tui]`). Dunkles Studio-Theme, passend zur
+Hero-Infographic des Repos. 17 Menüpunkte — detect, clean, dilute, embed,
+pipeline, report, rewrite, die vier Datei-Werkzeuge, SynthID-Scoring,
+Verzeichnis-Überwachung, beide Benchmarks, Systemstatus und Update.
+
+Navigation:
+
+- `↑`/`↓` bewegen durchs Menü, `Enter` führt die gewählte Aktion aus
+- Buchstaben-Shortcuts: `d` detect · `c` clean · `e` embed · `p` pipeline ·
+  `r` report · `s` splash · `q` beenden · `^p` Befehlspalette
+- Das Pfad-Feld unten nimmt einen Datei- oder Verzeichnispfad; die meisten
+  Aktionen lesen ihn und schreiben Ergebnisse ins Ausgabe-Panel
+
+**Update:** Punkt 17 vergleicht die installierte Version mit PyPI und führt
+`pip install --upgrade text-watermark-studio` aus, wenn eine neuere Version
+existiert.
+
+**Burn-in:** `python benchmarks/tui_burnin.py` fährt alle 17 Aktionen
+headless gegen eine echte Beispieldatei und schlägt bei jeder Exception laut
+fehl — das Pre-Release-Gate für die Oberfläche.
+
+![Menügesteuerte Studio-TUI](../docs/tws-tui.png)
+
+---
+
+## 7. KGW-Erkennung statistischer Wasserzeichen
 
 Der Detektor implementiert das KGW-Greenlist-Schema (Kirchenbauer et al.):
 
@@ -276,7 +312,7 @@ detektieren. Gemessen:
 
 ---
 
-## 7. Eigene Marken setzen
+## 8. Eigene Marken setzen
 
 **Text:** `ai-wm embed text.txt --key demo-kgw-1` (bzw. `mark_greenlist()`
 im Code) setzt die Greenlist durch Ersetzen nicht-grüner Wörter durch grüne
@@ -300,7 +336,7 @@ trägt ein öffentliches Demo-Secret — vor echtem Einsatz ersetzen:
 
 ---
 
-## 8. Datei-Provenance (HMAC)
+## 9. Datei-Provenance (HMAC)
 
 `file-embed`/`file-detect` signieren Dateien mit einem HMAC über den
 Original-Inhalt und legen die Marke in der Datei ab (XMP-artiges Paket).
@@ -322,7 +358,7 @@ ai-wm file-detect signiert.pdf --key mein-key --json
 
 ---
 
-## 9. Metadaten-Bereinigung (C2PA / EXIF / XMP)
+## 10. Metadaten-Bereinigung (C2PA / EXIF / XMP)
 
 `file-inspect`/`file-clean` prüfen und entfernen Metadaten:
 
@@ -337,7 +373,7 @@ Abhängigkeitsgewicht.
 
 ---
 
-## 10. SynthID (Pixel-Scoring)
+## 11. SynthID (Pixel-Scoring)
 
 SynthIDs Modell ist hier nicht weiterverteilbar (220 MB,
 nicht-kommerzielle Research-Lizenz). Das Toolkit liefert einen Adapter +
@@ -360,7 +396,7 @@ endet mit Exit 1. Der Adapter tut nie so als ob.
 
 ---
 
-## 11. Rewrite-Engine
+## 12. Rewrite-Engine
 
 `rewrite` und `pipeline --rewrite-mode` bieten:
 
@@ -380,7 +416,7 @@ export LOCAL_LLM_MODEL=eurollm-9b
 
 ---
 
-## 12. Befund-Report & Ordner-Watcher (2.0.0)
+## 13. Befund-Report & Ordner-Watcher (2.0.0)
 
 `ai-wm report` erzeugt einen selbsttragenden HTML-Befund — KGW-Statistik,
 Tabelle unsichtbarer Zeichen, den analysierten Text und eine Empfehlung —
@@ -393,7 +429,7 @@ Incident Response.
 
 ---
 
-## 13. Benchmarks
+## 14. Benchmarks
 
 Drei reproduzierbare Skripte in `benchmarks/` (standardmäßig
 deterministisch, kein LLM nötig):
@@ -411,7 +447,7 @@ Die Marke überlebt je nach γ etwa 45–60 % Wort-Umsatz.
 
 ---
 
-## 14. API-Server
+## 15. API-Server
 
 ```bash
 ai-wm serve --port 8000
@@ -423,7 +459,7 @@ sowie `/health`- und `/ready`-Probes. Swagger-UI unter `/docs`.
 
 ---
 
-## 15. MCP-Tools & Hermes-Skills
+## 16. MCP-Tools & Hermes-Skills
 
 Das Repo bündelt MCP-Tools und 5 Hermes-Skills
 (`hermes/skills/text-watermark-studio-lab/`) mit Vendor-Notes auf
@@ -432,7 +468,7 @@ bekannt ist vs. Best-Effort-Behauptungen je Anbieter.
 
 ---
 
-## 16. Sicherheitsmodell & ehrliche Grenzen
+## 17. Sicherheitsmodell & ehrliche Grenzen
 
 - **Kein regelbasierter Detektor besiegt ein Sampling-Wasserzeichen**, das
   ein fremdes Modell auf Logit-Ebene anwendet. Was dieses Toolkit liefert,
@@ -448,7 +484,7 @@ bekannt ist vs. Best-Effort-Behauptungen je Anbieter.
 
 ---
 
-## 17. Fehlerbehebung
+## 18. Fehlerbehebung
 
 | Symptom | Lösung |
 |---|---|
@@ -460,7 +496,7 @@ bekannt ist vs. Best-Effort-Behauptungen je Anbieter.
 
 ---
 
-## 18. Entwicklung & Tests
+## 19. Entwicklung & Tests
 
 ```bash
 pip install -e ".[dev,bpe]"

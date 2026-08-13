@@ -24,6 +24,7 @@ dependencies = ["fastapi>=0.115", "uvicorn>=0.30", "python-dotenv>=1.0", "redis>
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "httpx>=0.27", "build>=1.2", "twine>=5.1", "pytest-timeout>=2.2", "tiktoken>=0.7", "markdown>=3.5"]
 bpe = ["tiktoken>=0.7"]
+tui = ["textual>=8.0"]
 
 [project.scripts]
 ai-wm = "ai_watermark_toolkit.cli:main"

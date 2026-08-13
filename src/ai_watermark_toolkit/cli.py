@@ -87,6 +87,8 @@ def main() -> int:
     wc.add_argument("--once", action="store_true", help="single scan pass, then exit")
     wc.add_argument("--interval", type=float, default=5.0, help="poll seconds (default 5)")
 
+    tui = sub.add_parser("tui", help="launch the menu-driven terminal UI (needs textual)")
+
     rw = sub.add_parser("rewrite")
     rw.add_argument("input", nargs="?")
     rw.add_argument("--stdin", action="store_true")
@@ -314,6 +316,15 @@ def main() -> int:
             else:
                 print("PDF-Rendering übersprungen (Edge nicht gefunden) — HTML liegt vor.")
         return
+
+    if args.cmd == "tui":
+        try:
+            from .ui.tui import main as _tui_main
+        except ImportError as e:
+            print(f"error: textual not installed — pip install text-watermark-studio[tui] ({e})",
+                  file=sys.stderr)
+            return 2
+        return _tui_main()
 
     if args.cmd == "watch":
         from .forensics.watcher import watch_dir

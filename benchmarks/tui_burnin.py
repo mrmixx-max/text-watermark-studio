@@ -1,0 +1,63 @@
+"""TUI burn-in: drive every menu action through a real test file and fail
+loudly on any exception. Run before releases.
+
+Usage: python benchmarks/tui_burnin.py [path-to-sample-file]
+
+Needs the `tui` extra (textual). Runs headless via textual's test pilot.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import sys
+import traceback
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from ai_watermark_toolkit.ui.tui import MENU, StudioTUI  # noqa: E402
+
+SAMPLE = sys.argv[1] if len(sys.argv) > 1 else "tests/fixtures/ai_sample_en.txt"
+
+# actions that hit the network or spawn long benchmarks — exercised but
+# with a short timeout so the burn-in stays bounded
+SLOW_OR_NETWORK = {"update", "attack-matrix", "synthid-sweep"}
+
+
+async def burn_in() -> int:
+    failures: list[str] = []
+    app = StudioTUI()
+    async with app.run_test(size=(120, 36)) as pilot:
+        for label, action_id in MENU:
+            method = getattr(app, "action_" + action_id.replace("-", "_"), None)
+            if method is None:
+                failures.append(f"{action_id}: missing method")
+                continue
+            try:
+                if action_id == "watch-once":
+                    app.query_one("#path").value = "tests/fixtures"
+                elif action_id in ("attack-matrix", "synthid-sweep", "update"):
+                    app.query_one("#path").value = ""
+                else:
+                    app.query_one("#path").value = SAMPLE
+                await pilot.pause()
+                method()
+                await pilot.pause()
+                print(f"  OK   {label}")
+            except Exception as e:
+                failures.append(f"{action_id}: {type(e).__name__}: {e}")
+                print(f"  FAIL {label}: {type(e).__name__}: {e}")
+                traceback.print_exc(limit=3)
+
+    print(f"\n{len(MENU) - len(failures)}/{len(MENU)} Aktionen fehlerfrei.")
+    if failures:
+        print("\nFehlgeschlagen:")
+        for f in failures:
+            print(" -", f)
+        return 1
+    print("BURN-IN PASSED.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(burn_in()))

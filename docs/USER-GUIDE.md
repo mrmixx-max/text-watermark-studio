@@ -43,6 +43,9 @@ pip install text-watermark-studio
 
 # With BPE token-level detection (cl100k via tiktoken)
 pip install text-watermark-studio[bpe]
+
+# With the menu-driven terminal UI (textual)
+pip install text-watermark-studio[tui]
 ```
 
 From source:
@@ -113,8 +116,8 @@ removed: `detect_kgw` reports whether a mark is present, with a score.
 
 ## 5. CLI reference
 
-16 subcommands. Exit codes: `0` clean, `1` findings/error/unavailable,
-`2` input error.
+17 subcommands. Exit codes: `0` clean, `1` findings/error/unavailable,
+`2` input error. `ai-wm tui` launches the menu-driven terminal UI (see §6).
 
 ### detect
 ```bash
@@ -220,7 +223,38 @@ Studio banner + system state.
 
 ---
 
-## 6. KGW statistical watermark detection
+## 6. Menu-driven terminal UI
+
+```bash
+ai-wm tui
+```
+
+A menu-driven Textual interface (install with
+`pip install text-watermark-studio[tui]`). Dark studio theme matching the
+repo's hero infographic. 17 menu entries — detect, clean, dilute, embed,
+pipeline, report, rewrite, the four file tools, SynthID scoring, directory
+watch, both benchmarks, system state, and update.
+
+Navigation:
+
+- `↑`/`↓` move through the menu, `Enter` runs the selected action
+- letter shortcuts: `d` detect · `c` clean · `e` embed · `p` pipeline ·
+  `r` report · `s` splash · `q` quit · `^p` command palette
+- the Path field at the bottom takes a file or directory path; most actions
+  read it, then write results to the output panel
+
+**Update:** entry 17 checks the installed version against PyPI and runs
+`pip install --upgrade text-watermark-studio` when a newer release exists.
+
+**Burn-in:** `python benchmarks/tui_burnin.py` drives all 17 actions through
+a real sample file headlessly and fails loudly on any exception — the
+pre-release gate for the UI.
+
+![Menu-driven studio TUI](../docs/tws-tui.png)
+
+---
+
+## 7. KGW statistical watermark detection
 
 The detector implements the KGW (Kirchenbauer et al.) greenlist scheme:
 
@@ -267,7 +301,7 @@ greenlist on the foreign model's own tokens → detect. Measured:
 
 ---
 
-## 7. Embedding your own marks
+## 8. Embedding your own marks
 
 **Text:** `ai-wm embed text.txt --key demo-kgw-1` (or
 `mark_greenlist()` in code) imposes the greenlist by substituting green
@@ -290,7 +324,7 @@ a public demo secret — replace it before real use:
 
 ---
 
-## 8. File provenance (HMAC)
+## 9. File provenance (HMAC)
 
 `file-embed`/`file-detect` sign files with an HMAC over the original
 content and store the mark in the file (XMP-style packet). 8 formats:
@@ -311,7 +345,7 @@ ai-wm file-detect signed.pdf --key my-key --json
 
 ---
 
-## 9. Metadata stripping (C2PA / EXIF / XMP)
+## 10. Metadata stripping (C2PA / EXIF / XMP)
 
 `file-inspect`/`file-clean` inspect and strip metadata:
 
@@ -326,7 +360,7 @@ weight.
 
 ---
 
-## 10. SynthID (pixel scoring)
+## 11. SynthID (pixel scoring)
 
 SynthID's model is not redistributable here (220 MB, non-commercial
 research license). The toolkit ships an adapter + bootstrap that builds it
@@ -348,7 +382,7 @@ and exits 1. The adapter never pretends.
 
 ---
 
-## 11. Rewrite engine
+## 12. Rewrite engine
 
 `rewrite` and `pipeline --rewrite-mode` provide:
 
@@ -368,7 +402,7 @@ export LOCAL_LLM_MODEL=eurollm-9b
 
 ---
 
-## 12. Findings report & directory watcher (2.0.0)
+## 13. Findings report & directory watcher (2.0.0)
 
 `ai-wm report` produces a self-contained HTML report — KGW statistics,
 invisible-character table, the analyzed text, and a recommendation —
@@ -380,7 +414,7 @@ findings. Built for newsrooms, editors, incident response.
 
 ---
 
-## 13. Benchmarks
+## 14. Benchmarks
 
 Three reproducible scripts in `benchmarks/` (deterministic by default, no
 LLM needed):
@@ -398,7 +432,7 @@ survives roughly 45–60% lexical churn depending on γ.
 
 ---
 
-## 14. API server
+## 15. API server
 
 ```bash
 ai-wm serve --port 8000
@@ -410,7 +444,7 @@ plus `/health` and `/ready` probes. Swagger UI at `/docs`.
 
 ---
 
-## 15. MCP tools & Hermes skills
+## 16. MCP tools & Hermes skills
 
 The repo bundles MCP tools and 5 Hermes skills
 (`hermes/skills/text-watermark-studio-lab/`) with class-level vendor notes
@@ -419,7 +453,7 @@ verifiably known to do vs. best-effort claims.
 
 ---
 
-## 16. Security model & honest limitations
+## 17. Security model & honest limitations
 
 - **No rule-based detector defeats a vendor's sampling watermark applied at
   logit level by a model you don't control.** What this toolkit gives you is
@@ -434,7 +468,7 @@ verifiably known to do vs. best-effort claims.
 
 ---
 
-## 17. Troubleshooting
+## 18. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -446,7 +480,7 @@ verifiably known to do vs. best-effort claims.
 
 ---
 
-## 18. Development & testing
+## 19. Development & testing
 
 ```bash
 pip install -e ".[dev,bpe]"
