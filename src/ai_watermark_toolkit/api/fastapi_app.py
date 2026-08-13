@@ -61,8 +61,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version='1.0.2',
-    summary='Text Watermark Studio v1.0.2 Watermarking Lab Edition',
+    version='1.0.0',
+    summary='Text Watermark Studio v1.0.0 Watermarking Lab Edition',
     description='Adds a modular watermarking lab with taxonomy-driven family plugins, capabilities, demo embed/detect routines, and a lab UI.',
     lifespan=lifespan,
 )

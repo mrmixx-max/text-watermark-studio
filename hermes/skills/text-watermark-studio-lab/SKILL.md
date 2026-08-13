@@ -1,6 +1,6 @@
 ---
 name: text-watermark-studio-lab
-version: 1.0.2
+version: 1.0.0
 description: Hermes-compatible skill bundle for the Text Watermark Studio Lab, including API-guided MCP tools.
 --- # Text Watermark Studio Lab Use this skill to operate the lab, detect across families, inspect the key registry, and run the API-backed MCP tools. ## Primary capabilities
 - Run pipeline actions.
@@ -75,3 +75,19 @@ The following tools are available via the companion MCP manifest:
 - Use `routing_status` to inspect configured profiles and the last routing decision.
 - Use `routing_configure` to define primary, fallbacks, timeouts, and failure rules.
 - Recommended default: local EuroLLM primary, cloud mid-tier fallback, cloud mini tertiary fallback.
+## Vendor provenance notes (reference)
+- See `references/vendor-notes-claude.md` for how Claude marks content (C2PA, metadata, no public statistical text mark).
+- See `references/vendor-notes-gemini-synthid.md` for Gemini/SynthID surfaces (SynthID-Text statistical, SynthID media pixel codebook).
+- See `references/vendor-notes-openai.md` for OpenAI surfaces (C2PA media, no public text detector/key).
+- These are class-level reference docs, NOT implementations: the studio reports claims and separates verifiable from best-effort. ## Keyed forensics (detect + embed)
+- Use `forensics_keys` / `forensics_add_key` to register keys with a secret.
+- Use `forensics_detect` to run the KGW Z-score test over the whole text.
+- Use the KGW embed path to write your own greenlist watermark, then detect it.
+- File-level: embed signed HMAC provenance and detect/verify via the metadata routes. ## File metadata cleaning
+- Use metadata inspect/clean for C2PA / EXIF / XMP stripping (PNG/JPEG/SVG/PDF/DOCX/ODT/HTML/MD).
+- Use embed/detect for your own signed file marks. ## SynthID pixel scoring
+- External adapter: run the reverse-SynthID scorer via a local checkout (see `references/vendor-notes-gemini-synthid.md`).
+- Bootstrap with `scripts/setup_synthid.sh` or the `Dockerfile.synthid` image. ## Rewrite modes
+- `rewrite_run` now supports clarity, concise, plain, formal, structural, and backtranslate.
+- Backtranslate is the standard two-hop paraphrase attack (text → English → original). ## Console UI
+- JSON stays the default for scripts; opt into pretty/banner output with `splash` / `--pretty`.
