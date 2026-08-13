@@ -34,7 +34,7 @@
 | C2 | **Windows-Desktop-App + Installer** (PySide6-GUI als dünner Wrapper um Core + PyInstaller + Inno Setup + CI `build-desktop.yml`; Code-Signing optional) | M-L | Institutional-Verkauf (€149-499 Kanzleien, €490-1.490 Unis) | 2 | ✅ **GELIEFERT 2026-08-13** (`240a749`, 459 Tests) — Controller Qt-frei, EXE real gebaut+gestartet (desktop_entry-Fix), Inno/CI ready; Code-Signing offen (Budget) |
 | C3 | **Verifikations-Report als Produkt** (signierte Befunde: HMAC-SHA256 + ML-DSA-44 optional, CLI report-sign/verify/keygen, API + MCP; Tamper-Feld-Diff) | S-M | Gerichtsfestigkeit, Institutional | 1 | ✅ **GELIEFERT 2026-08-13** (1763874, 459 Tests) |
 | C4 | **ΔZ-Check als Service** (web, IMATAG-Muster, per-Authentifizierung) | M | Cleaner-Moat, Verifikation | 3 | ✅ **GELIEFERT 2026-08-13** (`140add1`, 459 Tests) — ΔZ-Beweis: shuffle z 13.61→0.0 removed:true; clean ΔZ=0.0 (entlarvt Unicode-Cleaner); signierter Befund; Service-Betrieb offen (Deployment) |
-| C5 | **KI-Erklärungs-Report-Modul** (kostenlos für 5-10 Pilot-Prüfungsämter im Ouriginal-Migrationsfenster) — **Blaupause: `dissertation-ai-authorship-audit`** (Evidenzklassen A-D, Befund-Schema, 12-Schritte-Workflow, 15-Abschnitt-Report, Prüfpriorität 0-5 statt Schuld-Scoring) | M | Institutions-Play | 3 | C3 |
+| C5 | **KI-Erklärungs-Report-Modul** (kostenlos für 5-10 Pilot-Prüfungsämter im Ouriginal-Migrationsfenster) — **Blaupause: `dissertation-ai-authorship-audit`** (Evidenzklassen A-D, Befund-Schema, Prüfpriorität 0-5 statt Schuld-Scoring) | M | Institutions-Play | 3 | 🔄 läuft (`deleg_aabba92d`) — finding.py/CLI/API/MCP |
 
 ## Block D — Forschung → Bau (Literatur Runde 1+2 ABGESCHLOSSEN, Skizzen geliefert)
 
