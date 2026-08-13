@@ -56,22 +56,39 @@ def main():
         return 1
 
     import subprocess
-    pairs = [("USER-GUIDE.md", "tws-user-guide-en"),
-             ("BENUTZERHANDBUCH.md", "tws-benutzerhandbuch-de")]
-    for md_name, out_name in pairs:
+
+    def render(md_name: str, out_name: str) -> bool:
+        """Render one doc; returns True when the PDF was written."""
         md = docs / md_name
         html = downloads / f"{out_name}.html"
         pdf = downloads / f"{out_name}.pdf"
         md_to_html(md, html)
-        subprocess.run(
+        proc = subprocess.run(
             [edge, "--headless", "--disable-gpu", "--no-sandbox",
              f"--print-to-pdf={pdf.resolve()}",
              "--no-pdf-header-footer",
              f"file:///{html.resolve().as_posix()}"],
-            capture_output=True, timeout=180,
+            capture_output=True, text=True, timeout=180,
         )
-        print(f"{md_name} -> {pdf.name} ({pdf.stat().st_size if pdf.exists() else 'FEHLT'} bytes)")
+        stderr = (proc.stderr or "") + (proc.stdout or "")
+        # Edge exits 0 even when the write failed (e.g. Windows file lock) —
+        # the stderr message is the only signal.
+        if proc.returncode != 0 or "Failed to write file" in stderr:
+            print(f"{md_name} -> FEHLER: {pdf.name} ist von einem anderen "
+                  f"Prozess belegt (Viewer offen?).")
+            html.unlink(missing_ok=True)
+            return False
+        print(f"{md_name} -> {pdf.name} ({pdf.stat().st_size} bytes)")
         html.unlink(missing_ok=True)
+        return True
+
+    pairs = [("USER-GUIDE.md", "tws-user-guide-en"),
+             ("BENUTZERHANDBUCH.md", "tws-benutzerhandbuch-de")]
+    for md_name, out_name in pairs:
+        ok = render(md_name, out_name)
+        if not ok:
+            print(f"  -> Fallback: {out_name}-neu.pdf")
+            render(md_name, f"{out_name}-neu")
     return 0
 
 

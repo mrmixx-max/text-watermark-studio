@@ -168,6 +168,10 @@ The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectabil
 - **SynthID-style sweep**: `python benchmarks/synthid_sweep.py` — gamma × paraphrase-rate grid producing the detection curve.
 - **Findings report**: `ai-wm report file.txt --key <key> [--pdf]` — self-contained HTML forensics report, optional PDF via Edge headless.
 - **Directory watcher**: `ai-wm watch ./docs --once|--interval 5` — JSON lines with metadata + provenance findings per file.
+- **Local corpus similarity**: `ai-wm similarity text.txt --corpus ./archiv` — MinHash
+  fingerprint comparison against YOUR OWN documents, with fundstelle quotes
+  and an honest boundary (literal overlap, not paraphrased meaning; no web
+  crawl, no hidden corpus).
 - **Prompt optimizer (real evaluator loop)**: locked eval set
   (`data/optimization_evals.json`), candidates changing one variable each,
   deterministic scoring (protected-term guardrail, length, marker reduction,

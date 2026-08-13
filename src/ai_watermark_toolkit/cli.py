@@ -89,6 +89,15 @@ def main() -> int:
 
     tui = sub.add_parser("tui", help="launch the menu-driven terminal UI (needs textual)")
 
+    sim = sub.add_parser("similarity", help="compare a text against YOUR OWN corpus (local MinHash, honest boundary)")
+    sim.add_argument("input", help="text file to check")
+    sim.add_argument("--corpus", action="append", required=True,
+                     help="corpus file or directory (repeatable)")
+    sim.add_argument("--threshold", type=float, default=0.4,
+                     help="similarity threshold for findings (default 0.4)")
+    sim.add_argument("--top", type=int, default=5, help="max findings shown (default 5)")
+    sim.add_argument("--json", action="store_true", help="machine-readable output")
+
     llm = sub.add_parser("llm", help="manage the local model backend (Ollama)")
     llm_sub = llm.add_subparsers(dest="llm_action", required=True)
     llm_install = llm_sub.add_parser("install", help="pull a model via the Ollama API and select it")
@@ -325,6 +334,25 @@ def main() -> int:
             else:
                 print("PDF-Rendering übersprungen (Edge nicht gefunden) — HTML liegt vor.")
         return
+
+    if args.cmd == "similarity":
+        from pathlib import Path as _P
+        from .forensics.similarity import check_similarity, render_text, render_json
+        inp = _P(args.input)
+        if not inp.is_file():
+            print(f"error: input file not found: {args.input}", file=sys.stderr)
+            return 2
+        corpus = [_P(c) for c in args.corpus]
+        if not any(c.exists() for c in corpus):
+            print("error: no corpus path exists", file=sys.stderr)
+            return 2
+        report = check_similarity(inp.read_text(encoding="utf-8", errors="replace"),
+                                  corpus, threshold=args.threshold, top=args.top)
+        if args.json:
+            print(render_json(report))
+        else:
+            print(render_text(report))
+        return 1 if report["findings"] else 0
 
     if args.cmd == "llm":
         from .llm.service import LocalLLMService

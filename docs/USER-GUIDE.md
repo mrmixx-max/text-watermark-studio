@@ -509,5 +509,23 @@ writes into tracked `data/` files.
 
 ---
 
+## 20. Local corpus similarity
+
+```bash
+ai-wm similarity text.txt --corpus ./archiv [--threshold 0.4] [--top 5] [--json]
+```
+
+MinHash fingerprint comparison of a text against **your own** document
+corpus. Deterministic, offline, with fundstelle quotes as evidence.
+Exit code `1` when findings exceed the threshold, `0` otherwise.
+
+**Honest boundary (by design):** similarity measures literal overlap
+(5-gram MinHash signatures), not paraphrased meaning. A heavily rewritten
+copy scores low — the report says so. No web crawl, no hidden corpus, no
+"plagiarism proof": similarity to *these* sources, nothing more. Binary or
+unreadable corpus files are listed as skipped, not treated as errors.
+
+---
+
 License: MIT · Repository: <https://github.com/mrmixx-max/text-watermark-studio>
 PyPI: <https://pypi.org/project/text-watermark-studio>

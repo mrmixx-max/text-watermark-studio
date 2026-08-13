@@ -115,6 +115,14 @@ class StudioTUI(App):
                                 id="path")
         yield Footer()
 
+    def on_mount(self) -> None:
+        # header title carries the author credit — guaranteed visible
+        self.title = "Text Watermark Studio 2.0.0 — by Erik Gieske"
+        self.query_one("#out", RichLog).write(
+            "[cyan]Text Watermark Studio 2.0.0[/] — menu-driven local forensics")
+        self.query_one("#out", RichLog).write(
+            "↑/↓ navigate · Enter runs the selected action · q quits")
+
     # ---- helpers ----------------------------------------------------------
 
     def _out(self, text: str) -> None:
@@ -402,7 +410,8 @@ class StudioTUI(App):
     def action_splash(self) -> None:
         from ..ui.banner import render_banner
         banner = render_banner() if callable(render_banner) else "Text Watermark Studio 2.0.0"
-        self._out(str(banner))
+        self._out(banner)
+        self._out("[dim]by Erik Gieske · MIT · 100% local, zero telemetry[/]")
 
     # ---- menu navigation ---------------------------------------------------
 

@@ -525,5 +525,25 @@ Test schreibt in getrackte `data/`-Dateien.
 
 ---
 
+## 20. Lokaler Corpus-Abgleich
+
+```bash
+ai-wm similarity text.txt --corpus ./archiv [--threshold 0.4] [--top 5] [--json]
+```
+
+MinHash-Fingerprint-Vergleich eines Textes gegen **Ihren eigenen**
+Dokument-Korpus. Deterministisch, offline, mit Fundstellen-Zitaten als
+Beleg. Exit-Code `1` bei Funden über dem Schwellwert, sonst `0`.
+
+**Ehrliche Grenze (bewusst so gebaut):** Der Abgleich misst wörtliche
+Überlappung (5-Gramm-MinHash-Signaturen), nicht umschriebene Bedeutung.
+Eine stark paraphrasierte Kopie erzielt einen niedrigen Wert — der Bericht
+sagt das ausdrücklich. Kein Web-Crawl, kein versteckter Korpus, kein
+„Plagiatsbeweis": Ähnlichkeit zu *diesen* Quellen, mehr nicht. Binäre oder
+unlesbare Korpus-Dateien werden als übersprungen gelistet, nicht als
+Fehler behandelt.
+
+---
+
 Lizenz: MIT · Repository: <https://github.com/mrmixx-max/text-watermark-studio>
 PyPI: <https://pypi.org/project/text-watermark-studio>

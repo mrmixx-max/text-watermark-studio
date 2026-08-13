@@ -2,6 +2,11 @@
 
 ## Unreleased — prompt optimizer (real evaluator loop) + TUI cursor navigation
 
+- **Local corpus similarity** (`ai-wm similarity`): MinHash fingerprinting
+  against a user-owned corpus with fundstelle evidence and an explicit
+  honest boundary — literal overlap, not plagiarism claims, no web crawl.
+- **TUI**: header sub-title "by Erik Gieske" + splash credit line.
+
 - **Multi-model local backend**: `ai-wm llm install|list|use|status` — pull
   any model through the Ollama API (streamed progress, verified, config
   updated), switch between installed models, list everything the local
