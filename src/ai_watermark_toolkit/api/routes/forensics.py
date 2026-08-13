@@ -8,6 +8,7 @@ from ...forensics.signed_report import sign_report, verify_report
 from ...forensics.ensemble import ensemble_detect
 from ...forensics.audit import AuditLogger
 from ...forensics.kgw import detect_multi_key, mark_greenlist
+from ...forensics.delta_z import delta_z, delta_z_report, delta_z_transform
 from ...plugins.registry import get_plugins
 
 router = APIRouter(prefix='/api/forensics', tags=['forensics'])
@@ -52,6 +53,26 @@ class ReportSignRequest(BaseModel):
 class ReportVerifyRequest(BaseModel):
     signed: dict
     key_id: str | None = None
+
+
+class DeltaZRequest(BaseModel):
+    """ΔZ check: two-text mode (text_before+text_after) OR transform mode.
+
+    The key is always a REGISTERED key_id — the secret is resolved
+    server-side from the KeyRegistry and never travels in the request body
+    (audit 2026-08-13, report-sign pattern). ``sign=True`` attaches a
+    signed_report HMAC block using the key's registry secret.
+    """
+    text_before: str | None = None
+    text_after: str | None = None
+    text: str | None = None
+    key_id: str
+    level: str = 'word'
+    context: int = 1
+    transform: str | None = None
+    truncate_fraction: float = 0.6
+    seed: int = 42
+    sign: bool = False
 
 
 @router.get('/keys', summary='List registered forensic keys')
@@ -171,3 +192,49 @@ def report_verify(req: ReportVerifyRequest, _auth: None = Depends(require_api_ke
     if not key.get('secret'):
         raise HTTPException(status_code=400, detail='key_has_no_secret')
     return verify_report(req.signed, key['secret'])
+
+
+@router.post('/delta-z', summary='ΔZ check: measure KGW watermark strength before vs after (removal with receipt)')
+def delta_z_endpoint(req: DeltaZRequest, _auth: None = Depends(require_api_key)):
+    """ΔZ check as a service (C4, IMATAG-style verification).
+
+    Two modes, selected by the body:
+    - two-text: ``{text_before, text_after, key_id}`` — measures the ΔZ
+      between the two texts.
+    - transform: ``{text, key_id, transform}`` — applies a stdlib transform
+      (clean|truncate|shuffle|reformat) server-side and measures its ΔZ.
+
+    The key secret is ALWAYS resolved server-side from the KeyRegistry —
+    a raw secret in the body is never accepted (the key_id must be
+    registered). ``sign=true`` attaches a signed_report HMAC block (secret =
+    the key's registry secret, like /api/forensics/report-sign).
+
+    removed:true is a FINDING (before provable, after not) — the response is
+    still 200; it is not an error.
+    """
+    key = next((k for k in keys.list_keys() if k.get('key_id') == req.key_id), None)
+    if key is None:
+        raise HTTPException(status_code=404, detail=f'key_not_found: {req.key_id}')
+    if not key.get('secret'):
+        raise HTTPException(status_code=400, detail='key_has_no_secret')
+    if req.transform:
+        if req.text is None:
+            raise HTTPException(status_code=400, detail='text_required_for_transform')
+        result = delta_z_transform(
+            req.text, req.key_id, method=req.transform,
+            level=req.level, context=req.context, registry=keys,
+            seed=req.seed, truncate_fraction=req.truncate_fraction,
+        )
+    else:
+        if req.text_before is None or req.text_after is None:
+            raise HTTPException(
+                status_code=400,
+                detail='text_before_and_text_after_required (or text+transform)')
+        result = delta_z(req.text_before, req.text_after, req.key_id,
+                         level=req.level, context=req.context, registry=keys)
+    if req.sign:
+        result = delta_z_report(result, key['secret'], key_id=req.key_id)
+    audit.write({'event': 'delta_z', 'key_id': req.key_id,
+                 'transform': req.transform, 'removed': result.get('removed'),
+                 'delta_z': result.get('delta_z')})
+    return result

@@ -582,6 +582,24 @@
       }
     },
     {
+      "name": "forensics_delta_z",
+      "method": "POST",
+      "path": "/api/forensics/delta-z",
+      "description": "ΔZ check: measure KGW watermark strength before vs after (removal with receipt; two-text or stdlib transform mode, key secret resolved server-side from the registry)",
+      "body_schema": {
+        "text_before": "string|null",
+        "text_after": "string|null",
+        "text": "string|null",
+        "key_id": "string",
+        "level": "string",
+        "context": "integer",
+        "transform": "string|null",
+        "truncate_fraction": "number",
+        "seed": "integer",
+        "sign": "boolean"
+      }
+    },
+    {
       "name": "metadata_formats",
       "method": "GET",
       "path": "/api/metadata/formats",

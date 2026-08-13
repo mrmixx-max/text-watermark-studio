@@ -228,6 +228,22 @@ def main() -> int:
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8080)
 
+    dz = sub.add_parser("delta-z", help="ΔZ check: measure KGW watermark strength before vs after (removal with receipt)")
+    dz.add_argument("before", nargs="?", help="file with the text BEFORE cleaning/attack (single file when --transform is used)")
+    dz.add_argument("after", nargs="?", help="file with the text AFTER cleaning/attack (omitted with --transform)")
+    dz.add_argument("--stdin", action="store_true")
+    dz.add_argument("--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret")
+    dz.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
+    dz.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
+    dz.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
+    dz.add_argument("--transform", default=None, choices=["clean", "truncate", "shuffle", "reformat"],
+                    help="apply a stdlib transform to the single input file and measure its ΔZ (no second file)")
+    dz.add_argument("--truncate-fraction", type=float, default=0.6, help="fraction of leading tokens kept by --transform truncate (default 0.6)")
+    dz.add_argument("--seed", type=int, default=42, help="RNG seed for --transform shuffle (default 42)")
+    dz.add_argument("--sign", default=None, help="HMAC secret: sign the ΔZ result (signed_report) for an auditable document")
+    dz.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
+    dz.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
+
     args = p.parse_args()
 
     if args.cmd == "splash":
@@ -691,6 +707,58 @@ def main() -> int:
             print(f"# green_rate {gen['green_rate']}  z={det['z_score']}  verdict={det['verdict']}  "
                   f"bias={args.bias} gamma={args.gamma} context={args.context} seed={args.seed}",
                   file=sys.stderr)
+        return 0
+
+    if args.cmd == "delta-z":
+        # ΔZ check: measurement IS the product — exit 0 on any successful
+        # measurement (even removed:true; removed is a FINDING, not an
+        # error). Exit 2 for usage/input errors. Unlike `detect`, exit 1 is
+        # not used for findings.
+        from .forensics.delta_z import delta_z, delta_z_report, delta_z_transform
+        from .forensics.key_registry import KeyRegistry
+        key_arg = _resolve_key_arg(args)
+        if not key_arg:
+            print("ai-wm: error: delta-z requires --key (key_id or raw secret)", file=sys.stderr)
+            return 2
+        if args.transform:
+            if args.after is not None:
+                print("ai-wm: error: --transform measures ONE file — do not pass <after>", file=sys.stderr)
+                return 2
+            if args.stdin:
+                text = read_text(stdin_text=sys.stdin.read()).text
+            elif args.before:
+                text = read_text(path=args.before).text
+            else:
+                print("ai-wm: error: delta-z --transform requires an input file (or --stdin)", file=sys.stderr)
+                return 2
+            result = delta_z_transform(
+                text, key_arg, method=args.transform,
+                level=args.level, context=args.context,
+                registry=KeyRegistry('data/key_registry.json'),
+                seed=args.seed, truncate_fraction=args.truncate_fraction,
+            )
+        else:
+            if args.stdin or not (args.before and args.after):
+                print("ai-wm: error: delta-z requires <before> and <after> files (or --transform with one file)", file=sys.stderr)
+                return 2
+            result = delta_z(
+                read_text(path=args.before).text,
+                read_text(path=args.after).text,
+                key_arg, level=args.level, context=args.context,
+                registry=KeyRegistry('data/key_registry.json'),
+            )
+        sign_secret = None
+        if args.sign_file:
+            sign_secret = Path(args.sign_file).read_text(encoding="utf-8").strip()
+        elif args.sign:
+            sign_secret = args.sign
+        if sign_secret:
+            result = delta_z_report(result, sign_secret, key_id=result.get("key_id"))
+        rendered = json.dumps(result, ensure_ascii=False, indent=2)
+        if args.output:
+            Path(args.output).write_text(rendered, encoding="utf-8")
+        else:
+            print(rendered)
         return 0
 
     if args.cmd == "serve":
