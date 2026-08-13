@@ -146,7 +146,7 @@ def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
                    for k, r in zip(kgw_keys, kgw.get('results', []))}
     result = ensemble_detect(req.text, registry, window=req.window,
                              level=req.level, context=req.context,
-                             kgw_results=kgw_results)
+                             kgw_results=kgw_results, exclude_demo=True)
     top_verdict = result['verdict']
     best = kgw.get('best')
     # The best |Z| key carries the authoritative two-sided verdict; surface it

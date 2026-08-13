@@ -15,6 +15,7 @@ def score_segment(text: str, key_meta: dict) -> dict:
     hints = []
     score = 0.0
     family = key_meta.get('family', 'unknown')
+    heuristic_components: dict[str, float] = {}
     if family == 'kgw' and key_meta.get('secret'):
         # Real KGW Z-score test per segment, normalized to [-0.99, 0.99]:
         # z >= 4 -> ~0.95, z <= -4 -> ~-0.95 (redlist), linear-ish in between.
@@ -35,19 +36,34 @@ def score_segment(text: str, key_meta: dict) -> dict:
     if trigger and trigger.lower() in text.lower():
         score += 0.65
         hints.append('trigger_phrase_match')
+    # P0-3: Heuristik-Beiträge sind sichtbare Beobachtungen, keine
+    # Wasserzeichen-Statistik. Die Komponenten werden separat exponiert —
+    # ein 'furthermore'-Zähler darf im Verdict nie wie ein Z-Score wirken.
     if family == 'greenlist_bias':
-        score += min(0.25, text.count(',') * 0.01)
+        comma = min(0.25, text.count(',') * 0.01)
+        score += comma
+        heuristic_components['comma_bias'] = round(comma, 4)
     elif family == 'semantic_pattern':
-        score += min(0.25, text.lower().count('furthermore') * 0.08)
-    return {'score': round(min(score, 0.99), 4), 'hints': hints, 'family': family}
+        further = min(0.25, text.lower().count('furthermore') * 0.08)
+        score += further
+        heuristic_components['furthermore_bias'] = round(further, 4)
+    out: dict = {'score': round(min(score, 0.99), 4), 'hints': hints, 'family': family}
+    if heuristic_components:
+        out['heuristic_components'] = heuristic_components
+    return out
 
 
 def ensemble_detect(text: str, keys: list[dict], window: int = 400,
                     level: str = "word", context: int = 1,
-                    kgw_results: dict[str, dict] | None = None) -> dict:
+                    kgw_results: dict[str, dict] | None = None,
+                    exclude_demo: bool = False) -> dict:
     segments = segment_text(text, window=window)
     per_key = []
+    excluded_demo = 0
     for key in keys:
+        if exclude_demo and key.get('is_demo'):
+            excluded_demo += 1
+            continue
         if key.get('family') == 'kgw' and key.get('secret'):
             # KGW: one Z-test over the WHOLE text (statistics need n), not per segment.
             # Normalize z to the [-0.99, 0.99] score scale; the SIGN must survive
@@ -67,6 +83,7 @@ def ensemble_detect(text: str, keys: list[dict], window: int = 400,
                 'verdict': r['verdict'],
                 'signal': r['signal'],
                 'segments': [r],
+                'is_demo': bool(key.get('is_demo')),
             })
             continue
         seg_scores = [score_segment(seg, key) for seg in segments] or [score_segment(text, key)]
@@ -76,27 +93,40 @@ def ensemble_detect(text: str, keys: list[dict], window: int = 400,
             'family': key.get('family', 'unknown'),
             'avg_score': round(avg, 4),
             'segments': seg_scores,
+            'is_demo': bool(key.get('is_demo')),
         })
     ensemble_score = mean([k['avg_score'] for k in per_key]) if per_key else 0.0
+    kgw_keys = [k for k in per_key if k.get('family') == 'kgw']
+    heuristic_keys = [k for k in per_key if k.get('family') != 'kgw']
+    kgw_score = mean([k['avg_score'] for k in kgw_keys]) if kgw_keys else None
+    heuristic_score = mean([k['avg_score'] for k in heuristic_keys]) if heuristic_keys else None
     # KGW verdicts (two-sided) must surface as the TOP-LEVEL verdict: a
     # redlist watermark (z <= -4 / -2) is a finding, not "no reliable signal".
-    kgw_verdicts = [k.get('verdict') for k in per_key
-                    if k.get('family') == 'kgw' and k.get('verdict')]
+    kgw_verdicts = [k.get('verdict') for k in kgw_keys
+                    if k.get('verdict')]
     if 'redlist_detected' in kgw_verdicts:
         verdict = 'redlist_detected'
     elif 'weak_redlist_signal' in kgw_verdicts:
         verdict = 'weak_redlist_signal'
     elif 'watermark_detected' in kgw_verdicts:
         verdict = 'strong_consistent_signal'
-    elif ensemble_score >= 0.7:
+    elif kgw_keys and ensemble_score >= 0.7:
         verdict = 'strong_consistent_signal'
-    elif ensemble_score >= 0.35:
+    elif kgw_keys and ensemble_score >= 0.35:
         verdict = 'weak_or_mixed_signal'
+    elif not kgw_keys and heuristic_score is not None:
+        # P0-3: Ohne KGW-Statistik kann Heuristik (Komma-/furthermore-Zähler,
+        # trigger_phrase) nie ein Wasserzeichen-Signal behaupten — sie ist
+        # eine Beobachtung, kein Beweis.
+        verdict = 'heuristic_hints_only'
     else:
         verdict = 'no_reliable_signal'
     return {
         'ensemble_score': round(ensemble_score, 4),
+        'kgw_score': round(kgw_score, 4) if kgw_score is not None else None,
+        'heuristic_score': round(heuristic_score, 4) if heuristic_score is not None else None,
         'verdict': verdict,
         'segments_total': len(segments),
+        'excluded_demo_keys': excluded_demo,
         'per_key': per_key,
     }

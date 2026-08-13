@@ -16,12 +16,14 @@ from pathlib import Path
 # committed data file) means key material is never version-controlled.
 DEMO_KEYS: list[dict] = [
     {"key_id": "demo-green-1", "family": "greenlist_bias", "status": "active",
-     "owner": "local", "trigger_phrase": "", "notes": "demo heuristic key"},
+     "owner": "local", "trigger_phrase": "", "notes": "demo heuristic key",
+     "is_demo": True},
     {"key_id": "demo-semantic-1", "family": "semantic_pattern", "status": "active",
-     "owner": "local", "trigger_phrase": "furthermore", "notes": "demo semantic key"},
+     "owner": "local", "trigger_phrase": "furthermore", "notes": "demo semantic key",
+     "is_demo": True},
     {"key_id": "demo-kgw-1", "family": "kgw", "status": "active", "owner": "local",
      "trigger_phrase": "", "notes": "demo KGW key — public demo secret, replace for real use",
-     "secret": "demo-kgw-secret-0001", "gamma": 0.25},
+     "secret": "demo-kgw-secret-0001", "gamma": 0.25, "is_demo": True},
 ]
 
 DEFAULT_PATH = "data/key_registry.json"
