@@ -4,5 +4,6 @@ include LICENSE
 include pyproject.toml
 include Dockerfile.synthid
 recursive-include scripts *.sh *.txt
+recursive-include benchmarks *.py
 recursive-include hermes **
 recursive-include mcp *.json
