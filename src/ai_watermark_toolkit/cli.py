@@ -72,6 +72,8 @@ def main() -> int:
     d.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
     d.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
     d.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
+    d.add_argument("--e-value", action="store_true",
+                   help="also run anytime-valid e-process detection (E >= 1/alpha, log-space, Bonferroni in multi-key runs); requires --key")
 
     sp = sub.add_parser("splash", help="Show the studio banner and system state")
     sp.add_argument("--plain", action="store_true", help="no ANSI colors")
@@ -248,6 +250,9 @@ def main() -> int:
     if args.cmd == "detect":
         text = _read(args)
         key_arg = getattr(args, "key", None)
+        if getattr(args, "e_value", False) and not key_arg:
+            print("ai-wm: error: --e-value requires --key (e-process detection is keyed)", file=sys.stderr)
+            return 2
         if key_arg:
             # Keyed KGW detection path (real Z-score test, sign-preserving).
             from .forensics.key_registry import KeyRegistry
@@ -276,12 +281,25 @@ def main() -> int:
                 "tested_keys": result.get("tested_keys"),
                 "kgw": result,
             }
+            e_value_result = None
+            if getattr(args, "e_value", False):
+                # Anytime-valid e-process detection on the SAME key, same
+                # tokenization and same green_token PRF as the Z-score path.
+                from .forensics.e_value import e_detect
+                e_value_result = e_detect(
+                    text, key["secret"],
+                    gamma=key.get('gamma') or DEFAULT_GAMMA,
+                    level=getattr(args, "level", "word"),
+                    context=getattr(args, "context", 1),
+                )
+                out["e_value"] = e_value_result
             rendered = json.dumps(out, ensure_ascii=False, indent=2)
             if args.output:
                 Path(args.output).write_text(rendered, encoding="utf-8")
             else:
                 print(rendered)
-            return 1 if best.get("verdict") in ("watermark_detected", "redlist_detected") else 0
+            e_detected = bool(e_value_result and e_value_result.get("detected"))
+            return 1 if (best.get("verdict") in ("watermark_detected", "redlist_detected") or e_detected) else 0
         result = detect_text(text, lang=args.lang, aggressive=getattr(args, "aggressive", False))
         rendered = json.dumps(result, ensure_ascii=False, indent=2) if args.json or args.output else json.dumps(result, ensure_ascii=False, indent=2)
         if args.output:
