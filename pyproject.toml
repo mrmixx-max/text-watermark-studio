@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "text-watermark-studio"
 version = "2.0.0"
-description = "Detect, clean, and dilute AI text markers and unicode/stego signals"
+description = "Independent, offline verification of AI text watermarks — keyed detection, marking, provenance, measurement"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Erik Gieske"}]

@@ -4,7 +4,7 @@
 ![Release](https://github.com/mrmixx-max/text-watermark-studio/actions/workflows/release.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-![Text Watermark Studio 2.0.0 — detect, remove, prove, protect. BPE token level. 100% local, no cloud, zero telemetry, MIT.](docs/tws-infographic.png)
+![Text Watermark Studio 2.0.0 — verify, measure, prove. Keyed watermark verification. 100% local, no cloud, zero telemetry, MIT.](docs/tws-infographic.png)
 
 Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias (post-hoc text rewrite + experimental generation-time sampler), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
 
