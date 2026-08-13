@@ -186,20 +186,38 @@ def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     }
 
 
+def _bpe_word_subwords(text: str) -> list[list[str]]:
+    """Per-word BPE subword lists; mark and detect share this exact surface."""
+    words = [m.group(0) for m in _TOKEN_RE.finditer(text)]
+    return [s for s in (bpe_tokenize(w) for w in words) if s]
+
+
+def _score_bpe_boundaries(subs: list[list[str]], key: str, gamma: float) -> tuple[int, int]:
+    """Count green word-boundary pairs: (last subword of prev, first of curr).
+
+    Returns (green, n) where n is the number of scored boundary pairs.
+    This is the single source of truth for the BPE green rate so that
+    mark_greenlist and detect_kgw can never drift apart.
+    """
+    n = len(subs) - 1
+    if n <= 0:
+        return 0, 0
+    green = sum(
+        1 for i in range(1, len(subs))
+        if green_token(subs[i][0], subs[i - 1][-1], key, gamma)
+    )
+    return green, n
+
+
 def _detect_bpe_boundaries(text: str, key: str, gamma: float) -> dict:
     """BPE-level detection scored at word boundaries (see detect_kgw)."""
-    words = [m.group(0) for m in _TOKEN_RE.finditer(text)]
-    subs = [s for s in (bpe_tokenize(w) for w in words) if s]
-    n = len(subs) - 1
+    subs = _bpe_word_subwords(text)
+    green, n = _score_bpe_boundaries(subs, key, gamma)
     if n < 10:
         return {
             "z_score": None, "p_value": None, "green_count": 0,
             "n_tokens": n, "green_rate": None, "verdict": "too_short",
         }
-    green = sum(
-        1 for i in range(1, len(subs))
-        if green_token(subs[i][0], subs[i - 1][-1], key, gamma)
-    )
     mu = gamma * n
     sigma = math.sqrt(n * gamma * (1 - gamma))
     z = (green - mu) / sigma
@@ -329,16 +347,25 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         else:
             prev = lower
     new_text = "".join(parts)
-    tokens_after = tokenize(new_text, level=level)
-    n = max(0, len(tokens_after) - 1)
-    green_now = sum(
-        1 for i in range(1, len(tokens_after))
-        if green_token(tokens_after[i], tokens_after[i - 1], key, gamma)
-    ) if n else 0
+    if level == "bpe":
+        # Report the SAME green rate the detector sees: word-boundary pairs
+        # (last subword of prev word, first subword of curr word), not every
+        # contiguous BPE pair in the flat subword stream.
+        subs = _bpe_word_subwords(new_text)
+        green_now, n = _score_bpe_boundaries(subs, key, gamma)
+        total_tokens = len(subs)
+    else:
+        tokens_after = tokenize(new_text, level=level)
+        n = max(0, len(tokens_after) - 1)
+        green_now = sum(
+            1 for i in range(1, len(tokens_after))
+            if green_token(tokens_after[i], tokens_after[i - 1], key, gamma)
+        ) if n else 0
+        total_tokens = len(tokens_after)
     return {
         "text": new_text,
         "replacements": replaced,
-        "total_tokens": len(tokens_after),
+        "total_tokens": total_tokens,
         "green_rate_after": round(green_now / n, 4) if n else None,
     }
 
