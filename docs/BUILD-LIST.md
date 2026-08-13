@@ -31,7 +31,7 @@
 | # | Kandidat | Aufwand | USP-Bezug | Priorität | Abhängigkeit |
 |---|---|---|---|---|---|
 | C1 | **Repo-Relabeling: "unabhängige Verifikation"** (README-Tagline, PyPI-Description von "Detect, clean, dilute" umstellen, bei 0 Stars) | S | Positionierung | 1 | — |
-| C2 | **Windows-Desktop-App + Installer** (PySide6-GUI als dünner Wrapper um Core + PyInstaller + Inno Setup + CI `build-desktop.yml`; Code-Signing optional) | M-L | Institutional-Verkauf (€149-499 Kanzleien, €490-1.490 Unis) | 2 | Markt-Bestätigung ✅; Signing-Entscheidung (Budget) |
+| C2 | **Windows-Desktop-App + Installer** (PySide6-GUI als dünner Wrapper um Core + PyInstaller + Inno Setup + CI `build-desktop.yml`; Code-Signing optional) | M-L | Institutional-Verkauf (€149-499 Kanzleien, €490-1.490 Unis) | 2 | 🔄 läuft (`deleg_9654f62b`, Nutzer-Go erteilt 2026-08-13) |
 | C3 | **Verifikations-Report als Produkt** (signierte Befunde: HMAC-SHA256 + ML-DSA-44 optional, CLI report-sign/verify/keygen, API + MCP; Tamper-Feld-Diff) | S-M | Gerichtsfestigkeit, Institutional | 1 | ✅ **GELIEFERT 2026-08-13** (1763874, 406 Tests) |
 | C4 | **ΔZ-Check als Service** (web, IMATAG-Muster, per-Authentifizierung) | M | Cleaner-Moat, Verifikation | 3 | C3; vor Anthropic-Detektor (Q4 26/Q1 27) |
 | C5 | **KI-Erklärungs-Report-Modul** (kostenlos für 5-10 Pilot-Prüfungsämter im Ouriginal-Migrationsfenster) — **Blaupause: `dissertation-ai-authorship-audit`** (Evidenzklassen A-D, Befund-Schema, 12-Schritte-Workflow, 15-Abschnitt-Report, Prüfpriorität 0-5 statt Schuld-Scoring) | M | Institutions-Play | 3 | C3 |
