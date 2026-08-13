@@ -17,7 +17,7 @@ class FamilyPlugin(LabFamily):
             return {'family': self.slug, 'supported': True, 'score': 0.0,
                     'notes': ['kgw_detection_requires_registered_secret_key']}
         r = detect_kgw(text, secret, gamma=opts.get('gamma', DEFAULT_GAMMA))
-        score = min(0.99, max(0.0, (r['z_score'] or 0.0) / 4.0))
+        score = min(0.99, max(-0.99, (r['z_score'] or 0.0) / 4.0))
         return {'family': self.slug, 'supported': True, 'score': round(score, 4), 'kgw': r}
 
     def embed(self, text: str, options: dict | None = None) -> dict:

@@ -146,6 +146,20 @@ class StudioTUI(App):
             return None
         return p
 
+    def _kgw_key(self) -> dict | None:
+        """Resolve the first registered KGW key with a secret.
+
+        No silent demo-key fallback: if the registry has no usable KGW key
+        the action must fail loudly instead of embedding under a hardcoded
+        secret the user never chose.
+        """
+        from ..forensics.key_registry import KeyRegistry
+        registry = KeyRegistry('data/key_registry.json')
+        for k in registry.list_keys():
+            if k.get('family') == 'kgw' and k.get('secret'):
+                return k
+        return None
+
     # ---- actions ----------------------------------------------------------
 
     def action_detect(self) -> None:
@@ -191,17 +205,25 @@ class StudioTUI(App):
         self._out(out.text[:2000])
 
     def action_embed(self) -> None:
-        from ..forensics.kgw import embed_kgw
+        from ..forensics.kgw import mark_greenlist, DEFAULT_GAMMA
         p = self._need_path()
         if not p:
+            return
+        key = self._kgw_key()
+        if key is None:
+            self._out("[red]No KGW key with a secret registered — add one via the "
+                      "API/CLI first, then retry.[/]")
             return
         try:
             text = open(p, encoding="utf-8").read()
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
-        emb = embed_kgw(text, "demo-kgw-1")
-        self._out(f"[green]Embedded (demo key).[/] {emb.get('replacements', 0)} replacements.")
+        emb = mark_greenlist(text, key['secret'],
+                             gamma=key.get('gamma') or DEFAULT_GAMMA)
+        self._out(f"[green]Embedded (key {key['key_id']}).[/] "
+                  f"{emb.get('replacements', 0)} replacements, "
+                  f"green_rate {emb.get('green_rate_after')}.")
         self._out(emb["text"][:2000])
 
     def action_pipeline(self) -> None:
@@ -223,16 +245,21 @@ class StudioTUI(App):
         p = self._need_path()
         if not p:
             return
+        key = self._kgw_key()
+        if key is None:
+            self._out("[red]No KGW key with a secret registered — add one via the "
+                      "API/CLI first, then retry.[/]")
+            return
         try:
             text = open(p, encoding="utf-8").read()
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
-        html_out = build_report(text, "demo-kgw-1")
+        html_out = build_report(text, key['secret'])
         out_path = "tws-report-tui.html"
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(html_out)
-        self._out(f"[green]Report written:[/] {out_path}")
+        self._out(f"[green]Report written:[/] {out_path} (key {key['key_id']})")
 
     def action_rewrite(self) -> None:
         from ..rewrite.service import RewriteService

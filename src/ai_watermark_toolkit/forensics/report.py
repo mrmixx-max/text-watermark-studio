@@ -23,9 +23,10 @@ from .kgw import detect_kgw
 def build_report(text: str, key: str, *, lang: str = "en",
                  unicode_findings: list | None = None,
                  marker_hits: int = 0,
-                 include_text: bool = True) -> str:
+                 include_text: bool = True,
+                 level: str = "word", context: int = 1) -> str:
     """Build a self-contained HTML findings report for one detect run."""
-    r = detect_kgw(text, key)
+    r = detect_kgw(text, key, level=level, context=context)
     verdict = r["verdict"]
     z = r["z_score"]
     green_rate = r["green_rate"]
@@ -34,7 +35,9 @@ def build_report(text: str, key: str, *, lang: str = "en",
 
     badge = {
         "watermark_detected": ("WASSERZEICHEN NACHGEWIESEN", "#b02a2a"),
+        "redlist_detected": ("REDLIST-SIGNAL NACHGEWIESEN", "#b02a2a"),
         "weak_signal": ("SCHWACHES SIGNAL", "#d9a404"),
+        "weak_redlist_signal": ("SCHWACHES REDLIST-SIGNAL", "#d9a404"),
         "no_signal": ("KEIN SIGNAL", "#0b7a3b"),
         "too_short": ("TEXT ZU KURZ", "#777777"),
     }.get(verdict, ("UNBEKANNT", "#777777"))
@@ -87,7 +90,7 @@ pre {{ background:#f4f6f8; padding:12px; border-radius:4px; white-space:pre-wrap
 <tr><td>Green-Rate</td><td>{rate_cell}</td></tr>
 <tr><td>Score-Tokens</td><td>{r.get('n_tokens', 0)}</td></tr>
 <tr><td>Grüne Tokens</td><td>{r.get('green_count', 0)}</td></tr>
-<tr><td>p-Wert (einseitig)</td><td>{r.get('p_value')}</td></tr>
+<tr><td>p-Wert (zweiseitig)</td><td>{r.get('p_value')}</td></tr>
 </table>
 <h2>Unsichtbare Zeichen ({uni} gefunden)</h2>
 <table><tr><th>Zeichen</th><th>Codepoint</th><th>Name</th></tr>{verdict_rows}</table>
@@ -95,8 +98,14 @@ pre {{ background:#f4f6f8; padding:12px; border-radius:4px; white-space:pre-wrap
 <div class="rec"><b>Empfehlung:</b>
 {"Clean + Dilute + Rewrite — das statistische Signal ist signifikant (Z>=4); "
  "der Text trägt nachweisbar ein Greenlist-Wasserzeichen." if verdict == "watermark_detected"
+ else "Redlist-Signal nachgewiesen (Z<=-4) — der Text meidet bewusst eine "
+ "hash-abgeleitete Token-Menge (Redlist-Wasserzeichen). Clean + Dilute + Rewrite empfohlen."
+ if verdict == "redlist_detected"
  else "Signal vorhanden aber unter der Signifikanzschwelle — Clean + Dilute als Vorsichtsmaßnahme."
  if verdict == "weak_signal"
+ else "Schwaches Redlist-Signal (Z<=-2) — Hinweis auf eine bewusst vermiedene "
+ "Hash-Menge, unter der Signifikanzschwelle. Clean + Dilute als Vorsichtsmaßnahme."
+ if verdict == "weak_redlist_signal"
  else "Kein statistisches Signal mit diesem Schlüssel. Reguläre Cleanup-Kette ausreichend."
  if verdict == "no_signal"
  else "Text zu kurz für eine statistische Aussage (mindestens ~10 Score-Tokens nötig)."}

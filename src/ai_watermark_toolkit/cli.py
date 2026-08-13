@@ -31,6 +31,9 @@ def main() -> int:
     d.add_argument("--pretty", action="store_true")
     d.add_argument("--aggressive", action="store_true", help="also flag script fillers (Braille blank, Hangul, ...)")
     d.add_argument("-o", "--output")
+    d.add_argument("--key", default=None, help="key_id / secret for the keyed KGW test (enables real Z-score detection)")
+    d.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
+    d.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
 
     sp = sub.add_parser("splash", help="Show the studio banner and system state")
     sp.add_argument("--plain", action="store_true", help="no ANSI colors")
@@ -54,6 +57,9 @@ def main() -> int:
     em.add_argument("--stdin", action="store_true")
     em.add_argument("--key", required=True, help="key_id from data/key_registry.json (must carry a secret)")
     em.add_argument("--gamma", type=float, default=None)
+    em.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for greenlist marking (default word)")
+    em.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
+    em.add_argument("--seed", type=int, default=None, help="RNG seed for deterministic marking")
     em.add_argument("-o", "--output")
 
     fi = sub.add_parser("file-inspect")
@@ -79,6 +85,8 @@ def main() -> int:
     rp.add_argument("--stdin", action="store_true")
     rp.add_argument("--key", required=True, help="key_id / secret for the KGW test")
     rp.add_argument("--lang", default="en", choices=["en", "de"])
+    rp.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
+    rp.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     rp.add_argument("--pdf", action="store_true", help="render to PDF via Edge headless (Windows)")
     rp.add_argument("-o", "--output", default=None, help="output path (default: tws-report-<ts>.html)")
 
@@ -178,6 +186,41 @@ def main() -> int:
 
     if args.cmd == "detect":
         text = _read(args)
+        key_arg = getattr(args, "key", None)
+        if key_arg:
+            # Keyed KGW detection path (real Z-score test, sign-preserving).
+            from .forensics.key_registry import KeyRegistry
+            from .forensics.kgw import detect_multi_key, DEFAULT_GAMMA
+            registry = KeyRegistry('data/key_registry.json')
+            key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
+            if key is None:
+                # allow a raw secret to be passed directly as --key
+                key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+            if not key.get('secret'):
+                print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
+                return 2
+            result = detect_multi_key(text, [key],
+                                      gamma=key.get('gamma') or DEFAULT_GAMMA,
+                                      level=getattr(args, "level", "word"),
+                                      context=getattr(args, "context", 1))
+            best = result.get('best') or {}
+            out = {
+                "verdict": best.get("verdict", "no_signal"),
+                "signal": best.get("signal"),
+                "z_score": best.get("z_score"),
+                "p_value": best.get("p_value"),
+                "green_rate": best.get("green_rate"),
+                "key_id": best.get("key_id"),
+                "best_p_adjusted": result.get("best_p_adjusted"),
+                "tested_keys": result.get("tested_keys"),
+                "kgw": result,
+            }
+            rendered = json.dumps(out, ensure_ascii=False, indent=2)
+            if args.output:
+                Path(args.output).write_text(rendered, encoding="utf-8")
+            else:
+                print(rendered)
+            return 1 if best.get("verdict") in ("watermark_detected", "redlist_detected") else 0
         result = detect_text(text, lang=args.lang, aggressive=getattr(args, "aggressive", False))
         rendered = json.dumps(result, ensure_ascii=False, indent=2) if args.json or args.output else json.dumps(result, ensure_ascii=False, indent=2)
         if args.output:
@@ -213,7 +256,7 @@ def main() -> int:
 
     if args.cmd == "embed":
         from .forensics.key_registry import KeyRegistry
-        from .forensics.kgw import embed_kgw, DEFAULT_GAMMA
+        from .forensics.kgw import mark_greenlist, DEFAULT_GAMMA
         text = _read(args)
         registry = KeyRegistry('data/key_registry.json')
         key = next((k for k in registry.list_keys() if k.get('key_id') == args.key), None)
@@ -223,7 +266,9 @@ def main() -> int:
         if not key.get('secret'):
             print(f"ai-wm: error: key {args.key} has no secret", file=sys.stderr)
             return 2
-        result = embed_kgw(text, key['secret'], gamma=args.gamma or key.get('gamma') or DEFAULT_GAMMA)
+        result = mark_greenlist(text, key['secret'],
+                                gamma=args.gamma or key.get('gamma') or DEFAULT_GAMMA,
+                                level=args.level, context=args.context, seed=args.seed)
         out = result['text']
         if args.output:
             Path(args.output).write_text(out, encoding="utf-8")
@@ -332,7 +377,9 @@ def main() -> int:
         marker_hits = d.get("layers", {}).get("lexical", {}).get("score", 0) if isinstance(d, dict) else 0
         html_out = build_report(text, args.key, lang=args.lang,
                                 unicode_findings=[asdict(x) for x in uni],
-                                marker_hits=marker_hits)
+                                marker_hits=marker_hits,
+                                level=getattr(args, "level", "word"),
+                                context=getattr(args, "context", 1))
         out_path = args.output or f"tws-report-{int(_time.time())}.html"
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(html_out)

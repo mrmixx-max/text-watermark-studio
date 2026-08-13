@@ -255,7 +255,8 @@ def _detect_bpe_boundaries(text: str, key: str, gamma: float) -> dict:
     return _summarize_z(green, n, gamma)
 
 
-def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA) -> dict:
+def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA,
+                     level: str = "word", context: int = 1) -> dict:
     """Test all KGW-family keys. Best |Z|-score wins; report all.
 
     keys: list of dicts with at least {'key_id': str, 'secret': str}.
@@ -265,6 +266,9 @@ def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA) 
     a strongly NEGATIVE z (greenlist under-represented) that must still win
     over near-zero wrong keys, while a greenlist watermark shows a strongly
     POSITIVE z. Raw `max(z_score)` would wrongly skip the redlist key.
+
+    `level` and `context` are forwarded to detect_kgw so the product path
+    (API/CLI) can score at BPE granularity and with a context window c.
     """
     results = []
     for k in keys:
@@ -272,7 +276,7 @@ def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA) 
         family = k.get("family", "")
         if not secret or (family and family != "kgw"):
             continue
-        r = detect_kgw(text, secret, gamma)
+        r = detect_kgw(text, secret, gamma, level=level, context=context)
         r["key_id"] = k.get("key_id", "unknown")
         results.append(r)
     if not results:
