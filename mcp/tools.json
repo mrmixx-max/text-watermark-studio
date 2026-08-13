@@ -19,13 +19,17 @@
       "name": "ops_status",
       "method": "GET",
       "path": "/api/ops/status",
-      "description": "JSON operations status"
+      "description": "JSON operations status",
+      "optional": true,
+      "note": "requires Hermes ops plugin; route not present in bare installs"
     },
     {
       "name": "ops_metrics",
       "method": "GET",
       "path": "/api/ops/metrics",
-      "description": "Prometheus metrics"
+      "description": "Prometheus metrics",
+      "optional": true,
+      "note": "requires Hermes ops plugin; route not present in bare installs"
     },
     {
       "name": "lab_families",

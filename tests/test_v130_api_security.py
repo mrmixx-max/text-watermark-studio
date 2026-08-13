@@ -35,8 +35,11 @@ class TestMCPManifestConsistency:
         manifest = json.loads((REPO / "mcp" / "tools.json").read_text(encoding="utf-8"))
         app = fastapi_app.app
         real = {(m, r.path) for r in app.routes if hasattr(r, "methods") for m in r.methods}
+        # optional tools (e.g. ops_*) depend on plugins not present in a bare
+        # install or CI; only non-optional tools must always resolve
         missing = [t["name"] for t in manifest["tools"]
-                   if (t["method"], t["path"]) not in real]
+                   if not t.get("optional")
+                   and (t["method"], t["path"]) not in real]
         assert missing == []
 
     def test_manifest_still_has_usable_tool_count(self):
