@@ -56,6 +56,63 @@ docker compose up --build
 
 Windows users: the Makefile detects `OS=Windows_NT` and uses `.venv\Scripts` paths automatically. `scripts/publish-check.ps1` runs the full check (venv, install, tests, build) in PowerShell. Desktop packaging for Windows lives in `desktop/packaging/windows/build.ps1`.
 
+## Desktop-App (Windows)
+
+Ein dünner PySide6-Wrapper um **dieselbe Core-Forensik**, die auch CLI/API/TUI
+nutzen — **kein Server, kein Netzwerk**: Menüs und Buttons rufen die
+Core-Funktionen direkt auf (Detect, Embed, Report, Sign, Verify, KGW-Beispiel).
+Der Einstieg für Nicht-Entwickler (Kanzleien, Institutionen): Text einfügen →
+Schlüssel wählen → Detektieren. Die App liegt unter
+`src/ai_watermark_toolkit/ui/desktop/` (Qt-freier `DesktopController` + PySide6-Shell).
+
+**Features**
+
+- **Detect** — KGW-Z-Score + e-process (anytime-valid) gegen den gewählten Key
+  oder alle registrierten Keys; JSON-Ergebnis im Panel
+- **Embed** — `mark_greenlist`: Text wird greenlist-markiert (garantiert
+  detektierbar, Z>4), Ergebnis ersetzt den Editor-Text (Ctrl+Z macht es rückgängig)
+- **Bericht** — selbstenthaltener HTML-Befund (`build_report`) nach `Downloads`
+  (Fallback: Temp-Verzeichnis)
+- **Signieren/Verifizieren** — Befund-JSON signieren (HMAC-SHA256, Registry-Secret;
+  ML-DSA optional, wenn `cryptography>=50` installiert ist) und verifizieren
+- **KGW-Beispiel** — synthetischer Generation-Time-Bias (Mechanik-Beweis, kein LLM)
+- Schlüssel-Auswahl, Statusleiste, JSON-Ergebnis-Panel, Datei-Dialog
+
+**Ausführen (Source)**
+
+```bash
+pip install PySide6        # optionale GUI-only-Dependency (Core bleibt stdlib-first, kein pyproject-Eintrag)
+python -m ai_watermark_toolkit.ui.desktop.app
+```
+
+**Build (Windows)**
+
+```bash
+pip install PySide6 pyinstaller
+pip install -e .
+pyinstaller packaging/tws-desktop.spec     # -> dist/tws-desktop.exe (onefile, windowed)
+iscc packaging/tws-setup.iss              # -> dist/TWS-Setup.exe (Inno Setup)
+```
+
+CI: `.github/workflows/build-desktop.yml` (manuell oder Tag `v*` auf
+windows-latest: PyInstaller → choco Inno Setup → ISCC → Artifacts).
+
+**Installation und die ehrliche SmartScreen-Hürde**
+
+`TWS-Setup.exe` installiert nach `%ProgramFiles%\TextWatermarkStudio`. Ohne
+Code-Signing-Zertifikat ist der Installer **unsigniert** — Windows SmartScreen
+zeigt „Unbekannter Herausgeber" und verlangt „Weitere Informationen → Trotzdem
+ausführen". Das ist erwartet und kein Fehler. Ein Code-Signing-Zertifikat
+(OV/EV, ~$100–300/Jahr) entfernt die Warnung; das ist eine Budget-Entscheidung —
+der optionale Signing-Schritt steht auskommentiert im Workflow (Zertifikat als
+Secret `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`).
+
+**Keys**: Die App liest `data/key_registry.json` (nur lesend, gleicher Vertrag
+wie CLI/TUI). Keys anlegen über `POST /api/forensics/keys` (`ai-wm serve`) oder
+per Registry-Eintrag; ohne KGW-Key mit Secret meldet die App das ehrlich statt
+leise eine Registry anzulegen. Der Installer legt keine Schlüssel ab — die
+Registry bleibt Operator-Sache.
+
 ## Why a lab edition
 
 Recent taxonomies and surveys split text watermarking into multiple families with different assumptions, requirements and threat models. Existing-text methods, generation-time methods and model-level provenance do not collapse into one universal technique, so the product is structured as a lab with family plugins and capability axes rather than a single misleading detector.
