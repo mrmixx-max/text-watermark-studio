@@ -82,9 +82,15 @@ def _readable_text(path: Path) -> str:
         return ""
 
 
-def _iter_corpus(corpus_paths: list[Path]) -> list[Path]:
+def _iter_corpus(corpus_paths) -> list[Path]:
+    """Resolve a list of str/Path entries into files.
+
+    Direct callers (TUI action_similarity, API) pass plain strings; the CLI
+    handler passes Path objects — one contract for both.
+    """
     files: list[Path] = []
-    for p in corpus_paths:
+    for entry in corpus_paths:
+        p = Path(entry)
         if p.is_dir():
             files.extend(sorted(f for f in p.rglob("*") if f.is_file()))
         elif p.is_file():

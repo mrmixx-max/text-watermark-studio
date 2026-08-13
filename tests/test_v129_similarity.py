@@ -92,6 +92,15 @@ class TestCore:
         assert r["top_similarity"] == 0.0
         assert not r["findings"]
 
+    def test_accepts_str_paths_like_tui(self, tmp_path):
+        """Direct callers (TUI action_similarity) pass plain strings for the
+        corpus dir; check_similarity takes TEXT as input, so the caller must
+        read the file first — mirror the TUI flow exactly."""
+        c = _corpus(tmp_path)
+        text = c["original"].read_text(encoding="utf-8")
+        r = check_similarity(text, [str(c["dir"])])
+        assert r["top_similarity"] >= 0.95
+
 
 class TestHonestBoundary:
     def test_paraphrase_scores_low(self, tmp_path):

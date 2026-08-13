@@ -11,6 +11,7 @@ Run: ai-wm tui   (requires `pip install text-watermark-studio[tui]`)
 from __future__ import annotations
 
 import json
+import os
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -40,6 +41,7 @@ MENU: list[tuple[str, str]] = [
     ("17 Update studio (check + upgrade)", "update"),
     ("18 Install local model (Ollama pull)", "llm-install"),
     ("19 Prompt optimizer (locked evals)", "optimizer"),
+    ("20 Corpus similarity (local MinHash)", "similarity"),
 ]
 
 SHORT_HELP: dict[str, str] = {
@@ -62,6 +64,7 @@ SHORT_HELP: dict[str, str] = {
     "update": "check PyPI for a newer release, then upgrade",
     "llm-install": "pull a local model via the Ollama API (name in Path field)",
     "optimizer": "run the prompt-optimizer evaluator loop against the locked evals",
+    "similarity": "compare a text against your own corpus (Path: file --corpus dir)",
 }
 
 
@@ -431,6 +434,40 @@ class StudioTUI(App):
         w = r["winner"]
         self._out(f"[green]Gewinner:[/] {w['candidate']['variant']} "
                   f"({w['avg_score']}) — {w['candidate']['changed_variable']}")
+
+    def action_similarity(self) -> None:
+        """Compare a text against a user-owned corpus. Path field format:
+        `document.txt --corpus ./archiv` (threshold optional via --threshold)."""
+        from ..forensics.similarity import check_similarity
+        from pathlib import Path as _P
+        raw = self._read_path()
+        parts = [p.strip() for p in raw.split("--corpus")] if "--corpus" in raw else [raw]
+        target = parts[0]
+        corpus = parts[1] if len(parts) > 1 else ""
+        if not target or not corpus:
+            self._out("[yellow]Format: <datei.txt> --corpus <ordner> "
+                      "(Threshold optional: --threshold 0.4)[/]")
+            return
+        if not os.path.exists(target) or not os.path.isdir(corpus):
+            self._out("[yellow]Datei oder Corpus-Ordner nicht gefunden.[/]")
+            return
+        try:
+            text = _P(target).read_text(encoding="utf-8", errors="replace")
+            r = check_similarity(text, [corpus])
+        except Exception as e:
+            self._out(f"[red]{e}[/]")
+            return
+        self._out(f"[cyan]Similarity gegen {os.path.basename(corpus)}:[/]")
+        if r["findings"]:
+            top = r["findings"][0]
+            self._out(f"Top: {top['similarity']:.2f} ({os.path.basename(top['path'])})")
+            for f in r["findings"][:5]:
+                zit = f["fundstellen"][0] if f["fundstellen"] else ""
+                self._out(f"  {f['similarity']:.2f}  {os.path.basename(f['path'])}"
+                          f"  ~ {zit[:60]}")
+        else:
+            self._out(f"Keine Treffer über Schwelle "
+                      f"({r['input']['threshold']}). Top: {r['top_similarity']:.2f}")
 
     def action_splash(self) -> None:
         from ..ui.banner import render_banner

@@ -96,8 +96,8 @@ print(f'OK: {{n}} files compiled, {{m}} modules imported')
 
     # 4. TUI burn-in ------------------------------------------------------------
     out = run([PY, str(REPO / "benchmarks" / "tui_burnin.py")])
-    stage("TUI Burn-in (19 Aktionen)", "BURN-IN PASSED" in out,
-          "19/19" if "BURN-IN PASSED" in out else out.strip()[-150:])
+    stage("TUI Burn-in (20 Aktionen)", "BURN-IN PASSED" in out,
+          "20/20" if "BURN-IN PASSED" in out else out.strip()[-150:])
 
     # 5. prompt-optimizer loop (full: optimize -> promote -> history -> rollback) --
     out = run([PY, str(REPO / "benchmarks" / "optimizer_loop.py")])
