@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ...forensics.e_value import e_detect, e_detect_multi
-from ...forensics.key_registry import DEFAULT_PATH, KeyRegistry
+from ...forensics.key_registry import DEFAULT_PATH, KeyRegistry, mask_secret_key_id
 from ...forensics.kgw import (
     DEFAULT_GAMMA,
     detect_kgw,
@@ -89,8 +89,11 @@ class DesktopController:
                 if not k.get("secret"):
                     raise ValueError(f"Key '{arg}' hat kein Secret.")
                 return k, True
-        # Not in the registry -> treat as a raw secret (CLI contract).
-        return {"key_id": arg, "family": "kgw", "secret": arg, "gamma": None}, False
+        # Not in the registry -> treat as a raw secret (CLI contract). The
+        # reported key_id is masked so the secret never leaks into detect
+        # results / finding reports (the detection uses the real secret).
+        return {"key_id": mask_secret_key_id(arg), "family": "kgw",
+                "secret": arg, "gamma": None, "key_source": "raw_secret"}, False
 
     def _require_kgw_keys(self) -> list[dict]:
         """All registry keys usable for KGW detection; error when none."""

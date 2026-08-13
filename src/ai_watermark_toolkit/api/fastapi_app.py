@@ -68,14 +68,35 @@ app = FastAPI(
 )
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(PrometheusMiddleware)
+# P0-1: CORS '*' ist nur im Dev-Modus akzeptabel. Außerhalb development
+# wird ausschließlich die konfigurierte Origin-Liste erlaubt (Default leer =>
+# keine Cross-Origin-Freigabe; ein '*' wäre auf einer non-dev-Instanz ein
+# offenes Forensik-/Marking-API für jede Website).
+if settings.cors_origins and settings.cors_origins != '*':
+    _origins = [o.strip() for o in settings.cors_origins.split(',')]
+elif settings.app_env == 'development':
+    _origins = ['*']
+else:
+    _origins = []
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(',')] if settings.cors_origins else ['*'],
+    allow_origins=_origins,
     allow_credentials=False,
     allow_methods=['*'],
     allow_headers=['*'],
 )
 app.add_middleware(RateLimitMiddleware, limit=settings.rate_limit_requests, window_sec=settings.rate_limit_window_sec)
+
+# P0-1: Sichtbare Startwarnung, wenn eine non-dev-Instanz ohne API-Key läuft.
+# Die fail-closed-Middleware schützt bereits (401 überall), aber ein Operator
+# soll es sofort sehen — stiller 401-Regen ist schwerer zu diagnostizieren.
+if settings.app_env != 'development' and not settings.api_key:
+    import logging
+    logging.getLogger('uvicorn.error').warning(
+        'AI_WM_API_KEY ist nicht gesetzt und AI_WM_ENV != development: '
+        'die API ist FAIL-CLOSED (jeder Request wird mit 401 abgelehnt), '
+        'bis AI_WM_API_KEY konfiguriert wird.')
+
 app.include_router(text_router)
 app.include_router(jobs_router)
 app.include_router(studio_router)

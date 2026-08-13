@@ -269,7 +269,8 @@ class TestApiSignedReport:
         signed = r.json()
         assert signed["signature"]["algorithm"] == "hmac-sha256"
         assert signed["signature"]["key_id"] == "sig-key-1"
-        assert "secret" not in json.dumps(signed)
+        assert "secret" not in json.dumps(signed).replace("shared_secret", "")
+        assert SECRET not in json.dumps(signed)  # echtes Secret nie im Report
         r = c.post("/api/forensics/report-verify",
                    json={"signed": signed, "key_id": "sig-key-1"})
         assert r.status_code == 200
@@ -379,7 +380,9 @@ class TestMldsa44:
                              private_key_pem=pair["private_key_pem"])
         res = verify_report(signed, public_key_pem=other["public_key_pem"])
         assert res["valid"] is False
-        assert res["reason"] == "signature_invalid"
+        # P0-2: fremder externer Key wird als Trust-Anker behandelt — die
+        # Identität ist nicht verankert (ehrlicher als nur 'signature_invalid').
+        assert res["reason"] == "key_not_pinned"
 
     def test_sign_without_private_key_raises(self):
         with pytest.raises(ValueError):

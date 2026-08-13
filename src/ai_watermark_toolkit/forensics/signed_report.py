@@ -131,6 +131,21 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _der_of_pem(pem: str) -> bytes | None:
+    """Canonical DER of a PEM public key (P0-2 Pinning-Vergleich).
+
+    Fehler (ungültiges PEM, kein Public Key) liefern None — ein None kann
+    nie matchen, ein kaputtes Pinning-Artefakt schlägt also fail-closed.
+    """
+    try:
+        from cryptography.hazmat.primitives import serialization as _ser
+        key = _ser.load_pem_public_key(pem.encode("utf-8"))
+        return key.public_bytes(
+            _ser.Encoding.DER, _ser.PublicFormat.SubjectPublicKeyInfo)
+    except Exception:
+        return None
+
+
 def _hmac_digest(secret: str, data: bytes) -> str:
     return hmac.new(secret.encode("utf-8"), data, hashlib.sha256).hexdigest()
 
@@ -219,7 +234,8 @@ def generate_mldsa_keypair(algorithm: str = "mldsa-44") -> dict:
 def sign_report(report_payload: dict, secret: str, *,
                 key_id: str | None = None,
                 algorithm: str = DEFAULT_ALGORITHM,
-                private_key_pem: str | None = None) -> dict:
+                private_key_pem: str | None = None,
+                trust: str | None = None) -> dict:
     """Sign a findings payload; returns the payload plus a ``signature`` block.
 
     - algorithm='hmac-sha256': ``signature.digest`` = hex HMAC-SHA256 over the
@@ -230,6 +246,11 @@ def sign_report(report_payload: dict, secret: str, *,
       ``signature.public_key_pem``. Signatures are non-deterministic: two
       signatures of the same payload differ, and both verify.
     - Both record key_id (default 'default') and signature_date (UTC ISO).
+    - ``trust`` (P0-2, ehrliche Klammer): standardmäßig
+      ``'embedded_key_unverified'`` bei ML-DSA (der Public Key steht im
+      Dokument selbst — das beweist Integrität, aber keine Herkunft; jeder
+      kann self-signieren). Aufrufer, die den Schlüssel extern verankern
+      (Key-Pinning, separates Key-Verzeichnis), setzen ``trust='pinned_key'``.
     """
     if not isinstance(report_payload, dict):
         raise ValueError("report_payload must be a dict")
@@ -239,6 +260,8 @@ def sign_report(report_payload: dict, secret: str, *,
         )
     resolved_key_id = key_id or "default"
     canonical = canonical_json(report_payload)
+    if trust is None:
+        trust = "shared_secret" if algorithm == "hmac-sha256" else "embedded_key_unverified"
     sig: dict = {
         "algorithm": algorithm,
         "key_id": resolved_key_id,
@@ -246,6 +269,7 @@ def sign_report(report_payload: dict, secret: str, *,
         "format_version": FORMAT_VERSION,
         "payload_sha256": hashlib.sha256(canonical).hexdigest(),
         "field_hashes": _field_hashes(report_payload),
+        "trust": trust,
     }
     if algorithm == "hmac-sha256":
         if not secret:
@@ -272,8 +296,18 @@ def sign_report(report_payload: dict, secret: str, *,
 
 
 def verify_report(signed: dict, secret: str | None = None, *,
-                  public_key_pem: str | None = None) -> dict:
+                  public_key_pem: str | None = None,
+                  trusted_public_keys: list[str] | None = None) -> dict:
     """Verify a signed document; returns {valid, algorithm, key_id, reason, ...}.
+
+    P0-2 — Root-of-Trust: ``trusted_public_keys`` (PEM-Liste) ist der
+    externe Anker. Wenn übergeben, MUSS der eingebettete Public Key in der
+    Liste sein (``reason='key_not_pinned'`` sonst) und das Ergebnis trägt
+    ``trust='pinned_key'``. Ohne Pinning trägt das Ergebnis ehrlich
+    ``trust='embedded_key_unverified'`` — die Signatur beweist dann
+    Integrität, aber keine Herkunft (jeder kann self-signieren).
+    ``public_key_pem`` (bestehend) wird als Ein-Element-Pinning behandelt,
+    wenn angegeben — Rückwärtskompatibel.
 
     Reason values:
     - 'ok'                    — signature matches the canonical payload
@@ -284,6 +318,8 @@ def verify_report(signed: dict, secret: str | None = None, *,
                                 attacker re-hashed the fields (best-effort)
     - 'missing_signature' / 'missing_digest' / 'missing_public_key'
                               — malformed signed document
+    - 'key_not_pinned'        — trusted_public_keys given but the embedded
+                                key is not among them (identity not anchored)
     - 'unsupported_algorithm' / 'mldsa_unavailable' / 'missing_secret'
                               — environment or usage problem
     """
@@ -339,7 +375,26 @@ def verify_report(signed: dict, secret: str | None = None, *,
     signature_b64 = sig.get("signature_b64")
     if not signature_b64:
         return _vr(False, "missing_signature", algorithm, key_id, sig_date)
-    pub_pem = public_key_pem or sig.get("public_key_pem")
+    # P0-2: externer Anker zuerst. public_key_pem (bestehendes Verhalten) wird
+    # als Ein-Element-Pinning behandelt; trusted_public_keys ist die
+    # explizite Liste. Ohne externen Anker bleibt nur der eingebettete Key —
+    # das Ergebnis sagt dann ehrlich 'embedded_key_unverified'.
+    pin_list = list(trusted_public_keys or [])
+    if public_key_pem:
+        pin_list.append(public_key_pem)
+    embedded_pem = sig.get("public_key_pem")
+    pinned = bool(pin_list)
+    if pinned:
+        embedded_der = _der_of_pem(embedded_pem) if embedded_pem else None
+        match = any(
+            _der_of_pem(p) == embedded_der for p in pin_list
+            if p and embedded_der
+        )
+        if not match:
+            return _vr(False, "key_not_pinned", algorithm, key_id, sig_date,
+                       trust="pinned_key",
+                       public_key_embedded=bool(embedded_pem))
+    pub_pem = public_key_pem or embedded_pem
     if not pub_pem:
         return _vr(False, "missing_public_key", algorithm, key_id, sig_date)
     try:
@@ -352,13 +407,16 @@ def verify_report(signed: dict, secret: str | None = None, *,
         actual = type(public_key).__name__  # e.g. 'MLDSA44PublicKey'
         if expected is not None and not actual.startswith(expected):
             return _vr(False, "algorithm_mismatch", algorithm, key_id, sig_date,
-                       public_key_embedded=bool(sig.get("public_key_pem")),
+                       public_key_embedded=bool(embedded_pem),
                        expected=f"{expected}PublicKey", actual=actual)
         _mldsa_verify(public_key, base64.b64decode(signature_b64), canonical)
         ok = True
     except Exception:
         ok = False
-    extra = {"public_key_embedded": bool(sig.get("public_key_pem"))}
+    extra = {
+        "public_key_embedded": bool(embedded_pem),
+        "trust": "pinned_key" if pinned else "embedded_key_unverified",
+    }
     if ok:
         return _vr(True, "ok", algorithm, key_id, sig_date, **extra)
     if tampered:

@@ -83,7 +83,10 @@ def test_resolve_empty_key_is_error(controller):
 def test_unknown_key_id_is_raw_secret_fallback(controller):
     """CLI contract: a non-registry argument is a raw secret, not an error."""
     result = controller.detect_text("some plain text", "raw-secret-value")
-    assert result["key_id"] == "raw-secret-value"
+    # P0-4: the raw secret is masked in the reported key_id
+    from ai_watermark_toolkit.forensics.key_registry import mask_secret_key_id
+    assert result["key_id"] == mask_secret_key_id("raw-secret-value")
+    assert result["key_id"] != "raw-secret-value"
     assert result["tested_keys"] == 1
 
 

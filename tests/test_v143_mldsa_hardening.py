@@ -279,7 +279,8 @@ class TestMldsa65_87:
                              private_key_pem=pair["private_key_pem"])
         res = verify_report(signed, public_key_pem=other["public_key_pem"])
         assert res["valid"] is False
-        assert res["reason"] == "signature_invalid"
+        # P0-2: fremder externer Key = Trust-Anker, Identität nicht verankert
+        assert res["reason"] == "key_not_pinned"
 
 
 # ---------------------------------------------------------------- label trust

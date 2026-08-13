@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from .report import write_json
 from .transform.clean import clean_text
 from .transform.dilute import dilute_text
 from .batch import process_batch
+from .forensics.key_registry import mask_secret_key_id
 
 
 def _resolve_key_arg(args) -> str | None:
@@ -42,12 +44,16 @@ def _resolve_key(registry, key_arg: str) -> tuple[dict, bool]:
     """Resolve a --key argument (key_id OR raw secret) to (key_dict, from_registry).
 
     key_id -> matching registry entry (with its secret); anything else is
-    treated as a raw secret (detect-style), so --key accepts both forms.
+    treated as a raw secret (detect-style), so --key accepts both forms. A
+    raw secret's reported key_id is MASKED (``secret:<sha256-prefix>``) so
+    the secret never appears in detect/finding/report output — the detection
+    itself still uses the real secret (parity).
     """
     key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
     if key is not None:
         return key, True
-    return {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}, False
+    return {"key_id": mask_secret_key_id(key_arg), "family": "kgw",
+            "secret": key_arg, "gamma": None, "key_source": "raw_secret"}, False
 
 
 def _read(args) -> str:
@@ -297,8 +303,11 @@ def main() -> int:
             registry = KeyRegistry('data/key_registry.json')
             key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
             if key is None:
-                # allow a raw secret to be passed directly as --key
-                key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+                # allow a raw secret to be passed directly as --key; the
+                # reported key_id is masked so the secret never leaks into
+                # the JSON output (the detection uses the real secret)
+                key = {"key_id": mask_secret_key_id(key_arg), "family": "kgw",
+                       "secret": key_arg, "gamma": None, "key_source": "raw_secret"}
             if not key.get('secret'):
                 print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
                 return 2
@@ -498,10 +507,11 @@ def main() -> int:
         d = _detect_text(text, lang=args.lang)
         marker_hits = d.get("layers", {}).get("lexical", {}).get("score", 0) if isinstance(d, dict) else 0
         # Resolve key_id -> secret (or accept a raw secret), like detect does.
-        # The secret itself is never shown in the report; key_id is the label.
+        # The secret itself is never shown in the report; key_id is the label
+        # (a raw secret's label is masked so it cannot leak into the HTML).
         effective_key = _resolve_key_arg(args)
         key_secret = effective_key
-        key_label = effective_key
+        key_label = mask_secret_key_id(effective_key) if effective_key else None
         if effective_key:
             try:
                 reg = KeyRegistry()
@@ -510,7 +520,7 @@ def main() -> int:
                     key_secret = resolved.get("secret") or effective_key
                     key_label = resolved.get("key_id", effective_key)
             except Exception:
-                pass  # registry unavailable -> keep the raw argument
+                pass  # registry unavailable -> masked raw argument stays the label
         html_out = build_report(text, key_secret, lang=args.lang,
                                 unicode_findings=[asdict(x) for x in uni],
                                 marker_hits=marker_hits,
@@ -599,6 +609,10 @@ def main() -> int:
         pub = out_dir / f"{args.prefix}_public.pem"
         priv.write_text(pair["private_key_pem"], encoding="utf-8")
         pub.write_text(pair["public_key_pem"], encoding="utf-8")
+        # P0-6: PrivKey nie weltweit lesbar (Unix 0644 wäre ein Review-Stopper)
+        if os.name != "nt":
+            os.chmod(priv, 0o600)
+            os.chmod(pub, 0o644)
         print(json.dumps({"ok": True, "algorithm": pair["algorithm"],
                           "private_key": str(priv), "public_key": str(pub)},
                          ensure_ascii=False, indent=2))
@@ -800,7 +814,10 @@ def main() -> int:
         registry = KeyRegistry('data/key_registry.json')
         key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
         if key is None:
-            key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+            # raw secret: masked key_id keeps the secret out of the finding
+            # report and its signature block (detection uses the real secret)
+            key = {"key_id": mask_secret_key_id(key_arg), "family": "kgw",
+                   "secret": key_arg, "gamma": None, "key_source": "raw_secret"}
         if not key.get('secret'):
             print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
             return 2

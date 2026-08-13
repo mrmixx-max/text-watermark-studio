@@ -45,7 +45,10 @@ from ai_watermark_toolkit.forensics.delta_z import (
     delta_z_report,
     delta_z_transform,
 )
-from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+from ai_watermark_toolkit.forensics.key_registry import (
+    KeyRegistry,
+    mask_secret_key_id,
+)
 from ai_watermark_toolkit.forensics.kgw import mark_greenlist
 from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
 from ai_watermark_toolkit.forensics.signed_report import verify_report
@@ -110,7 +113,10 @@ class TestDeltaZCore:
         assert r["z_before"] == pytest.approx(13.6083, abs=1e-3)
         assert r["z_after"] == pytest.approx(0.0, abs=1e-3)
         assert r["delta_z"] == pytest.approx(13.6083, abs=1e-3)
-        assert r["key_id"] == KEY
+        # P0-4: a raw secret must NEVER surface as key_id — it is masked
+        assert r["key_id"] == mask_secret_key_id(KEY)
+        assert r["key_id"] != KEY
+        assert r["key_source"] == "raw_secret"
 
     def test_marked_truncate_honest_no_false_removal(self, marked):
         """truncate 60% weakens (delta>0) but does NOT break the mark."""
@@ -163,7 +169,12 @@ class TestDeltaZCore:
         by_id = delta_z(m, _shuffle(m), "dz-key-1", registry=reg)
         by_secret = delta_z(m, _shuffle(m), "dz-secret-1", registry=reg)
         assert by_id["key_id"] == "dz-key-1"
-        assert by_secret["key_id"] == "dz-secret-1"
+        assert by_id["key_source"] == "registry"
+        # P0-4: the raw secret is MASKED in the reported key_id — same
+        # measurement (same key material), no secret in the output
+        assert by_secret["key_id"] == mask_secret_key_id("dz-secret-1")
+        assert by_secret["key_id"] != "dz-secret-1"
+        assert by_secret["key_source"] == "raw_secret"
         assert by_id["z_before"] == by_secret["z_before"]
         assert by_id["z_after"] == by_secret["z_after"]
         assert by_id["removed"] is True

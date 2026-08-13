@@ -41,7 +41,7 @@ from __future__ import annotations
 import random
 import re
 
-from .key_registry import KeyRegistry
+from .key_registry import KeyRegistry, mask_secret_key_id
 from .kgw import DEFAULT_GAMMA, detect_multi_key
 
 # ------------------------------------------------------------------ transforms
@@ -141,12 +141,24 @@ def _resolve_key(registry: KeyRegistry, key_arg: str) -> dict:
 
     Mirrors the CLI detect convention: a key_id matching a registry entry
     resolves to that entry (with its secret and gamma); anything else is
-    treated as a raw secret. Raises ValueError when the resolved key carries
-    no secret.
+    treated as a raw secret. The reported key_id of a raw secret is MASKED
+    (``secret:<sha256-prefix>``, see key_registry.mask_secret_key_id) so the
+    secret never leaks into ΔZ results or signed reports — the measurement
+    still uses the real secret (parity: raw-secret workflow keeps working).
+    Raises ValueError when the resolved key carries no secret.
     """
     key = next((k for k in registry.list_keys() if k.get("key_id") == key_arg), None)
     if key is None:
-        key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+        key = {
+            "key_id": mask_secret_key_id(key_arg),
+            "family": "kgw",
+            "secret": key_arg,
+            "gamma": None,
+            "key_source": "raw_secret",
+        }
+    else:
+        key = dict(key)
+        key.setdefault("key_source", "registry")
     if not key.get("secret"):
         raise ValueError(f"key {key_arg} has no secret")
     return key
@@ -181,7 +193,8 @@ def delta_z(text_before: str, text_after: str, key_id_or_secret: str, *,
     Returns::
 
         {
-          "key_id": str,               # resolved key identity
+          "key_id": str,               # resolved key identity (masked for raw secrets)
+          "key_source": str,           # 'registry' | 'raw_secret'
           "z_before": float|None,      # mark strength before (word/BPE level)
           "z_after": float|None,       # mark strength after
           "delta_z": float|None,       # z_before - z_after (None if either unmeasurable)
@@ -222,6 +235,7 @@ def delta_z(text_before: str, text_after: str, key_id_or_secret: str, *,
     )
     return {
         "key_id": key.get("key_id", "unknown"),
+        "key_source": key.get("key_source", "registry"),
         "z_before": z_before,
         "z_after": z_after,
         "delta_z": delta,
