@@ -15,6 +15,10 @@ on:
           - testpypi
           - pypi
 
+permissions:
+  id-token: write   # required for OIDC trusted publishing
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -54,11 +58,12 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Publish to TestPyPI
+      # Trusted Publisher (OIDC) — no API token secret required.
+      # PyPI resolves trust from (owner, repo, workflow, environment).
+      - name: Publish to TestPyPI (OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
   publish-pypi:
     needs: build
@@ -71,7 +76,5 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI (OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
