@@ -141,6 +141,16 @@ def main() -> int:
     bt.add_argument("--intensity", default="standard", choices=["light", "standard", "aggressive"])
     bt.add_argument("--report")
 
+    ks = sub.add_parser("kgw-sample", help="generate synthetic KGW-bias text and detect it (experimental generation-time bias demo)")
+    ks.add_argument("--key", default="demo-sampling-bias-key", help="secret key (default: demo key)")
+    ks.add_argument("--gamma", type=float, default=0.5, help="greenlist fraction (default 0.5)")
+    ks.add_argument("--bias", type=float, default=2.0, help="additive logit bias on greenlist tokens (default 2.0)")
+    ks.add_argument("--n-tokens", type=int, default=200, help="tokens to generate (default 200)")
+    ks.add_argument("--seed", type=int, default=0)
+    ks.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
+    ks.add_argument("--prefix", default="", help="optional prefix text as context")
+    ks.add_argument("--json", action="store_true", help="machine-readable output")
+
     sv = sub.add_parser("serve")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8080)
@@ -438,6 +448,22 @@ def main() -> int:
         if args.report:
             write_json(args.report, report)
         print(rendered)
+        return 0
+
+    if args.cmd == "kgw-sample":
+        from .generation.kgw_sampler import generate_marked_text
+        from .forensics.kgw import detect_kgw
+        gen = generate_marked_text(prefix=args.prefix, vocab=None, key=args.key,
+                                   gamma=args.gamma, bias_strength=args.bias,
+                                   n_tokens=args.n_tokens, seed=args.seed, context=args.context)
+        det = detect_kgw(gen["text"], args.key, args.gamma, context=args.context)
+        if args.json:
+            print(json.dumps({"generated": gen, "detected": det}, ensure_ascii=False, indent=2))
+        else:
+            print(gen["text"])
+            print(f"# green_rate {gen['green_rate']}  z={det['z_score']}  verdict={det['verdict']}  "
+                  f"bias={args.bias} gamma={args.gamma} context={args.context} seed={args.seed}",
+                  file=sys.stderr)
         return 0
 
     if args.cmd == "serve":

@@ -6,7 +6,7 @@
 
 ![Text Watermark Studio 2.0.0 — detect, remove, prove, protect. BPE token level. 100% local, no cloud, zero telemetry, MIT.](docs/tws-infographic.png)
 
-Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias approximation (post-hoc text rewrite — no generation-time logit control), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
+Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias (post-hoc text rewrite + experimental generation-time sampler), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
 
 📖 **Documentation:** [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md) · [Measurement First — Manifest](docs/measurement-first.md)
 
@@ -66,13 +66,15 @@ The forensics layer now includes a real KGW-style statistical detector (`src/ai_
 
 What it detects, honestly: texts generated **with this exact scheme and key**. It is not a universal detector for unknown vendor schemes — key and hash scheme must match. Word-level tokens approximate model tokenizers. Behavioral tests (`tests/test_v113_kgw_detector.py`) include a mini KGW generator that shares the detector's PRF: correct key → Z ≥ 4, wrong key → no signal.
 
+**Generation-time bias (experimental):** `src/ai_watermark_toolkit/generation/kgw_sampler.py` now implements the *real* generation-time half of KGW — an additive greenlist logit bias applied during autoregressive sampling (the step that maps 1:1 onto a `logit_bias` table in llama.cpp / OpenAI-style decoders). It is a deterministic, dependency-free mechanics proof, not a production generator: it samples synthetic tokens from a plain token→logit table and round-trips through the same `detect_kgw` detector. Tests (`tests/test_v134_kgw_sampler.py`) show bias=2.0, γ=0.5 → green_rate ≈ 0.88 (control ≈ 0.5), z ≫ 4 with the right key and context window, no signal for the wrong key or a mismatched window. The post-hoc text rewrite remains the standard embed path; llama.cpp `logit_bias` over a GGUF model is the documented production route (needs a MSVC/CMake build on Windows and is intentionally not a hard dependency).
+
 ## Included families
 
 - Unicode / zero-width — full bidi + zero-width family (ZWSP/ZWNJ/ZWJ, LRE/RLE/LRO/RLO/PDF, LRI/RLI/FSI/PDI, word joiner, BOM, Mongolian VS, deprecated format chars, tag block, variation selectors) **plus an opt-in aggressive mode** for script-specific fillers (Braille blank, Hangul fillers, object replacement) that standard mode deliberately leaves alone
 - Lexical choice
 - Syntactic pattern
 - Format / layout
-- Sampling / logit bias **approximation** (post-hoc text-rewrite KGW Z-score detector for registered keys; no generation-time logit control — measured 2026-08-13: real generator shows no greenlist bias)
+- Sampling / logit bias — post-hoc text-rewrite KGW (standard) **plus an experimental generation-time sampler** (`src/ai_watermark_toolkit/generation/kgw_sampler.py`): a deterministic, dependency-free sampler applies an additive logit bias to greenlist tokens during generation. At γ=0.5, bias=2.0 it reaches green_rate ≈ 0.88 and `detect_kgw` recovers it with z ≫ 4, while the unbiased control stays at ≈ γ and a wrong context window collapses the signal (measured 2026-08-13: the real Ollama generator itself shows no greenlist bias, so post-hoc rewrite remains the standard path)
 - Semantic / structure
 - Localized provenance
 - Training-time / ownership
