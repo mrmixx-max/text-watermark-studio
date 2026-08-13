@@ -1,10 +1,11 @@
 from pathlib import Path
 import py_compile
 
-def test_python_sources_compile():
+def test_python_sources_compile(tmp_path):
     root = Path(__file__).resolve().parents[1]
-    for p in (root / 'src').rglob('*.py'):
-        py_compile.compile(str(p), doraise=True)
+    for i, p in enumerate((root / 'src').rglob('*.py')):
+        py_compile.compile(str(p), doraise=True,
+                           cfile=str(tmp_path / f"v104-{i}.pyc"))
 
 def test_ui_uses_hx_request_headers():
     root = Path(__file__).resolve().parents[1]
