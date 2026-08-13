@@ -33,14 +33,19 @@ def _client_with_registry(tmp_path, monkeypatch):
 def _resolve_routes(app_or_router):
     """Flatten (method, path) pairs from a FastAPI app or router.
 
-    fastapi >=0.137 wraps included routers as _IncludedRouter objects whose
-    routes are nested; older versions expose them flat. This resolves both.
+    fastapi >=0.137 wraps included routers as _IncludedRouter objects; the
+    real router lives on their ``original_router`` attribute. Older versions
+    expose routes flat. This resolves all representations.
     """
     result = set()
     for r in app_or_router.routes:
         if hasattr(r, "methods") and hasattr(r, "path"):
             for m in r.methods:
                 result.add((m, r.path))
+        orig = getattr(r, "original_router", None)
+        if orig is not None and hasattr(orig, "routes"):
+            result |= _resolve_routes(orig)
+            continue
         nested = getattr(r, "router", None)
         if nested is not None and hasattr(nested, "routes"):
             result |= _resolve_routes(nested)
