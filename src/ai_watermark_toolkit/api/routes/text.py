@@ -26,4 +26,4 @@ def dilute(req: TextRequest):
 
 @router.post('/pipeline')
 def pipeline(req: TextRequest):
-    return service.pipeline(req.text, lang=req.lang, intensity=req.intensity, nfkc=req.nfkc, fold_confusables=req.fold_confusables)
+    return service.pipeline(req.text, lang=req.lang, intensity=req.intensity, nfkc=req.nfkc, fold_confusables=req.fold_confusables, rewrite_mode=req.rewrite_mode, aggressive=req.aggressive)

@@ -15,6 +15,6 @@ class TextService:
     def dilute(self, text: str, intensity: str = 'standard') -> dict:
         return dilute_text(text, intensity=intensity).to_dict()
 
-    def pipeline(self, text: str, lang: str = 'auto', intensity: str = 'standard', nfkc: bool = False, fold_confusables: bool = False) -> dict:
-        out, report = run_pipeline(text, lang=lang, intensity=intensity, nfkc=nfkc, fold_confusables=fold_confusables)
+    def pipeline(self, text: str, lang: str = 'auto', intensity: str = 'standard', nfkc: bool = False, fold_confusables: bool = False, rewrite_mode: str | None = None, aggressive: bool = False) -> dict:
+        out, report = run_pipeline(text, lang=lang, intensity=intensity, nfkc=nfkc, fold_confusables=fold_confusables, rewrite_mode=rewrite_mode, aggressive=aggressive)
         return {'text': out, 'report': report}

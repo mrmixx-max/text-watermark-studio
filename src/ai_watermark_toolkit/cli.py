@@ -90,6 +90,8 @@ def main() -> int:
     pl.add_argument("--nfkc", action="store_true")
     pl.add_argument("--fold-confusables", action="store_true")
     pl.add_argument("--intensity", default="standard", choices=["light", "standard", "aggressive"])
+    pl.add_argument("--rewrite-mode", default=None, choices=["clarity", "concise", "plain", "formal", "structural", "backtranslate"], help="optional rewrite phase after dilute")
+    pl.add_argument("--aggressive", action="store_true", help="aggressive unicode scanning")
     pl.add_argument("-o", "--output")
     pl.add_argument("--report")
 
@@ -262,6 +264,8 @@ def main() -> int:
             nfkc=args.nfkc,
             fold_confusables=args.fold_confusables,
             intensity=args.intensity,
+            rewrite_mode=getattr(args, "rewrite_mode", None),
+            aggressive=getattr(args, "aggressive", False),
         )
         if args.output:
             Path(args.output).write_text(out, encoding="utf-8")

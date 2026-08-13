@@ -9,3 +9,5 @@ class TextRequest(BaseModel):
     intensity: str = 'standard'
     nfkc: bool = False
     fold_confusables: bool = False
+    rewrite_mode: str | None = None
+    aggressive: bool = False

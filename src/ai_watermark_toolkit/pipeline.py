@@ -35,15 +35,28 @@ def detect_text(text: str, lang: str = "auto", aggressive: bool = False) -> dict
     }
 
 
-def run_pipeline(text: str, *, lang: str = "auto", nfkc: bool = False, fold_confusables: bool = False, intensity: str = "standard", aggressive: bool = False) -> tuple[str, dict]:
+def run_pipeline(text: str, *, lang: str = "auto", nfkc: bool = False, fold_confusables: bool = False, intensity: str = "standard", aggressive: bool = False, rewrite_mode: str | None = None) -> tuple[str, dict]:
     before = detect_text(text, lang=lang, aggressive=aggressive)
     cleaned = clean_text(text, nfkc=nfkc, fold_confusables=fold_confusables, aggressive=aggressive)
     diluted = dilute_text(cleaned.text, intensity=intensity)
-    after = detect_text(diluted.text, lang=lang, aggressive=aggressive)
+    rewritten = diluted.text
+    rewrite_report = None
+    if rewrite_mode in ('structural', 'backtranslate', 'clarity', 'concise', 'plain', 'formal'):
+        from .rewrite.service import RewriteService
+        svc = RewriteService(llm_backend=False)
+        r = svc.rewrite(diluted.text, mode=rewrite_mode, preserve=True, use_llm=False)
+        rewritten = r['rewritten']
+        rewrite_report = {
+            'mode': rewrite_mode,
+            'similarity_ratio': r['metrics']['similarity_ratio'],
+            'change_log': r['change_log'],
+        }
+    after = detect_text(rewritten, lang=lang, aggressive=aggressive)
     report = {
-        "before": before,
-        "clean": cleaned.to_dict(),
-        "dilute": diluted.to_dict(),
-        "after": after,
+        'before': before,
+        'clean': cleaned.to_dict(),
+        'dilute': diluted.to_dict(),
+        'rewrite': rewrite_report,
+        'after': after,
     }
-    return diluted.text, report
+    return rewritten, report
