@@ -17,17 +17,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev] --quiet
-      - name: Dump routes
+      - name: Isolated v130
+        run: pytest tests/test_v130_api_security.py -q --timeout=120 || true
+      - name: Route count after isolated run
         run: |
           python - <<'EOF'
-          import ai_watermark_toolkit.api.fastapi_app as fapp
-          app = fapp.app
-          print("AFTER_IMPORT", len(app.routes))
-          print("TEXT_ROUTER", len(fapp.text_router.routes))
-          print("HAS_ATTR_TEXT_ROUTER", hasattr(fapp, "text_router"))
-          # try including manually right now
-          app.include_router(fapp.text_router)
-          print("AFTER_MANUAL_INCLUDE", len(app.routes))
-          for r in app.routes:
-              print("R", getattr(r, "path", "?"))
+          from ai_watermark_toolkit.api.fastapi_app import app
+          print("ROUTES_AFTER_ISOLATED", len(app.routes))
           EOF
