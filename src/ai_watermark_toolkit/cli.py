@@ -13,6 +13,30 @@ from .transform.dilute import dilute_text
 from .batch import process_batch
 
 
+def _resolve_key_arg(args) -> str | None:
+    """Effective key argument: --key-file content wins over --key.
+
+    --key-file lets a caller pass a raw secret without it landing in shell
+    history. The file content is stripped of surrounding whitespace/newlines.
+    """
+    key_file = getattr(args, "key_file", None)
+    if key_file:
+        return Path(key_file).read_text(encoding="utf-8").strip()
+    return getattr(args, "key", None)
+
+
+def _resolve_key(registry, key_arg: str) -> tuple[dict, bool]:
+    """Resolve a --key argument (key_id OR raw secret) to (key_dict, from_registry).
+
+    key_id -> matching registry entry (with its secret); anything else is
+    treated as a raw secret (detect-style), so --key accepts both forms.
+    """
+    key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
+    if key is not None:
+        return key, True
+    return {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}, False
+
+
 def _read(args) -> str:
     if args.stdin:
         return read_text(stdin_text=sys.stdin.read()).text
@@ -32,6 +56,7 @@ def main() -> int:
     d.add_argument("--aggressive", action="store_true", help="also flag script fillers (Braille blank, Hangul, ...)")
     d.add_argument("-o", "--output")
     d.add_argument("--key", default=None, help="key_id / secret for the keyed KGW test (enables real Z-score detection)")
+    d.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
     d.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
     d.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
 
@@ -55,7 +80,8 @@ def main() -> int:
     em = sub.add_parser("embed")
     em.add_argument("input", nargs="?")
     em.add_argument("--stdin", action="store_true")
-    em.add_argument("--key", required=True, help="key_id from data/key_registry.json (must carry a secret)")
+    em.add_argument("--key", help="key_id from data/key_registry.json (must carry a secret) or a raw secret")
+    em.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
     em.add_argument("--gamma", type=float, default=None)
     em.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for greenlist marking (default word)")
     em.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
@@ -83,7 +109,8 @@ def main() -> int:
     rp = sub.add_parser("report")
     rp.add_argument("input", nargs="?")
     rp.add_argument("--stdin", action="store_true")
-    rp.add_argument("--key", required=True, help="key_id / secret for the KGW test")
+    rp.add_argument("--key", help="key_id / secret for the KGW test")
+    rp.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
     rp.add_argument("--lang", default="en", choices=["en", "de"])
     rp.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
     rp.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
@@ -370,14 +397,30 @@ def main() -> int:
         from .forensics.report import build_report, render_pdf
         from .sanitize_unicode import analyze as _uni_analyze
         from .pipeline import detect_text as _detect_text
+        from .forensics.key_registry import KeyRegistry
         text = _read(args)
         uni = _uni_analyze(text)
         # marker hits from the detect pipeline (unicode excluded — those are uni above)
         d = _detect_text(text, lang=args.lang)
         marker_hits = d.get("layers", {}).get("lexical", {}).get("score", 0) if isinstance(d, dict) else 0
-        html_out = build_report(text, args.key, lang=args.lang,
+        # Resolve key_id -> secret (or accept a raw secret), like detect does.
+        # The secret itself is never shown in the report; key_id is the label.
+        effective_key = _resolve_key_arg(args)
+        key_secret = effective_key
+        key_label = effective_key
+        if effective_key:
+            try:
+                reg = KeyRegistry()
+                resolved, from_registry = _resolve_key(reg, effective_key)
+                if from_registry:
+                    key_secret = resolved.get("secret") or effective_key
+                    key_label = resolved.get("key_id", effective_key)
+            except Exception:
+                pass  # registry unavailable -> keep the raw argument
+        html_out = build_report(text, key_secret, lang=args.lang,
                                 unicode_findings=[asdict(x) for x in uni],
                                 marker_hits=marker_hits,
+                                key_label=key_label,
                                 level=getattr(args, "level", "word"),
                                 context=getattr(args, "context", 1))
         out_path = args.output or f"tws-report-{int(_time.time())}.html"

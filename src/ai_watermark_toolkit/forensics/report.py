@@ -24,8 +24,15 @@ def build_report(text: str, key: str, *, lang: str = "en",
                  unicode_findings: list | None = None,
                  marker_hits: int = 0,
                  include_text: bool = True,
+                 key_label: str | None = None,
                  level: str = "word", context: int = 1) -> str:
-    """Build a self-contained HTML findings report for one detect run."""
+    """Build a self-contained HTML findings report for one detect run.
+
+    ``key`` is the secret used for KGW detection (never shown in the report).
+    ``key_label`` is the display name (e.g. the registry key_id); when omitted
+    it falls back to ``key`` for backward compatibility with direct callers.
+    """
+    label = key_label if key_label is not None else key
     r = detect_kgw(text, key, level=level, context=context)
     verdict = r["verdict"]
     z = r["z_score"]
@@ -63,7 +70,7 @@ def build_report(text: str, key: str, *, lang: str = "en",
 
     return f"""<!DOCTYPE html>
 <html lang="{lang}">
-<head><meta charset="utf-8"><title>Forensik-Befund — {html.escape(key)}</title>
+<head><meta charset="utf-8"><title>Forensik-Befund — {html.escape(label)}</title>
 <style>
 body {{ font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color:#1a1a2e;
        margin:24px auto; max-width:800px; padding:0 16px; font-size:13px; line-height:1.5; }}
@@ -81,7 +88,7 @@ pre {{ background:#f4f6f8; padding:12px; border-radius:4px; white-space:pre-wrap
 </style></head>
 <body>
 <h1>Forensik-Befund</h1>
-<div class="meta">Erstellt {now} · Schlüssel: <code>{html.escape(key)}</code></div>
+<div class="meta">Erstellt {now} · Schlüssel: <code>{html.escape(label)}</code></div>
 <div class="badge">{badge[0]}</div>
 <h2>KGW-Statistik</h2>
 <table>

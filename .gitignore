@@ -34,3 +34,4 @@ Thumbs.db
 .vscode/
 attack_matrix.json
 synthid_sweep.json
+data/key_registry.json

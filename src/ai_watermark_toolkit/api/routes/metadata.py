@@ -3,8 +3,9 @@ from __future__ import annotations
 import base64
 import tempfile
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from ..middleware.auth import require_api_key
 from ...forensics.key_registry import KeyRegistry
 from ...metadata.provenance import detect_provenance, embed_provenance
 from ...metadata.service import SUPPORTED, clean, inspect
@@ -48,7 +49,8 @@ def clean_file(file: UploadFile = File(...)):
 
 
 @router.post('/embed', summary='Embed your own signed provenance mark (HMAC, keyed) into a file')
-def embed_file(key_id: str, file: UploadFile = File(...)):
+def embed_file(key_id: str, file: UploadFile = File(...),
+               _auth: None = Depends(require_api_key)):
     if not file.filename:
         raise HTTPException(status_code=400, detail='filename_required')
     key = next((k for k in keys.list_keys() if k.get('key_id') == key_id), None)
@@ -65,7 +67,8 @@ def embed_file(key_id: str, file: UploadFile = File(...)):
 
 
 @router.post('/detect', summary='Detect and verify studio provenance marks in a file')
-def detect_file(file: UploadFile = File(...)):
+def detect_file(file: UploadFile = File(...),
+                _auth: None = Depends(require_api_key)):
     if not file.filename:
         raise HTTPException(status_code=400, detail='filename_required')
     data = file.file.read()

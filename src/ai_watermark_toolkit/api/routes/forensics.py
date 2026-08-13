@@ -43,7 +43,7 @@ class EmbedRequest(BaseModel):
 
 
 @router.get('/keys', summary='List registered forensic keys')
-def list_keys():
+def list_keys(_auth: None = Depends(require_api_key)):
     # strip the secret field — a registry key's secret must never be
     # readable through the API (audit 2026-08-13)
     public = [{k: v for k, v in item.items() if k != 'secret'}
@@ -60,7 +60,7 @@ def add_key(req: KeyCreateRequest,
 
 
 @router.post('/detect', summary='Run ensemble multi-key forensic detection')
-def detect(req: DetectRequest):
+def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
     registry = keys.list_keys()
     result = ensemble_detect(req.text, registry, window=req.window,
                              level=req.level, context=req.context)
@@ -89,7 +89,7 @@ def detect(req: DetectRequest):
 
 
 @router.post('/embed', summary='Embed a KGW watermark into text with a registered key')
-def embed(req: EmbedRequest):
+def embed(req: EmbedRequest, _auth: None = Depends(require_api_key)):
     key = next((k for k in keys.list_keys() if k.get('key_id') == req.key_id), None)
     if key is None:
         raise HTTPException(status_code=404, detail=f'key_not_found: {req.key_id}')
