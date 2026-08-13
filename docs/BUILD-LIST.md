@@ -36,15 +36,18 @@
 | C4 | **ΔZ-Check als Service** (web, IMATAG-Muster, per-Authentifizierung) | M | Cleaner-Moat, Verifikation | 3 | C3; vor Anthropic-Detektor (Q4 26/Q1 27) |
 | C5 | **KI-Erklärungs-Report-Modul** (kostenlos für 5-10 Pilot-Prüfungsämter im Ouriginal-Migrationsfenster) | M | Institutions-Play | 3 | C3 |
 
-## Block D — Forschung → Bau (Literatur Runde 1+2, wartet auf `deleg_ea4bc6c9`)
+## Block D — Forschung → Bau (Literatur Runde 1+2 ABGESCHLOSSEN, Skizzen geliefert)
 
-| # | Kandidat | Quelle | Aufwand | Priorität |
-|---|---|---|---|---|
-| D1 | Signature Filtering (Pre-Filter vor Z-Count; 8-31% → 78-99%) | arXiv 2606.18430 | S-M | 1 (nach Skizze) |
-| D2 | ML-DSA-Befund-Signatur (FIPS 204, `cryptography` mldsa live verifiziert) | FIPS 204 | S | 1 (Teil von C3) |
-| D3 | E-Value/Anytime-Valid-Detektion (E-Prozess für KGW Red/Green + Bonferroni-Integration) | 2602.17608, 2607.21958 | M | 2 |
-| D4 | Forensic Readiness Score (12 Kriterien/3 Gates auf Report mappen) | 2607.16010 | M | 2 |
-| D5 | Threat-Model.md (SeedHijack-PRNG, DHMark, C2PA-Lücke) | 2605.28632, 2608.03093, 2604.24890 | S | 3 |
+**Verifizierte Entwarnung:** Greenlist-Hash-Bias-Prüfung (Literatur-Fund `byte % 100` verzerrt 8,6 %) → TWS nutzt `int(h[:8],16)/0xFFFFFFFF` — gemessen 0,499985 bei 200K Samples, **sauber**. Kein Fix nötig.
+
+| # | Kandidat | Quelle | Aufwand | Priorität | Umsetzungs-Stand (Runde 2) |
+|---|---|---|---|---|---|
+| D1 | E-Prozess-Detektion (E-Wert statt/nach Z-Score; Early-Stop, Bonferroni via `E_max ≥ K/α`) | 2602.17608, 2607.21958 | S-M | **1** | ✅ Formel + Code-Skizze (20 Zeilen), Demo: schwaches Signal z=0.01 vs e=0.10; δ fix ok (Validität δ-unabhängig) |
+| D2 | ML-DSA-Befund-Signatur (FIPS 204) | FIPS 204 | S | **1** | ✅ Komplette API verifiziert + Größen/Perf gemessen (MLDSA-44: 2420 B sig, ~1.7 ms); 5 Fallstricke (verify-Reihenfolge, PrivKey=Seed, non-deterministisch, sign_mu 64 B, context b"") |
+| D3 | Signature Filtering — **ehrlich eingeordnet: primär FPR-Kontrolle** (98%→0% bei dominantem Token verifiziert), 78-99%-TPR-Claim braucht MILP-Lernset (nicht naiv erreichbar) | 2606.18430v2 | S-M | 2 | ✅ Heuristik-Skizze (Frequenz/χ²-Filter); kein öffentlicher Code gefunden |
+| D4 | FRS-Report-Gates (G1 FPR/FNR dokumentiert+rechenbar, G2 Paradox-Rate <20%, G3 Cross-Session) | 2607.16010 | M | 2 | ✅ Pflicht-Feld-Liste pro Gate; **Report ehrlich "NICHT FORENSIC READY" kennzeichnen solange G1-G3 unbelegt** |
+| D5 | Threat-Model.md (SeedHijack-PRNG, DHMark, C2PA-Lücke) | 2605.28632, 2608.03093, 2604.24890 | S | 3 | Skizze aus Runde 1 |
+| D6 | CORE-BREW-LLR-Kalibrierung (δ automatisch aus Hit-Rate p*), Power-Calibrated (γ/δ-Wahl), Forensics-Info-Profile (Payload-Stufe) | 2606.24163, 2607.05694, 2607.13003 | M | 3 | Neu aus Runde 2, nach D1-D3 |
 
 ## Kill-Kandidaten (bewusst nicht bauen)
 
