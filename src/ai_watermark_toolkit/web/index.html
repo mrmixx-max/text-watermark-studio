@@ -236,41 +236,39 @@ This section continues the document and adds a second topic. Overall, the goal i
 <div class="flex items-center justify-between gap-4">
 <div>
 <h2 class="text-xl font-semibold">LLM text rewriting</h2>
-<p class="mt-1 text-sm text-[var(--color-text-muted)]">Rewrite text through Ollama locally or through hosted KI APIs such as OpenAI and Anthropic.</p>
+<p class="mt-1 text-sm text-[var(--color-text-muted)]">Rewrite text locally (rule-based) or through the optional LLM backend (Ollama / hosted APIs).</p>
 </div>
 </div>
 <form class="mt-4 rounded-2xl border border-white/8 bg-white/3 p-4"
-hx-post="/api/llm/rewrite"
+hx-post="/api/rewrite/run"
 hx-target="#llm-output"
 hx-swap="innerHTML"
 >
-<div class="grid gap-4 xl:grid-cols-4">
+<div class="grid gap-4 xl:grid-cols-3">
 <div>
-<label class="label" for="llm_provider">Provider</label>
-<select id="llm_provider" name="provider" class="field">
-<option value="ollama">ollama</option>
-<option value="openai">openai</option>
-<option value="anthropic">anthropic</option>
+<label class="label" for="llm_mode">Mode</label>
+<select id="llm_mode" name="mode" class="field">
+<option value="clarity">clarity</option>
+<option value="structural">structural</option>
+<option value="backtranslate">backtranslate</option>
+<option value="concise">concise</option>
+<option value="plain">plain</option>
+<option value="formal">formal</option>
 </select>
 </div>
 <div>
-<label class="label" for="llm_model">Model</label>
-<input id="llm_model" name="model" class="field" value="">
-</div>
-<div>
-<label class="label" for="llm_style">Style</label>
-<input id="llm_style" name="style" class="field" value="clean, concise, professional">
-</div>
-<div>
-<label class="label" for="llm_instruction">Instruction</label>
-<input id="llm_instruction" name="instruction" class="field" value="Preserve facts and improve clarity.">
+<label class="label" for="llm_preserve">Preserve facts</label>
+<label class="flex items-center gap-2 text-sm">
+<input type="checkbox" id="llm_preserve" name="preserve" checked class="field w-auto">
+<span class="text-[var(--color-text-muted)]">Keep facts intact while rewriting</span>
+</label>
 </div>
 </div>
 <label class="label mt-4" for="llm_text">Source text</label>
 <textarea id="llm_text" name="text" class="field min-h-48">This draft text should be rewritten with the same meaning but better structure, improved clarity, and more consistent tone for downstream use.</textarea>
 <div class="mt-4 flex gap-3">
 <button class="btn-primary" type="submit">Rewrite text</button>
-<button class="btn-secondary" type="button" hx-get="/api/llm/providers" hx-target="#llm-output" hx-swap="innerHTML">Show providers</button>
+<button class="btn-secondary" type="button" hx-get="/api/llm/status" hx-target="#llm-output" hx-swap="innerHTML">Show LLM config</button>
 </div>
 </form>
 <div id="llm-output" class="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">LLM rewriting output will appear here.</div>
@@ -308,7 +306,7 @@ hx-swap="innerHTML"
 <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-semibold">Automatic prompt optimization</h2><p class="mt-1 text-sm text-[var(--color-text-muted)]">Generate candidate rewrites, score them against a golden set and promote the winner back into the prompt registry.</p></div></div>
 <form class="mt-4 rounded-2xl border border-white/8 bg-white/3 p-4" hx-post="/api/optimization/optimize" hx-target="#opt-output" hx-swap="innerHTML">
 <label class="label" for="opt_template_id">Template ID</label><input id="opt_template_id" name="template_id" class="field" value="rewrite.clean">
-<div class="mt-4 flex gap-3"><button class="btn-primary" type="submit">Optimize</button><button class="btn-secondary" type="button" hx-get="/api/optimization/baselines?template_id=rewrite.clean" hx-target="#opt-output" hx-swap="innerHTML">Show baseline</button><button class="btn-secondary" type="button" hx-post="/api/optimization/promote" hx-vals='{"template_id":"rewrite.clean"}' hx-target="#opt-output" hx-swap="innerHTML">Promote winner</button></div>
+<div class="mt-4 flex gap-3"><button class="btn-primary" type="submit">Optimize</button><button class="btn-secondary" type="button" hx-get="/api/optimization/evals" hx-target="#opt-output" hx-swap="innerHTML">Show eval set</button><button class="btn-secondary" type="button" hx-post="/api/optimization/promote" hx-vals='{"template_id":"rewrite.clean"}' hx-target="#opt-output" hx-swap="innerHTML">Promote winner</button></div>
 </form>
 <div id="opt-output" class="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Optimizer results will appear here.</div>
 </section> <section class="panel p-4 md:p-5">
@@ -409,7 +407,7 @@ hx-swap="innerHTML"
 </section> <section class="panel p-4 md:p-5">
 <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-semibold">Local LLM: EuroLLM GGUF</h2><p class="mt-1 text-sm text-[var(--color-text-muted)]">Direct configuration for <code>mradermacher/EuroLLM-9B-Instruct-2512-GGUF</code> via a local OpenAI-compatible llama.cpp server.</p></div></div>
 <div class="mt-4 grid gap-4 xl:grid-cols-2">
-<form class="rounded-2xl border border-white/8 bg-white/3 p-4" hx-post="/api/llm/configure" hx-target="#llm-output" hx-swap="innerHTML">
+<form class="rounded-2xl border border-white/8 bg-white/3 p-4" hx-post="/api/llm/configure" hx-target="#llm-status-output" hx-swap="innerHTML">
 <label class="label">Server base URL</label><input class="field" name="server_base_url" value="http://127.0.0.1:8080/v1">
 <label class="label mt-4">Model variant</label><select class="field" name="model_variant"><option value="Q4_K_M">Q4_K_M</option><option value="Q5_K_S">Q5_K_S</option><option value="Q2_K">Q2_K</option></select>
 <label class="mt-4 rounded-2xl border border-white/10 bg-white/3 p-4 text-sm text-[var(--color-text-muted)] flex items-center gap-3"><input type="checkbox" name="installed"> Mark as installed</label>
@@ -418,10 +416,10 @@ hx-swap="innerHTML"
 <div class="rounded-2xl border border-white/8 bg-white/3 p-4">
 <p class="text-sm text-[var(--color-text-muted)]">Suggested start command:</p>
 <pre class="mt-3 overflow-x-auto rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-emerald-200">llama-server -hf mradermacher/EuroLLM-9B-Instruct-2512-GGUF:Q4_K_M --host 0.0.0.0 --port 8080</pre>
-<button class="btn-secondary mt-4 w-full" type="button" hx-get="/api/llm/status" hx-target="#llm-output" hx-swap="innerHTML">Load local LLM status</button>
+<button class="btn-secondary mt-4 w-full" type="button" hx-get="/api/llm/status" hx-target="#llm-status-output" hx-swap="innerHTML">Load local LLM status</button>
 </div>
 </div>
-<div id="llm-output" class="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Local LLM status will appear here.</div>
+<div id="llm-status-output" class="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Local LLM status will appear here.</div>
 </section> <section class="panel p-4 md:p-5">
 <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-semibold">Automatic model fallback routing</h2><p class="mt-1 text-sm text-[var(--color-text-muted)]">Select a primary model, apply deterministic fallback chains, and route requests based on task, privacy, and context needs.</p></div></div>
 <div class="mt-4 grid gap-4 xl:grid-cols-2">

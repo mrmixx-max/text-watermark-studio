@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -215,12 +216,10 @@ class StudioTUI(App):
         registrierter KGW-Key).
         """
         import re as _re
-        path = None
-        for tok in raw.split():
-            if tok.startswith("--"):
-                continue
-            path = tok
-            break
+        # Path = everything up to the first flag token (trimmed), so paths
+        # containing spaces survive; quoted flag values are handled below.
+        m_path = _re.match(r"^(.*?)(?=\s+--|$)", raw, _re.S)
+        path = m_path.group(1).strip() if m_path else raw.strip()
         flags = {
             "path": path or raw.strip(),
             "key": None,
@@ -230,18 +229,19 @@ class StudioTUI(App):
             "delta_z": None,
             "algorithm": "mldsa-44",
         }
-        m = _re.search(r"--key\s+(\S+)", raw)
-        if m:
-            flags["key"] = m.group(1)
-        m = _re.search(r"--after\s+(\S+)", raw)
-        if m:
-            flags["after"] = m.group(1)
-        m = _re.search(r"--delta-z\s+(\S+)", raw)
-        if m:
-            flags["delta_z"] = m.group(1)
-        m = _re.search(r"--algorithm\s+(\S+)", raw)
-        if m:
-            flags["algorithm"] = m.group(1)
+
+        def _val(name: str) -> str | None:
+            # --name "quoted value" | --name 'quoted value' | --name value
+            m = _re.search(
+                rf"--{name}\s+(?:\"([^\"]+)\"|'([^']+)'|(\S+))", raw)
+            if not m:
+                return None
+            return m.group(1) or m.group(2) or m.group(3)
+
+        flags["key"] = _val("key")
+        flags["after"] = _val("after")
+        flags["delta_z"] = _val("delta-z")
+        flags["algorithm"] = _val("algorithm") or "mldsa-44"
         flags["e_value"] = "--e-value" in raw.split()
         flags["signature_filter"] = "--signature-filter" in raw.split()
         return flags
@@ -283,8 +283,12 @@ class StudioTUI(App):
                               f"({sf.get('before_n')} -> {sf.get('after_n')} tokens)")
             if flags["e_value"]:
                 from ..forensics.e_value import e_detect
-                ev = e_detect(text, best.get("key_id") or keys[0]["secret"],
-                              gamma=keys[0].get("gamma") or DEFAULT_GAMMA,
+                best_id = best.get("key_id")
+                secret = next((k["secret"] for k in keys
+                               if k.get("key_id") == best_id), keys[0]["secret"])
+                gamma = next((k.get("gamma") for k in keys
+                              if k.get("key_id") == best_id), None) or DEFAULT_GAMMA
+                ev = e_detect(text, secret, gamma=gamma,
                               level=level, context=context)
                 self._out(f"[cyan]E-Wert:[/] e={ev.get('e_value'):.3g} "
                           f"detected={ev.get('detected')}")
@@ -368,8 +372,8 @@ class StudioTUI(App):
                 text, after_text, key_id, level=level, context=context,
                 registry=KeyRegistry('data/key_registry.json'))
         ctx = None
-        m = _re.search(r"--institutional-rule\s+(.+?)(?:\s+--|\s*$)", flags["path"])
-        m2 = _re.search(r"--origin-history\s+(.+?)(?:\s+--|\s*$)", flags["path"])
+        m = _re.search(r"--institutional-rule\s+(.+?)(?:\s+--|\s*$)", p)
+        m2 = _re.search(r"--origin-history\s+(.+?)(?:\s+--|\s*$)", p)
         if m or m2:
             ctx = {}
             if m:
@@ -668,7 +672,11 @@ class StudioTUI(App):
         if not script.exists():
             self._out("[red]benchmarks/attack_matrix.py not found (repo install).[/]")
             return
-        r = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, timeout=300)
+        try:
+            r = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, timeout=300)
+        except subprocess.TimeoutExpired:
+            self._out("[red]Attack matrix timed out after 300s.[/]")
+            return
         self._out(r.stdout[-3000:] or r.stderr[-2000:])
 
     def action_synthid_sweep(self) -> None:
@@ -679,7 +687,11 @@ class StudioTUI(App):
         if not script.exists():
             self._out("[red]benchmarks/synthid_sweep.py not found (repo install).[/]")
             return
-        r = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, timeout=300)
+        try:
+            r = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, timeout=300)
+        except subprocess.TimeoutExpired:
+            self._out("[red]SynthID sweep timed out after 300s.[/]")
+            return
         self._out(r.stdout[-3000:] or r.stderr[-2000:])
 
     def action_update(self) -> None:
