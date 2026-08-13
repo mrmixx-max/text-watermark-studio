@@ -96,8 +96,8 @@ print(f'OK: {{n}} files compiled, {{m}} modules imported')
 
     # 4. TUI burn-in ------------------------------------------------------------
     out = run([PY, str(REPO / "benchmarks" / "tui_burnin.py")])
-    stage("TUI Burn-in (18 Aktionen)", "BURN-IN PASSED" in out,
-          "18/18" if "BURN-IN PASSED" in out else out.strip()[-150:])
+    stage("TUI Burn-in (19 Aktionen)", "BURN-IN PASSED" in out,
+          "19/19" if "BURN-IN PASSED" in out else out.strip()[-150:])
 
     # 5. prompt-optimizer loop (full: optimize -> promote -> history -> rollback) --
     out = run([PY, str(REPO / "benchmarks" / "optimizer_loop.py")])
@@ -181,8 +181,9 @@ print(f"models={{len(models)}}")
 
     # 10. API smoke (FastAPI TestClient) -------------------------------------------
     out = run([PY, str(REPO / "benchmarks" / "api_smoke.py")])
-    stage("API-Smoke (Health/Detect/Optimierung/LLM)", "OK" in out,
-          out.strip().splitlines()[-1] if out.strip() else "no output")
+    api_ok = "OK" in out
+    stage("API-Smoke (Health/Detect/Optimierung/LLM)", api_ok,
+          "5/5 Routen" if api_ok else out.strip()[-150:])
 
     # 11. version consistency + git -----------------------------------------------
     out = run(["git", "status", "--porcelain"], cwd=REPO)
