@@ -407,13 +407,38 @@ ai-wm tui                                  # Loslegen</pre>
   </div>
   <div class="section-title">Messbarkeit statt Magie — das Gegenmodell</div>
   <div class="box">
-    <h3>Während „Cleaner" Claims verkaufen, verkauft das Studio Messung</h3>
+    <h3>USP 1 · Keyed-Verifikation — „Der richtige Schlüssel schreit, der falsche schweigt"</h3>
+    <p><b>Kein Prozentsatz. Ein Z-Score mit Kontrollgruppe, den jeder nachrechnen kann — das ist der Unterschied zwischen Behauptung und Beweis.</b></p>
     <ul>
-      <li><b>Keyed-Verifikation statt Behauptung:</b> right-key z=15,9 · wrong-key z=−0,2 · Kontrolle z=0,6 — der richtige Schlüssel schreit, der falsche schweigt.</li>
-      <li><b>Ehrlich vermessene Grenzen:</b> Stil-Rewrites halten (ΔZ≈−2), Word-Shuffle kollabiert (ΔZ≈−12,8) — dieselben Grenzen, die auch Plattform-Anbieter dokumentieren.</li>
-      <li><b>Redlist-Erkennung &amp; Kontextfenster:</b> Vorzeichen-Semantik (z&lt;0 = Redlist) und c∈{1,2,4,8} — testbar, nicht behauptet.</li>
+      <li>Right-key <b>z=15,9</b> · wrong-key <b>z=−0,2</b> · unmarkierte Kontrolle <b>z=0,6</b> (echtes Modell, 304 Tokens)</li>
+      <li>Jede Detektion kommt mit Kontrollgruppen, p-Wert, Green-Rate und reproduzierbarem Befehl</li>
+      <li>Dagegen: GPTZero/Originality liefern eine Cloud-„99 %"-Zahl, die niemand nachbauen kann</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h3>USP 2 · 100 % lokal, offline, deterministisch — „Deine Texte verlassen nie den Rechner"</h3>
+    <ul>
+      <li>Null Telemetrie, kein Cloud-Zwang, kein Datenabfluss — Datenschutz/GDPR als eingebaute Eigenschaft, nicht als Add-on</li>
+      <li>Deterministischer Kern (stdlib-only, 0 €, MIT): Z-Score-Test, HMAC-Provenance und MinHash laufen lokal</li>
+      <li>Dagegen: SaaS-Detektoren verlangen Cloud-Upload deiner Dokumente</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h3>USP 3 · Dual-Use — „Ein Werkzeug. Drei Richtungen: erkennen, markieren, beweisen"</h3>
+    <p><b>Detektion, Markierung und signierte Provenance — in einer CLI, einer API, einer TUI.</b></p>
+    <ul>
+      <li>Statistische Detektion mit eigenem Schlüssel + aktive Markierung (post-hoc &amp; experimentell generation-time) + signierte Datei-Provenance (HMAC-SHA256, 8 Formate)</li>
+      <li>20 CLI-Subcommands · 20 TUI-Aktionen · FastAPI · 53 MCP-Tools · harter Exit-Code-Contract 0/1/2</li>
+      <li>Dagegen: SynthID nur Detektion (plattformgebunden), GPTZero/Originality nur Detektion ohne eigene Schlüssel</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>Die ehrlichen Grenzen — selbst ein Feature</h3>
+    <ul>
+      <li>Ehrlich vermessene Robustheit: Stil-Rewrites halten (ΔZ≈−2), Word-Shuffle kollabiert (ΔZ≈−12,8) — dieselben Grenzen, die Plattform-Anbieter dokumentieren.</li>
+      <li>Redlist-Vorzeichen (z&lt;0) und Kontextfenster c∈{1,2,4,8} — testbar, nicht behauptet.</li>
       <li><b>258 automatisierte Tests</b>, 12-Stufen-Burn-in, Security-Audits mit Regressionstests — das Repo jagt seine eigenen Fehler.</li>
-      <li><b>Kein Detektor, kein Urteil:</b> Jeder Befund kommt mit Messung, Kontrollgruppe und reproduzierbarem Befehl.</li>
+      <li>Kein Detektor, kein Urteil: Jeder Befund kommt mit Messung, Kontrollgruppe und reproduzierbarem Befehl.</li>
     </ul>
     <p class="small" style="margin-top: 4pt;">Ein Instrument, das nicht lügt — in einem Markt, der gerade entdeckt, wie viel Magie-Sprech es gibt.</p>
   </div>

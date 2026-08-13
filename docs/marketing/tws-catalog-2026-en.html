@@ -407,13 +407,38 @@ ai-wm tui                                       # start</pre>
   </div>
   <div class="section-title">Measurement over Magic — the counter-model</div>
   <div class="box">
-    <h3>While "cleaners" sell claims, the Studio sells measurement</h3>
+    <h3>USP 1 · Keyed verification — "The right key shouts, the wrong one stays silent"</h3>
+    <p><b>No percentage. A Z-score with a control group anyone can reproduce — that is the difference between a claim and proof.</b></p>
     <ul>
-      <li><b>Keyed verification, not assertion:</b> right-key z=15.9 · wrong-key z=−0.2 · control z=0.6 — the right key shouts, the wrong one stays silent.</li>
-      <li><b>Honestly measured limits:</b> style rewrites hold (ΔZ≈−2), word shuffle collapses (ΔZ≈−12.8) — the same limits platform vendors document.</li>
-      <li><b>Redlist detection &amp; context windows:</b> sign semantics (z&lt;0 = redlist) and c∈{1,2,4,8} — tested, not claimed.</li>
+      <li>Right-key <b>z=15.9</b> · wrong-key <b>z=−0.2</b> · unmarked control <b>z=0.6</b> (real model, 304 tokens)</li>
+      <li>Every detection ships with control groups, p-value, green-rate and a reproducible command</li>
+      <li>In contrast: GPTZero/Originality return a cloud "99%" number nobody can rebuild</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h3>USP 2 · 100% local, offline, deterministic — "Your texts never leave the machine"</h3>
+    <ul>
+      <li>Zero telemetry, no cloud requirement, no data egress — privacy/GDPR as a built-in property, not an add-on</li>
+      <li>Deterministic core (stdlib-only, $0, MIT): Z-score test, HMAC provenance and MinHash all run locally</li>
+      <li>In contrast: SaaS detectors require uploading your documents</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h3>USP 3 · Dual-use — "One tool. Three directions: detect, mark, prove"</h3>
+    <p><b>Detection, marking and signed provenance — in one CLI, one API, one TUI.</b></p>
+    <ul>
+      <li>Statistical detection with your own key + active marking (post-hoc &amp; experimental generation-time) + signed file provenance (HMAC-SHA256, 8 formats)</li>
+      <li>20 CLI subcommands · 20 TUI actions · FastAPI · 53 MCP tools · strict exit-code contract 0/1/2</li>
+      <li>In contrast: SynthID is detection only (platform-bound), GPTZero/Originality are detection only without own keys</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest limits — themselves a feature</h3>
+    <ul>
+      <li>Honestly measured robustness: style rewrites hold (ΔZ≈−2), word shuffle collapses (ΔZ≈−12.8) — the same limits platform vendors document.</li>
+      <li>Redlist sign semantics (z&lt;0) and context windows c∈{1,2,4,8} — tested, not claimed.</li>
       <li><b>258 automated tests</b>, 12-stage burn-in, security audits with regression tests — the repo hunts its own bugs.</li>
-      <li><b>No detector, no verdict:</b> every finding ships with measurement, control group and a reproducible command.</li>
+      <li>No detector, no verdict: every finding ships with measurement, control group and a reproducible command.</li>
     </ul>
     <p class="small" style="margin-top: 4pt;">An instrument that does not lie — in a market that just discovered how much magic-speak is out there.</p>
   </div>
