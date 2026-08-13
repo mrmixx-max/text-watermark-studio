@@ -38,6 +38,7 @@ MENU: list[tuple[str, str]] = [
     ("15 SynthID sweep (benchmark)", "synthid-sweep"),
     ("16 System state", "splash"),
     ("17 Update studio (check + upgrade)", "update"),
+    ("18 Install local model (Ollama pull)", "llm-install"),
 ]
 
 SHORT_HELP: dict[str, str] = {
@@ -58,6 +59,7 @@ SHORT_HELP: dict[str, str] = {
     "synthid-sweep": "run the gamma×paraphrase sweep",
     "splash": "studio banner + system state",
     "update": "check PyPI for a newer release, then upgrade",
+    "llm-install": "pull a local model via the Ollama API (name in Path field)",
 }
 
 
@@ -374,6 +376,28 @@ class StudioTUI(App):
         else:
             self._out(f"[red]Upgrade failed (exit {proc.returncode}).[/]")
             self._out(proc.stderr[-1500:])
+
+    def action_llm_install(self) -> None:
+        """Pull a model via the Ollama API; model name comes from the Path
+        field (e.g. `hf.co/bartowski/EuroLLM-9B-Instruct-GGUF:Q4_K_M`)."""
+        from ..llm.service import LocalLLMService
+        model = self._read_path()
+        if not model:
+            self._out("[yellow]No model name — type one into the Path field "
+                      "(e.g. llama3.2:3b).[/]")
+            return
+        svc = LocalLLMService()
+
+        def progress(line: str) -> None:
+            self._out(f"[cyan]{line}[/]")
+
+        self._out(f"Pulling {model} via Ollama API ...")
+        try:
+            result = svc.install_model(model, progress=progress)
+        except RuntimeError as e:
+            self._out(f"[red]{e}[/]")
+            return
+        self._out(f"[green]Installed and selected:[/] {result['model']}")
 
     def action_splash(self) -> None:
         from ..ui.banner import render_banner

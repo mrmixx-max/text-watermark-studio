@@ -416,6 +416,20 @@ export LOCAL_LLM_BASE_URL=http://127.0.0.1:11434/v1
 export LOCAL_LLM_MODEL=eurollm-9b
 ```
 
+**Jedes lokale Modell, nicht nur EuroLLM** — das Studio verwaltet das
+Ollama-Backend direkt:
+
+```bash
+ai-wm llm list                  # alle Modelle, die das lokale Ollama kennt
+ai-wm llm install llama3.2:3b   # Pull über die Ollama-API + Auswahl
+ai-wm llm use qwen-coder        # auf ein installiertes Modell umschalten
+ai-wm llm status                # aktuelle Backend-Konfiguration
+```
+
+`install` streamt den Pull-Fortschritt, prüft, dass das Modell angekommen
+ist, und setzt die Konfiguration (und `LOCAL_LLM_MODEL`) darauf. Dieselbe
+Aktion im TUI: Menüpunkt 18, Modellname im Pfad-Feld.
+
 ---
 
 ## 13. Befund-Report & Ordner-Watcher (2.0.0)

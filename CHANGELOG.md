@@ -2,6 +2,12 @@
 
 ## Unreleased — prompt optimizer (real evaluator loop) + TUI cursor navigation
 
+- **Multi-model local backend**: `ai-wm llm install|list|use|status` — pull
+  any model through the Ollama API (streamed progress, verified, config
+  updated), switch between installed models, list everything the local
+  Ollama knows. TUI menu entry 18 does the same from the Path field. Not
+  locked to EuroLLM anymore.
+
 - **Prompt optimizer rebuilt** (was a 20-line demo stub): locked eval set,
   one-variable candidates, deterministic metrics with hard protected-term
   guardrail, baseline hashing, promotion only on improvement, immutable

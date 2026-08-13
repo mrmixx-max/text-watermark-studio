@@ -49,3 +49,100 @@ class LocalLLMService:
         cfg = self.load()
         cfg['effective_base_url'] = os.getenv('LOCAL_LLM_BASE_URL', cfg['server_base_url'])
         return cfg
+
+    # ---- multi-model support ------------------------------------------------
+
+    @staticmethod
+    def ollama_base() -> str:
+        """Ollama HTTP endpoint (override with OLLAMA_BASE_URL)."""
+        return os.getenv('OLLAMA_BASE_URL', 'http://127.0.0.1:11434').rstrip('/')
+
+    def _ollama(self, path: str, method: str = 'GET', payload: dict | None = None,
+                timeout: int = 30):
+        import urllib.request
+        import urllib.error
+        url = f"{self.ollama_base()}{path}"
+        data = json.dumps(payload).encode('utf-8') if payload is not None else None
+        req = urllib.request.Request(url, data=data, method=method,
+                                     headers={'Content-Type': 'application/json'})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.read().decode('utf-8')
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"ollama_{path.lstrip('/').replace('/', '_')}_failed: "
+                               f"HTTP {e.code} {e.reason}") from e
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"ollama_unreachable: {e.reason}") from e
+
+    def list_models(self) -> list[dict]:
+        """All models the local Ollama instance knows (GET /api/tags)."""
+        body = json.loads(self._ollama('/api/tags'))
+        return body.get('models', [])
+
+    def model_installed(self, model_name: str) -> bool:
+        names = {m.get('name', '') for m in self.list_models()}
+        # accept exact names and names without the ':latest' suffix
+        return model_name in names or f"{model_name}:latest" in names
+
+    def install_model(self, model_name: str, progress=None) -> dict:
+        """Pull a model through the Ollama API (POST /api/pull) and point the
+        studio config at it. `progress` (optional callable) receives status
+        lines from the NDJSON pull stream. Raises RuntimeError when Ollama is
+        unreachable or the pull fails."""
+        import urllib.request
+
+        def _line_status(line: dict) -> str:
+            return line.get('status', '')
+
+        url = f"{self.ollama_base()}/api/pull"
+        payload = json.dumps({'name': model_name, 'stream': True}).encode('utf-8')
+        req = urllib.request.Request(url, data=payload, method='POST',
+                                     headers={'Content-Type': 'application/json'})
+        last_status = ''
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                for raw in resp:
+                    if not raw.strip():
+                        continue
+                    try:
+                        line = json.loads(raw.decode('utf-8').strip())
+                    except json.JSONDecodeError:
+                        continue
+                    if 'error' in line:
+                        raise RuntimeError(f"ollama_pull_failed: {line['error']}")
+                    st = _line_status(line)
+                    if st and st != last_status:
+                        last_status = st
+                        if progress:
+                            progress(st)
+                        if line.get('completed') and line.get('total'):
+                            pct = int(line['completed'] / line['total'] * 100)
+                            if progress:
+                                progress(f"{st} {pct}%")
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"ollama_pull_failed: HTTP {e.code}") from e
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"ollama_unreachable: {e.reason}") from e
+
+        if not self.model_installed(model_name):
+            raise RuntimeError("ollama_pull_failed: model not present after pull")
+
+        cfg = self.load()
+        cfg['model_variant'] = model_name
+        cfg['model_family'] = model_name
+        cfg['download_hint'] = f'ollama pull {model_name}'
+        cfg['installed'] = True
+        cfg['server_base_url'] = f"{self.ollama_base()}/v1"
+        self.save(cfg)
+        return {'model': model_name, 'installed': True, 'config': self.status()}
+
+    def use_model(self, model_name: str) -> dict:
+        """Point the studio at an already-installed model (no download)."""
+        if not self.model_installed(model_name):
+            raise ValueError(f"model_not_installed: {model_name}")
+        cfg = self.load()
+        cfg['model_variant'] = model_name
+        cfg['model_family'] = model_name
+        cfg['installed'] = True
+        self.save(cfg)
+        return self.status()

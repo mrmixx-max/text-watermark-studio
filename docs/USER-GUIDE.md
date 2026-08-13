@@ -402,6 +402,20 @@ export LOCAL_LLM_BASE_URL=http://127.0.0.1:11434/v1
 export LOCAL_LLM_MODEL=eurollm-9b
 ```
 
+**Any local model, not just EuroLLM** — the studio manages the Ollama
+backend directly:
+
+```bash
+ai-wm llm list                  # all models the local Ollama knows
+ai-wm llm install llama3.2:3b   # pull via the Ollama API + select
+ai-wm llm use qwen-coder        # switch to an installed model
+ai-wm llm status                # current backend config
+```
+
+`install` streams pull progress, verifies the model landed and points the
+config (and `LOCAL_LLM_MODEL`) at it. Same action in the TUI: menu entry 18,
+model name in the Path field.
+
 ---
 
 ## 13. Findings report & directory watcher (2.0.0)

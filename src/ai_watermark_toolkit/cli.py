@@ -89,6 +89,15 @@ def main() -> int:
 
     tui = sub.add_parser("tui", help="launch the menu-driven terminal UI (needs textual)")
 
+    llm = sub.add_parser("llm", help="manage the local model backend (Ollama)")
+    llm_sub = llm.add_subparsers(dest="llm_action", required=True)
+    llm_install = llm_sub.add_parser("install", help="pull a model via the Ollama API and select it")
+    llm_install.add_argument("model")
+    llm_sub.add_parser("list", help="list models known to the local Ollama instance")
+    llm_use = llm_sub.add_parser("use", help="switch to an already-installed model")
+    llm_use.add_argument("model")
+    llm_sub.add_parser("status", help="show the current backend configuration")
+
     rw = sub.add_parser("rewrite")
     rw.add_argument("input", nargs="?")
     rw.add_argument("--stdin", action="store_true")
@@ -316,6 +325,45 @@ def main() -> int:
             else:
                 print("PDF-Rendering übersprungen (Edge nicht gefunden) — HTML liegt vor.")
         return
+
+    if args.cmd == "llm":
+        from .llm.service import LocalLLMService
+        svc = LocalLLMService()
+        if args.llm_action == "list":
+            try:
+                models = svc.list_models()
+            except RuntimeError as e:
+                print(f"error: {e}", file=sys.stderr)
+                return 1
+            if not models:
+                print("no models")
+                return 0
+            for m in models:
+                size_gb = m.get("size", 0) / 1e9
+                print(f"{m.get('name', '?')}  ({size_gb:.1f} GB)")
+            return 0
+        if args.llm_action == "status":
+            print(json.dumps(svc.status(), ensure_ascii=False, indent=2, default=str))
+            return 0
+        if args.llm_action == "use":
+            try:
+                cfg = svc.use_model(args.model)
+            except ValueError as e:
+                print(f"error: {e}", file=sys.stderr)
+                return 1
+            print(f"active model: {cfg['model_variant']}")
+            return 0
+        if args.llm_action == "install":
+            def progress(line):
+                print(line, flush=True)
+            try:
+                result = svc.install_model(args.model, progress=progress)
+            except RuntimeError as e:
+                print(f"error: {e}", file=sys.stderr)
+                return 1
+            print(f"installed and selected: {result['model']}")
+            return 0
+        return 2
 
     if args.cmd == "tui":
         try:

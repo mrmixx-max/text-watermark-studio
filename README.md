@@ -174,9 +174,10 @@ The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectabil
   lexical balance), promotion only on improvement over a hashed baseline,
   immutable versioning + rollback via the prompt registry. Offline
   deterministic backend; LLM backend via `LOCAL_LLM_*`.
-- **Menu-driven TUI**: `ai-wm tui` — Textual terminal UI, 17 menu actions,
+- **Menu-driven TUI**: `ai-wm tui` — Textual terminal UI, 18 menu actions,
   cursor-key navigation with app-level priority (works from any focus),
-  keyboard shortcuts, built-in check-and-upgrade. Needs `textual`
+  keyboard shortcuts, built-in check-and-upgrade and in-menu local model
+  install (Ollama pull). Needs `textual`
   (`pip install text-watermark-studio[tui]`).
 
 ## What removing a text watermark costs (honest disclaimer)
@@ -240,6 +241,26 @@ The current production pattern for browser uploads is to split control plane and
 ## Local LLM integration: EuroLLM GGUF
 
 The Hugging Face model page for `mradermacher/EuroLLM-9B-Instruct-2512-GGUF` explicitly documents direct local usage with llama.cpp-style tooling, including commands such as `llama serve -hf mradermacher/EuroLLM-9B-Instruct-2512-GGUF:Q4_K_M` and `./llama-server -hf mradermacher/EuroLLM-9B-Instruct-2512-GGUF:Q4_K_M`. Recent llama.cpp guides also note that `llama-server` exposes an OpenAI-compatible API, typically under `http://localhost:8080/v1`, which can be consumed by standard OpenAI clients and local tools without major code changes. This edition adds direct configuration support for the local model `mradermacher/EuroLLM-9B-Instruct-2512-GGUF`, stores provider and endpoint metadata in `data/local_llm.json`, and exposes configuration/status routes and UI hooks for a local OpenAI-compatible backend.
+
+## Any local model via Ollama (not just EuroLLM)
+
+The studio is not locked to EuroLLM. Any model your local Ollama instance
+knows works — including everything you've pulled from Hugging Face GGUF
+mirrors:
+
+```bash
+ai-wm llm list                    # every model the local Ollama knows
+ai-wm llm install llama3.2:3b     # pull via the Ollama API + select it
+ai-wm llm use qwen-coder          # switch to an installed model
+ai-wm llm status                  # current backend configuration
+```
+
+`install` streams pull progress, verifies the model landed, and points
+`data/local_llm.json` (and the rewrite/optimizer backends via
+`LOCAL_LLM_MODEL`) at it. The TUI has the same action as menu entry 18
+(model name in the Path field). The rewrite and optimizer backends honor
+`LOCAL_LLM_BASE_URL` + `LOCAL_LLM_MODEL` — so any OpenAI-compatible endpoint
+works, not just Ollama.
 
 ## Automatic model fallback routing
 
