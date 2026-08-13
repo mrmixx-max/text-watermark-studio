@@ -21,7 +21,7 @@
       "path": "/api/ops/status",
       "description": "JSON operations status",
       "optional": true,
-      "note": "requires Hermes ops plugin; route not present in bare installs"
+      "note": "conditional: requires lab/ops subsystem availability at runtime"
     },
     {
       "name": "ops_metrics",
@@ -29,13 +29,15 @@
       "path": "/api/ops/metrics",
       "description": "Prometheus metrics",
       "optional": true,
-      "note": "requires Hermes ops plugin; route not present in bare installs"
+      "note": "conditional: requires lab/ops subsystem availability at runtime"
     },
     {
       "name": "lab_families",
       "method": "GET",
       "path": "/api/lab/families",
-      "description": "List watermark families and capabilities"
+      "description": "List watermark families and capabilities",
+      "optional": true,
+      "note": "conditional: requires lab/ops subsystem availability at runtime"
     },
     {
       "name": "lab_detect_all",
@@ -44,7 +46,9 @@
       "description": "Run demo detection across all families",
       "body_schema": {
         "text": "string"
-      }
+      },
+      "optional": true,
+      "note": "conditional: requires lab/ops subsystem availability at runtime"
     },
     {
       "name": "lab_embed",
@@ -54,7 +58,9 @@
       "body_schema": {
         "family": "string",
         "text": "string"
-      }
+      },
+      "optional": true,
+      "note": "conditional: requires lab/ops subsystem availability at runtime"
     },
     {
       "name": "forensics_keys",
@@ -104,7 +110,9 @@
         "text",
         "lang",
         "intensity"
-      ]
+      ],
+      "optional": true,
+      "note": "conditional: requires lab/ops subsystem availability at runtime"
     },
     {
       "name": "streams_enqueue",
