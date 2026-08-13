@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 from ai_watermark_toolkit.forensics.invariant import (
+    _ollama_infill,
     corrupt,
     detect_anchors,
     embed,
@@ -97,3 +98,47 @@ def test_family_plugin_explain_lists_anchors_and_masks():
     assert r['supported'] is True
     assert r['explanation']['n_anchors'] > 0
     assert r['explanation']['n_masks'] > 0
+
+
+def test_ollama_infill_rejects_meta_text(monkeypatch):
+    """Chatty/tool responses must never seed codebook candidates."""
+    import json
+    import urllib.request
+
+    def fake_urlopen(req, timeout=30):
+        class FakeResp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def read(self):
+                return json.dumps({'response': 'The user wants me to complete a German sentence by replacing the mask'}).encode()
+        return FakeResp()
+
+    monkeypatch.setattr(urllib.request, 'urlopen', fake_urlopen)
+    result = _ollama_infill('Der schnelle braune Fuchs', 1, 'fake-model', timeout=5)
+    assert result == []  # meta rambling rejected -> caller falls back to bank
+
+
+def test_ollama_infill_rejects_stopword_only(monkeypatch):
+    """All-stopword filler answers must not seed candidates."""
+    import json
+    import urllib.request
+
+    def fake_urlopen(req, timeout=30):
+        class FakeResp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def read(self):
+                return json.dumps({'response': 'the user wants'}).encode()
+        return FakeResp()
+
+    monkeypatch.setattr(urllib.request, 'urlopen', fake_urlopen)
+    result = _ollama_infill('Der schnelle braune Fuchs', 1, 'fake-model', timeout=5)
+    assert result == []

@@ -200,6 +200,9 @@ def _ollama_infill(
 
     Returns up to ``top_k`` candidate tokens. Failures (model missing,
     timeout, non-JSON) degrade to [] — callers fall back to the synonym bank.
+    Also rejects chatty/meta responses (e.g. tool-instruct models that answer
+    "The user wants me to...") by length and stopword content, so garbage
+    never enters the codebook.
     """
     tokens = sentence.split()
     prompt_sentence = " ".join(
@@ -208,11 +211,12 @@ def _ollama_infill(
     payload = json.dumps({
         "model": model,
         "prompt": (
-            "Fill the [MASK] with one natural word. Reply with ONLY the word, "
-            f"no explanation.\nText: {prompt_sentence}\nWord:"
+            "List 3 different natural words that fit the [MASK] in this "
+            "sentence. Reply with ONLY the words, comma-separated, no "
+            f"explanation.\nText: {prompt_sentence}\nWords:"
         ),
         "stream": False,
-        "options": {"num_predict": 8, "temperature": 0.3},
+        "options": {"num_predict": 24, "temperature": 0.0},
     }).encode("utf-8")
     req = urllib.request.Request(
         "http://localhost:11434/api/generate", data=payload,
@@ -221,12 +225,29 @@ def _ollama_infill(
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = json.loads(resp.read().decode("utf-8"))
     out = (data.get("response") or "").strip()
-    words = re.findall(r"[A-Za-zÄÖÜäöüß'\-]+", out)
+    # The prompt demands a comma-separated answer. If the model rambled
+    # (meta-text like "The user wants me to...") there are no commas and
+    # many words — reject before it can seed the codebook.
+    if "," not in out:
+        words = out.split()
+        if len(words) > 1:
+            return []
+    else:
+        words = [w for part in out.split(",") for w in re.findall(r"[A-Za-zÄÖÜäöüß'\-]+", part)]
     if not words:
         return []
-    # dedupe, drop the original word, keep casing-neutral
+    # Meta-text guard: a genuine infill answer is 1-3 words. A model that
+    # rambles ("The user wants me to complete...") must not seed candidates.
+    if len(words) > 4:
+        return []
+    # Stopword guard: fillers ("the", "user", "wants") are not usable
+    # codebook candidates — they'd let unmarked text decode as bits.
+    content = [w for w in words if w.lower() not in _STOPWORDS]
+    if not content:
+        return []
+    # dedupe (case-neutral), cap at top_k
     seen, result = set(), []
-    for w in words:
+    for w in content:
         low = w.lower()
         if low not in seen:
             seen.add(low)
