@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
+import tempfile
 import traceback
 from pathlib import Path
 
@@ -39,7 +40,12 @@ async def burn_in() -> int:
                 elif action_id in ("attack-matrix", "synthid-sweep", "update"):
                     app.query_one("#path").value = ""
                 else:
-                    app.query_one("#path").value = SAMPLE
+                    # run against a throwaway copy so file actions never
+                    # write -clean/-signed artifacts next to tracked fixtures
+                    src = Path(SAMPLE)
+                    tmp_copy = Path(tempfile.mkdtemp(prefix="tws-burnin-")) / src.name
+                    tmp_copy.write_bytes(src.read_bytes())
+                    app.query_one("#path").value = str(tmp_copy)
                 await pilot.pause()
                 method()
                 await pilot.pause()
