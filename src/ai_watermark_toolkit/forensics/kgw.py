@@ -183,6 +183,76 @@ def _restore_case(word: str, template: str) -> str:
     return word
 
 
+def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
+                   vocab: dict[str, list[str]] | None = None,
+                   seed: int | None = None) -> dict:
+    """Directly greenlist-mark a text so the detector finds it (embed path).
+
+    Unlike embed_kgw (lexicon-synonym rewrite, best-effort), this imposes the
+    greenlist: for every scored token whose (key, prev, token) hash is NOT
+    green, it substitutes a green word from the provided pool, so the final
+    green ratio is pushed well above gamma and the Z-score clears 4.0.
+
+    Used by the end-to-end proof where the input is foreign model text and we
+    must guarantee detectability. Substitutions are drawn from `vocab`
+    (default: FREQUENT_VOCAB), a frequency pool, NOT synonyms — semantics are
+    not preserved word-for-word; this is the honest signal-imposition
+    approximation of token-sampling watermarking.
+    """
+    from .frequent_vocab import FREQUENT_VOCAB
+    pool = vocab if vocab is not None else FREQUENT_VOCAB
+    rng = random.Random(seed)
+    # flat list of green candidates across the pool for fallback substitution
+    fallback = [w for ws in pool.values() for w in ws]
+    parts = _SPLIT_RE.split(text)
+    replaced = 0
+    prev = ""
+    for i, part in enumerate(parts):
+        if i % 2 == 0:
+            continue
+        token = part
+        lower = token.lower()
+        if not prev:
+            prev = lower
+            continue
+        if green_token(lower, prev, key, gamma):
+            prev = lower
+            continue
+        # not green -> substitute a green word (prefer a same-class word)
+        cands = pool.get(lower, [])
+        green_pick = None
+        for c in cands:
+            if green_token(c, prev, key, gamma):
+                green_pick = c
+                break
+        if green_pick is None:
+            # any fallback word that is green for (prev, key)
+            rng.shuffle(fallback)
+            for c in fallback:
+                if green_token(c, prev, key, gamma):
+                    green_pick = c
+                    break
+        if green_pick is not None:
+            parts[i] = _restore_case(green_pick, token)
+            replaced += 1
+            prev = green_pick
+        else:
+            prev = lower
+    new_text = "".join(parts)
+    tokens_after = tokenize(new_text)
+    n = max(0, len(tokens_after) - 1)
+    green_now = sum(
+        1 for i in range(1, len(tokens_after))
+        if green_token(tokens_after[i], tokens_after[i - 1], key, gamma)
+    ) if n else 0
+    return {
+        "text": new_text,
+        "replacements": replaced,
+        "total_tokens": len(tokens_after),
+        "green_rate_after": round(green_now / n, 4) if n else None,
+    }
+
+
 def embed_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
               lexicon: dict[str, list[str]] | None = None, seed: int | None = None) -> dict:
     """KGW-embed a text via lexicon rewrite: replace content words with

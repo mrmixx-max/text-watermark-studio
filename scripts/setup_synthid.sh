@@ -14,10 +14,11 @@ DIR=""
 REF="main"
 PYTHON="${PYTHON:-python3}"
 FULL=0
+VERIFY=0
 
 usage() {
   cat <<'EOF'
-Usage: setup_synthid.sh [--dir PATH] [--ref REF] [--full] [--python PYTHON]
+Usage: setup_synthid.sh [--dir PATH] [--ref REF] [--full] [--verify] [--python PYTHON]
 
 Clones (if needed) aloshdenny/reverse-SynthID, creates a venv, and installs
 the Python dependencies required by the scorer wrapper.
@@ -26,6 +27,8 @@ Options:
   --dir PATH     checkout directory (default: $REVERSE_SYNTHID_DIR or ~/reverse-SynthID)
   --ref REF      git ref to clone (default: main)
   --full         install upstream requirements.txt (adds torch/diffusers)
+  --verify       run a real score on a generated test image after setup,
+                 so "it works" is proven rather than assumed
   --python PY    Python interpreter used to create the venv (default: python3)
 EOF
 }
@@ -35,6 +38,7 @@ while [[ $# -gt 0 ]]; do
     --dir)   DIR="${2:?--dir requires a value}"; shift 2 ;;
     --ref)   REF="${2:?--ref requires a value}"; shift 2 ;;
     --full)  FULL=1; shift ;;
+    --verify) VERIFY=1; shift ;;
     --python) PYTHON="${2:?--python requires a value}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
@@ -85,6 +89,41 @@ codebook="$DIR/artifacts/spectral_codebook_v4.npz"
 if [[ ! -f "$codebook" ]]; then
   echo "warning: codebook not found at $codebook" >&2
   echo "run: git -C '$DIR' sparse-checkout add '/artifacts/spectral_codebook_v4.npz'" >&2
+fi
+
+if [[ "$VERIFY" -eq 1 ]]; then
+  echo ""
+  echo "=== Verifying the scorer with a real score run ==="
+  if [[ ! -f "$codebook" ]]; then
+    echo "FAIL: cannot verify — codebook missing at $codebook" >&2
+    exit 1
+  fi
+  # Generate a small deterministic test image (stdlib, no Pillow needed).
+  TEST_IMG="$(mktemp --suffix=.png)"
+  "$VENV_PY" - "$TEST_IMG" <<'PYEOF'
+import sys, struct, zlib
+out = sys.argv[1]
+def chunk(t, d):
+    return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+w = h = 64
+raw = b"\x00" + b"".join(b"\x00" + bytes([64, 128, 192] * (w // 3)) for _ in range(h))
+ihdr = struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)
+png = (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+       + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+open(out, "wb").write(png)
+PYEOF
+  echo "Test image: $TEST_IMG"
+  # Run the scorer wrapper through the checkout venv.
+  SCORE_OUT="$("$VENV_PY" "$SCRIPT_DIR/../src/ai_watermark_toolkit/metadata/score_synthid_cli.py" "$TEST_IMG" 2>&1)"
+  SCORE_RC=$?
+  rm -f "$TEST_IMG"
+  echo "$SCORE_OUT"
+  if [[ $SCORE_RC -ne 0 ]] || echo "$SCORE_OUT" | grep -q '"error"'; then
+    echo "FAIL: scorer did not produce a clean score (exit $SCORE_RC)." >&2
+    echo "Check that the reverse-SynthID src/ package exposes a scoring entrypoint." >&2
+    exit 1
+  fi
+  echo "VERIFY OK: scorer ran and returned a verdict."
 fi
 
 cat <<EOF

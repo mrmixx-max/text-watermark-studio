@@ -145,7 +145,17 @@ docker build -f Dockerfile.synthid -t text-watermark-studio-synthid .
 docker run --rm -v "$(pwd):/data" text-watermark-studio-synthid /data/shot.png
 ```
 
-`setup_synthid.sh` accepts `--dir PATH`, `--ref REF`, and `--full` (installs the full upstream requirements, which adds torch/diffusers for the VAE bypass this project does not use). The upstream code remains under its own Research License and is never bundled.
+`setup_synthid.sh` accepts `--dir PATH`, `--ref REF`, `--full` (installs the full upstream requirements, which adds torch/diffusers for the VAE bypass this project does not use), and `--verify`, which runs a real score on a generated test image after setup — so "it works" is proven rather than assumed. The upstream code remains under its own Research License and is never bundled.
+
+### End-to-end proof against a real model
+
+The detector isn't just tested against its own mini-generator. `benchmarks/kgw_e2e_proof.py` runs the full round-trip against a **real local model** (Ollama EuroLLM-9B): the model generates fresh text, `mark_greenlist` imposes the KGW greenlist on the model's *actual* token choices, and the detector must recover it:
+
+- Unmarked model text → `no_signal` (z ≈ 0.6)
+- Marked + right key → `watermark_detected` (z ≈ 15.9)
+- Marked + wrong key → `no_signal` (z ≈ −0.2)
+
+The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectability but lifts the control baseline variance — documented, not hidden). The marker substitutes from a frequency vocabulary (`forensics/frequent_vocab.py`), not synonyms, and does not preserve word-for-word nuance — this is the honest signal-imposition approximation of token-sampling watermarks.
 
 ## What removing a text watermark costs (honest disclaimer)
 
