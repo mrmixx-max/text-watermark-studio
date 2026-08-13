@@ -15,7 +15,10 @@ Text Watermark Studio v8 adds a taxonomy-driven watermarking lab with plugin fam
 Requires Python 3.10+.
 
 ```bash
-# Local install (editable, with test deps)
+# Install from PyPI (the CLI + library)
+pip install text-watermark-studio
+
+# Or from source (editable, with test deps)
 python -m venv .venv
 # Windows: .\.venv\Scripts\activate | macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
@@ -33,6 +36,11 @@ pytest -q
 # API server
 uvicorn ai_watermark_toolkit.api.fastapi_app:app --host 127.0.0.1 --port 8080
 ```
+
+> **Note:** the CLI + library are on PyPI. The SynthID bootstrap
+> (`scripts/setup_synthid.sh`), the `Dockerfile.synthid`, and the bundled
+> Hermes skills live in this repository, not the wheel — they are operator
+> tooling and skill bundles, not runtime modules. Clone the repo for those.
 
 Alternatively, run the whole stack via Docker:
 
