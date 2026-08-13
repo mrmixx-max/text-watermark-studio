@@ -30,11 +30,30 @@ def _client_with_registry(tmp_path, monkeypatch):
     return TestClient(fastapi_app.app)
 
 
+def _resolve_routes(app_or_router):
+    """Flatten (method, path) pairs from a FastAPI app or router.
+
+    fastapi >=0.137 wraps included routers as _IncludedRouter objects whose
+    routes are nested; older versions expose them flat. This resolves both.
+    """
+    result = set()
+    for r in app_or_router.routes:
+        if hasattr(r, "methods") and hasattr(r, "path"):
+            for m in r.methods:
+                result.add((m, r.path))
+        nested = getattr(r, "router", None)
+        if nested is not None and hasattr(nested, "routes"):
+            result |= _resolve_routes(nested)
+        elif hasattr(r, "routes"):
+            result |= _resolve_routes(r)
+    return result
+
+
 class TestMCPManifestConsistency:
     def test_every_tool_path_exists_in_api(self):
         manifest = json.loads((REPO / "mcp" / "tools.json").read_text(encoding="utf-8"))
         app = fastapi_app.app
-        real = {(m, r.path) for r in app.routes if hasattr(r, "methods") for m in r.methods}
+        real = _resolve_routes(app)
         # optional tools (e.g. ops_*) depend on plugins not present in a bare
         # install or CI; only non-optional tools must always resolve
         missing = [t["name"] for t in manifest["tools"]
