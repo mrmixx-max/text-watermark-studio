@@ -42,10 +42,15 @@ MENU: list[tuple[str, str]] = [
     ("18 Install local model (Ollama pull)", "llm-install"),
     ("19 Prompt optimizer (locked evals)", "optimizer"),
     ("20 Corpus similarity (local MinHash)", "similarity"),
+    ("21 ΔZ check (before --after after)", "delta-z"),
+    ("22 Findings report (Evidenzklassen A-D)", "finding"),
+    ("23 Sign findings JSON (report-sign)", "report-sign"),
+    ("24 Verify signed findings JSON", "report-verify"),
+    ("25 Generate ML-DSA keypair (report-keygen)", "report-keygen"),
 ]
 
 SHORT_HELP: dict[str, str] = {
-    "detect": "scan a text file for unicode + AI markers",
+    "detect": "scan a text file for unicode + AI markers (--e-value/--signature-filter opt-in)",
     "clean": "strip the invisible-character layer",
     "dilute": "rewrite marker-heavy phrasing",
     "embed": "impose a greenlist mark (keyed)",
@@ -65,6 +70,11 @@ SHORT_HELP: dict[str, str] = {
     "llm-install": "pull a local model via the Ollama API (name in Path field)",
     "optimizer": "run the prompt-optimizer evaluator loop against the locked evals",
     "similarity": "compare a text against your own corpus (Path: file --corpus dir)",
+    "delta-z": "ΔZ check: Path: before.txt --after after.txt (--key <id> optional)",
+    "finding": "KI-Erklärungs-Befund A-D: Path: file.txt (--e-value, --delta-z <after>, --key <id>)",
+    "report-sign": "sign a findings JSON: Path: finding.json (--key <id>) — Secret bleibt in der Registry",
+    "report-verify": "verify a signed findings JSON: Path: signed.json (--key <id>)",
+    "report-keygen": "generate an ML-DSA keypair: Path: target base path (--algorithm mldsa-44|65|87)",
 }
 
 
@@ -194,6 +204,48 @@ class StudioTUI(App):
             context = max(1, int(m.group(1)))
         return level, context
 
+    @staticmethod
+    def _parse_tui_flags(raw: str) -> dict:
+        """Parse the Runde-3 opt-in flag tokens from the Path field.
+
+        Supported: ``--key <id>``, ``--e-value``, ``--signature-filter``,
+        ``--after <file>``, ``--delta-z <file>``, ``--algorithm <name>``.
+        ``path`` ist der verbleibende Token (der erste, der keine Flag ist).
+        Defaults sind CLI-parität (alles opt-in, ``--key`` None = erster
+        registrierter KGW-Key).
+        """
+        import re as _re
+        path = None
+        for tok in raw.split():
+            if tok.startswith("--"):
+                continue
+            path = tok
+            break
+        flags = {
+            "path": path or raw.strip(),
+            "key": None,
+            "e_value": False,
+            "signature_filter": False,
+            "after": None,
+            "delta_z": None,
+            "algorithm": "mldsa-44",
+        }
+        m = _re.search(r"--key\s+(\S+)", raw)
+        if m:
+            flags["key"] = m.group(1)
+        m = _re.search(r"--after\s+(\S+)", raw)
+        if m:
+            flags["after"] = m.group(1)
+        m = _re.search(r"--delta-z\s+(\S+)", raw)
+        if m:
+            flags["delta_z"] = m.group(1)
+        m = _re.search(r"--algorithm\s+(\S+)", raw)
+        if m:
+            flags["algorithm"] = m.group(1)
+        flags["e_value"] = "--e-value" in raw.split()
+        flags["signature_filter"] = "--signature-filter" in raw.split()
+        return flags
+
     # ---- actions ----------------------------------------------------------
 
     def action_detect(self) -> None:
@@ -210,16 +262,202 @@ class StudioTUI(App):
         # run the real multi-key detection (redlist sign + Bonferroni).
         keys = self._kgw_keys()
         if keys:
-            from ..forensics.kgw import detect_multi_key
+            from ..forensics.kgw import detect_multi_key, DEFAULT_GAMMA
+            flags = self._parse_tui_flags(p)
+            if flags["key"]:
+                keys = [k for k in keys if k["key_id"] == flags["key"]] or keys
             level, context = self._parse_level_context(p)
-            r = detect_multi_key(text, keys, level=level, context=context)
+            # Runde-3 opt-in-Umschalter (CLI-Parität, Default aus):
+            # --signature-filter (FPR-Kontrolle) und --e-value (E-Wert-Befund).
+            r = detect_multi_key(text, keys, level=level, context=context,
+                                 signature_filter=flags["signature_filter"])
             best = r.get("best", {})
             self._out(f"[green]Keyed detect ({r.get('tested_keys', 0)} keys).[/] "
                       f"best={best.get('key_id')} z={best.get('z_score')} "
                       f"verdict={best.get('verdict')}")
+            if flags["signature_filter"]:
+                sf = best.get("signature_filtered")
+                if sf:
+                    self._out(f"[cyan]Signature filter:[/] "
+                              f"{sf.get('removed_types')} removed "
+                              f"({sf.get('before_n')} -> {sf.get('after_n')} tokens)")
+            if flags["e_value"]:
+                from ..forensics.e_value import e_detect
+                ev = e_detect(text, best.get("key_id") or keys[0]["secret"],
+                              gamma=keys[0].get("gamma") or DEFAULT_GAMMA,
+                              level=level, context=context)
+                self._out(f"[cyan]E-Wert:[/] e={ev.get('e_value'):.3g} "
+                          f"detected={ev.get('detected')}")
             self._report(detect_text(text))
             return
         self._report(detect_text(text))
+
+    def action_delta_z(self) -> None:
+        """ΔZ check (E2): Path = before.txt --after after.txt --key <id>."""
+        from ..forensics.delta_z import delta_z
+        from ..forensics.key_registry import KeyRegistry
+        p = self._need_path()
+        if not p:
+            return
+        flags = self._parse_tui_flags(p)
+        if not flags["after"]:
+            self._out("[yellow]ΔZ needs two files: Path: before.txt --after after.txt[/]")
+            return
+        try:
+            text_before = open(flags["path"], encoding="utf-8").read()
+            text_after = open(flags["after"], encoding="utf-8").read()
+        except OSError as e:
+            self._out(f"[red]{e}[/]")
+            return
+        keys = self._kgw_keys()
+        if not keys:
+            self._out("[red]No KGW key with secret registered — add one via CLI `ai-wm key add`.[/]")
+            return
+        key = flags["key"]
+        if key and key not in [k["key_id"] for k in keys]:
+            self._out(f"[red]Key {key} not found in registry.[/]")
+            return
+        key_arg = key or keys[0]["key_id"]
+        level, context = self._parse_level_context(flags["path"])
+        result = delta_z(text_before, text_after, key_arg,
+                         level=level, context=context,
+                         registry=KeyRegistry('data/key_registry.json'))
+        self._report(result)
+
+    def action_finding(self) -> None:
+        """KI-Erklärungs-Befund A-D (E2): Path: file.txt --key <id>
+        --e-value --delta-z <after> --institutional-rule <t> --origin-history <t>."""
+        from ..forensics.finding import build_finding_report
+        from ..forensics.kgw import detect_multi_key, DEFAULT_GAMMA
+        from ..forensics.key_registry import KeyRegistry
+        from ..forensics.e_value import e_detect
+        from ..forensics.delta_z import delta_z
+        import re as _re
+        p = self._need_path()
+        if not p:
+            return
+        flags = self._parse_tui_flags(p)
+        try:
+            text = open(flags["path"], encoding="utf-8").read()
+        except OSError as e:
+            self._out(f"[red]{e}[/]")
+            return
+        keys = self._kgw_keys()
+        if not keys:
+            self._out("[red]No KGW key with secret registered — add one via CLI `ai-wm key add`.[/]")
+            return
+        key_id = flags["key"] or keys[0]["key_id"]
+        key = next((k for k in keys if k["key_id"] == key_id), None)
+        if key is None:
+            self._out(f"[red]Key {key_id} not found in registry.[/]")
+            return
+        gamma = key.get("gamma") or DEFAULT_GAMMA
+        level, context = self._parse_level_context(flags["path"])
+        results = {"detect": detect_multi_key(
+            text, [key], gamma=gamma, level=level, context=context)}
+        if flags["e_value"]:
+            results["e_value"] = e_detect(
+                text, key["secret"], gamma=gamma, level=level, context=context)
+        if flags["delta_z"]:
+            try:
+                after_text = open(flags["delta_z"], encoding="utf-8").read()
+            except OSError as e:
+                self._out(f"[red]{e}[/]")
+                return
+            results["delta_z"] = delta_z(
+                text, after_text, key_id, level=level, context=context,
+                registry=KeyRegistry('data/key_registry.json'))
+        ctx = None
+        m = _re.search(r"--institutional-rule\s+(.+?)(?:\s+--|\s*$)", flags["path"])
+        m2 = _re.search(r"--origin-history\s+(.+?)(?:\s+--|\s*$)", flags["path"])
+        if m or m2:
+            ctx = {}
+            if m:
+                ctx["institutional_rule"] = m.group(1).strip()
+            if m2:
+                ctx["origin_history"] = m2.group(1).strip()
+        report = build_finding_report(results, key_id=key_id, context=ctx)
+        self._report(report)
+
+    def action_report_sign(self) -> None:
+        """Sign a findings JSON (E2): Path: finding.json --key <id>.
+        Secret comes from the registry — never shown."""
+        from ..forensics.signed_report import sign_report
+        p = self._need_path()
+        if not p:
+            return
+        flags = self._parse_tui_flags(p)
+        try:
+            payload = json.loads(open(flags["path"], encoding="utf-8").read())
+        except (OSError, json.JSONDecodeError) as e:
+            self._out(f"[red]{e}[/]")
+            return
+        if not isinstance(payload, dict):
+            self._out("[red]Payload must be a JSON object.[/]")
+            return
+        secrets = self._provenance_secrets()
+        key_id = flags["key"] or next(iter(secrets), None)
+        if not key_id or key_id not in secrets:
+            self._out("[red]No registry secret for --key — sign via CLI with --secret-file.[/]")
+            return
+        signed = sign_report(payload, secrets[key_id], key_id=key_id,
+                             algorithm="hmac-sha256")
+        out = Path(flags["path"]).with_suffix(".signed.json")
+        out.write_text(json.dumps(signed, ensure_ascii=False, indent=2),
+                       encoding="utf-8")
+        self._out(f"[green]Signed[/] {out} (HMAC-SHA256, key_id={key_id}) — "
+                  f"Secret bleibt in der Registry, nie im Report.")
+
+    def action_report_verify(self) -> None:
+        """Verify a signed findings JSON (E2): Path: signed.json --key <id>."""
+        from ..forensics.signed_report import verify_report
+        p = self._need_path()
+        if not p:
+            return
+        flags = self._parse_tui_flags(p)
+        try:
+            signed = json.loads(open(flags["path"], encoding="utf-8").read())
+        except (OSError, json.JSONDecodeError) as e:
+            self._out(f"[red]{e}[/]")
+            return
+        algorithm = (signed.get("signature") or {}).get("algorithm") if isinstance(signed, dict) else None
+        secret = None
+        if algorithm == "hmac-sha256":
+            secrets = self._provenance_secrets()
+            key_id = flags["key"] or next(iter(secrets), None)
+            if key_id and key_id in secrets:
+                secret = secrets[key_id]
+            elif key_id:
+                self._out(f"[red]No registry secret for --key {key_id}.[/]")
+                return
+        result = verify_report(signed, secret or "", public_key_pem=None)
+        self._report(result)
+
+    def action_report_keygen(self) -> None:
+        """Generate an ML-DSA keypair (E2): Path: target dir
+        (e.g. keys) --algorithm mldsa-44|65|87."""
+        from ..forensics.signed_report import generate_mldsa_keypair, mldsa_status
+        p = self._need_path()
+        if not p:
+            return
+        flags = self._parse_tui_flags(p)
+        status = mldsa_status()
+        if not status["available"]:
+            self._out(f"[red]{status['hint']}[/]")
+            return
+        try:
+            pair = generate_mldsa_keypair(flags["algorithm"])
+        except ValueError as e:
+            self._out(f"[red]{e}[/]")
+            return
+        out_dir = Path(flags["path"])
+        out_dir.mkdir(parents=True, exist_ok=True)
+        prefix = "mldsa"
+        priv = out_dir / f"{prefix}_private.pem"
+        pub = out_dir / f"{prefix}_public.pem"
+        priv.write_text(pair["private_key_pem"], encoding="utf-8")
+        pub.write_text(pair["public_key_pem"], encoding="utf-8")
+        self._out(f"[green]ML-DSA keypair ({pair['algorithm']})[/] -> {priv} / {pub}")
 
     def action_clean(self) -> None:
         from ..transform.clean import clean_text

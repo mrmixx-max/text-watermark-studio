@@ -74,7 +74,7 @@ Schlüssel wählen → Detektieren. Die App liegt unter
 - **Bericht** — selbstenthaltener HTML-Befund (`build_report`) nach `Downloads`
   (Fallback: Temp-Verzeichnis)
 - **Signieren/Verifizieren** — Befund-JSON signieren (HMAC-SHA256, Registry-Secret;
-  ML-DSA optional, wenn `cryptography>=50` installiert ist) und verifizieren
+  ML-DSA (quantenfest) über die CLI: `ai-wm report-keygen`/`report-sign`) und verifizieren
 - **KGW-Beispiel** — synthetischer Generation-Time-Bias (Mechanik-Beweis, kein LLM)
 - Schlüssel-Auswahl, Statusleiste, JSON-Ergebnis-Panel, Datei-Dialog
 
@@ -243,7 +243,7 @@ The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectabil
   lexical balance), promotion only on improvement over a hashed baseline,
   immutable versioning + rollback via the prompt registry. Offline
   deterministic backend; LLM backend via `LOCAL_LLM_*`.
-- **Menu-driven TUI**: `ai-wm tui` — Textual terminal UI, 18 menu actions,
+- **Menu-driven TUI**: `ai-wm tui` — Textual terminal UI, 25 menu actions,
   cursor-key navigation with app-level priority (works from any focus),
   keyboard shortcuts, built-in check-and-upgrade and in-menu local model
   install (Ollama pull). Needs `textual`

@@ -100,7 +100,7 @@
     <div class="card"><div class="t">7 · Befund & Watch</div><div class="d">Report als PDF/HTML + Directory-Watcher: Überwachung ohne manuelle Routine.</div></div>
     <div class="card"><div class="t">8 · Corpus-Abgleich</div><div class="d">MinHash-Similarity gegen eigene Dokumente — mit Fundstellen, deterministisch, offline.</div></div>
     <div class="card"><div class="t">9 · Robustheit messen</div><div class="d">Attack-Matrix + SynthID-Sweep: was bricht ein Wasserzeichen wirklich?</div></div>
-    <div class="card"><div class="t">10 · Automatisierung</div><div class="d">CLI, API (FastAPI) und menügesteuerte TUI mit 20 Aktionen. Für Menschen und Maschinen.</div></div>
+    <div class="card"><div class="t">10 · Automatisierung</div><div class="d">CLI, API (FastAPI) und menügesteuerte TUI mit 25 Aktionen. Für Menschen und Maschinen.</div></div>
   </div>
   <h2>Die ehrliche Grundlage</h2>
   <div class="box">
@@ -306,7 +306,7 @@ ai-wm synthid-sweep --rate 0.5</pre>
       <li><b class="accent">API:</b> <code>ai-wm serve</code> — FastAPI-Endpoints für Detect, Clean, Embed, Similarity. JSON in, JSON out.</li>
       <li><b class="accent">Watch-Modus:</b> <code>ai-wm watch ./eingang --once</code> — in jeden Cronjob integrierbar, deterministische JSON-Lines.</li>
       <li><b class="accent">CI-Gate:</b> <code>ai-wm detect</code> in die Pipeline — Release-Artefakte auf Marker prüfen, Exit-Code 1 bricht den Build.</li>
-      <li><b class="accent">TUI für Menschen, CLI für Maschinen:</b> dieselben 20 Aktionen, zwei Interfaces.</li>
+      <li><b class="accent">TUI für Menschen, CLI für Maschinen:</b> dieselben 25 Aktionen, zwei Interfaces.</li>
     </ul>
   </div>
   <div class="box warn">
@@ -428,7 +428,7 @@ ai-wm tui                                  # Loslegen</pre>
     <p><b>Detektion, Markierung und signierte Provenance — in einer CLI, einer API, einer TUI.</b></p>
     <ul>
       <li>Statistische Detektion mit eigenem Schlüssel + aktive Markierung (post-hoc &amp; experimentell generation-time) + signierte Datei-Provenance (HMAC-SHA256, 8 Formate)</li>
-      <li>25 CLI-Subcommands · 20 TUI-Aktionen · FastAPI · 80 MCP-Tools · harter Exit-Code-Contract 0/1/2</li>
+      <li>25 CLI-Subcommands · 25 TUI-Aktionen · FastAPI · 80 MCP-Tools · harter Exit-Code-Contract 0/1/2</li>
       <li>Dagegen: SynthID nur Detektion (plattformgebunden), GPTZero/Originality nur Detektion ohne eigene Schlüssel</li>
     </ul>
   </div>

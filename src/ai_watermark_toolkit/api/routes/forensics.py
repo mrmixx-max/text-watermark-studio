@@ -33,6 +33,11 @@ class DetectRequest(BaseModel):
     window: int = 400
     level: str = 'word'
     context: int = 1
+    # Runde-3-Lücke E3: die opt-in-Flags der CLI (--e-value,
+    # --signature-filter) sind jetzt auch API-übergebbar. Defaults bleiben
+    # False — exakt die CLI-Parität (opt-in, keine Verhaltensänderung).
+    e_value: bool = False
+    signature_filter: bool = False
 
 
 class EmbedRequest(BaseModel):
@@ -90,14 +95,24 @@ class FindingRequest(BaseModel):
     The key is always a REGISTERED key_id — the secret is resolved
     server-side from the KeyRegistry and never travels in the request body.
     ``sign=True`` signs the report with the key's registry secret (HMAC).
+
+    ``context`` ist bewusst dual-typisiert (Runde-3-Lücke E1):
+    - ``int`` (Default 1): KGW-Greenlist-Fenster c — bestehender Vertrag.
+    - ``dict``: Evidenzklasse-D-Kontext (``institutional_rule`` /
+      ``origin_history``) — setzt ``context_missing:false`` im Befund.
+    Die Typ-Dispatch-Regel ist im Endpoint dokumentiert und getestet; der
+    Name ``context`` bleibt damit in beiden Lesarten eindeutig dokumentiert.
     """
     text: str
     key_id: str
     level: str = 'word'
-    context: int = 1
+    context: int | dict | None = 1
     e_value: bool = False
     delta_z: FindingDeltaZOption | None = None
     sign: bool = False
+    # Forensic Readiness Score (Runde-3-Lücke E5): frs=true hängt den
+    # ehrlichen Selbst-Assessment-Block an den Report (wird MIT-signiert).
+    frs: bool = False
 
 
 @router.get('/keys', summary='List registered forensic keys')
@@ -123,7 +138,8 @@ def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
     # ONE KGW pass: detect_multi_key returns the full per-key detect_kgw
     # results; the ensemble reuses them instead of re-hashing every key
     # (audit 2026-08-13: was 2x tokenize+hash per request).
-    kgw = detect_multi_key(req.text, registry, level=req.level, context=req.context)
+    kgw = detect_multi_key(req.text, registry, level=req.level, context=req.context,
+                           signature_filter=req.signature_filter)
     kgw_keys = [k for k in registry
                 if k.get('family') == 'kgw' and k.get('secret')]
     kgw_results = {k['key_id']: r
@@ -145,6 +161,17 @@ def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
             plugin_hits.append({'key_id': key.get('key_id'), **plugin.detect(req.text, key)})
     payload = {'verdict': top_verdict, 'result': result, 'kgw': kgw,
                'plugin_hits': plugin_hits}
+    if req.signature_filter:
+        # Opt-in signature pre-filter (CLI-Parität): surface the per-key
+        # filter report of the best key at top level.
+        payload['signature_filtered'] = (best or {}).get('signature_filtered')
+    if req.e_value:
+        # Opt-in anytime-valid e-process over all registered KGW keys
+        # (Bonferroni-corrected), CLI-Parität (CLI nutzt single-key; die
+        # API ist multi-key und rechnet daher e_detect_multi).
+        from ...forensics.e_value import e_detect_multi
+        payload['e_value'] = e_detect_multi(req.text, kgw_keys,
+                                            level=req.level, context=req.context)
     audit.write({'event': 'detect', 'operator': req.operator,
                  'keys_used': [k.get('key_id') for k in registry],
                  'verdict': top_verdict})
@@ -290,23 +317,33 @@ def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)
     if not key.get('secret'):
         raise HTTPException(status_code=400, detail='key_has_no_secret')
     from ...forensics.finding import build_finding_report
+    from ...forensics.frs import compute_frs
     from ...forensics.kgw import detect_multi_key
     from ...forensics.e_value import e_detect
     from ...forensics.delta_z import delta_z, delta_z_transform
     gamma = key.get('gamma') or 0.25
+    # context-Typ-Dispatch (Runde-3-Lücke E1): int = KGW-Fenster c
+    # (bestehender Vertrag), dict = Evidenzklasse-D-Kontext. Ein dict
+    # lässt das Fenster auf dem Default 1.
+    if isinstance(req.context, dict):
+        evidence_context = req.context
+        kgw_context = 1
+    else:
+        evidence_context = None
+        kgw_context = int(req.context) if req.context is not None else 1
     results = {}
     results['detect'] = detect_multi_key(
-        req.text, [key], gamma=gamma, level=req.level, context=req.context)
+        req.text, [key], gamma=gamma, level=req.level, context=kgw_context)
     if req.e_value:
         results['e_value'] = e_detect(
             req.text, key['secret'], gamma=gamma,
-            level=req.level, context=req.context)
+            level=req.level, context=kgw_context)
     if req.delta_z is not None:
         if req.delta_z.transform:
             # Transform-Modus: Quelle ist der Top-Level-Text (Pflichtfeld).
             results['delta_z'] = delta_z_transform(
                 req.text, req.key_id, method=req.delta_z.transform,
-                level=req.level, context=req.context, registry=keys,
+                level=req.level, context=kgw_context, registry=keys,
                 seed=req.delta_z.seed,
                 truncate_fraction=req.delta_z.truncate_fraction)
         else:
@@ -315,11 +352,14 @@ def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)
                                     detail='text_after_required')
             results['delta_z'] = delta_z(
                 req.text, req.delta_z.text_after, req.key_id,
-                level=req.level, context=req.context, registry=keys)
+                level=req.level, context=kgw_context, registry=keys)
     report = build_finding_report(
         results, key_id=req.key_id,
-        sign_secret=key['secret'] if req.sign else None)
+        context=evidence_context,
+        sign_secret=key['secret'] if req.sign else None,
+        frs=compute_frs() if req.frs else None)
     audit.write({'event': 'finding', 'key_id': req.key_id,
                  'e_value': req.e_value, 'delta_z': bool(req.delta_z),
-                 'priority': report.get('priority'), 'signed': req.sign})
+                 'priority': report.get('priority'), 'signed': req.sign,
+                 'context_provided': bool(evidence_context), 'frs': req.frs})
     return report

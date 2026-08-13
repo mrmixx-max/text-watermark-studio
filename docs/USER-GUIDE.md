@@ -248,7 +248,7 @@ Navigation:
 **Update:** entry 17 checks the installed version against PyPI and runs
 `pip install --upgrade text-watermark-studio` when a newer release exists.
 
-**Burn-in:** `python benchmarks/tui_burnin.py` drives all 17 actions through
+**Burn-in:** `python benchmarks/tui_burnin.py` drives all 25 actions through
 a real sample file headlessly and fails loudly on any exception — the
 pre-release gate for the UI.
 

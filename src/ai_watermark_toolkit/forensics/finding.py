@@ -420,7 +420,8 @@ def _verdict_text(findings: list[dict], priority: int) -> str:
 def build_finding_report(results: dict, key_id: str = "unknown", *,
                          context: dict | None = None,
                          alpha: float = DEFAULT_ALPHA,
-                         sign_secret: str | None = None) -> dict:
+                         sign_secret: str | None = None,
+                         frs: dict | None = None) -> dict:
     """Bündelt detect + e_value + delta_z zu einem strukturierten Befund.
 
     ``results`` ist entweder ein einzelnes Detektor-Ergebnis (flach) oder ein
@@ -430,6 +431,18 @@ def build_finding_report(results: dict, key_id: str = "unknown", *,
     ID | Beobachtung | Klasse | Risiko | Gegenhypothesen | Nächster Schritt),
     eine Gesamt-``priority`` (max der Einzelprioritäten, 0-5) und ein
     ehrlicher ``verdict_text``.
+
+    ``context`` (Evidenzklasse D) liefert die institutionelle Regel
+    (``institutional_rule``) und/oder die Entstehungshistorie
+    (``origin_history``); fehlt sie, wird ``context_missing: true`` gesetzt
+    (Runde-3-Lücke E1: über CLI ``--institutional-rule``/``--origin-history``
+    und API ``context`` übergebbar).
+
+    ``frs`` (optional) hängt den Forensic-Readiness-Score-Block
+    (:func:`ai_watermark_toolkit.forensics.frs.compute_frs`) an den Report.
+    Der Block wird MIT-signiert — ``sign_report`` hasht den ganzen Payload,
+    sodass der FRS nicht nachträglich manipuliert werden kann, ohne die
+    Signatur zu brechen.
 
     ``sign_secret`` (optional) signiert den Report via ``signed_report``
     (HMAC-SHA256, stdlib) — der Befund wird ein auditierbares Dokument
@@ -486,6 +499,8 @@ def build_finding_report(results: dict, key_id: str = "unknown", *,
             "Schlussfolgerung."
         ),
     }
+    if frs is not None:
+        report["frs"] = frs
     if sign_secret:
         from .signed_report import sign_report
         report = sign_report(report, sign_secret, key_id=key_id)

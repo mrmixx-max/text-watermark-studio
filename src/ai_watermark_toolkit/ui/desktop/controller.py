@@ -204,11 +204,20 @@ class DesktopController:
 
     # ------------------------------------------------------------- report
     def build_report(self, text: str, key_id: str,
-                     output_dir: str | Path | None = None) -> dict:
+                     output_dir: str | Path | None = None,
+                     context: dict | None = None) -> dict:
         """Build the self-contained HTML forensic report (build_report).
 
         Writes the HTML to ``output_dir`` (default: Downloads, fallback
         tmp) and returns the path plus the underlying verdict.
+
+        ``context`` (Evidenzklasse D, Runde-3-Lücke E1) nimmt die
+        institutionelle Regel (``institutional_rule``) und/oder die
+        Entstehungshistorie (``origin_history``) entgegen. Der HTML-Befund
+        rendert die Kontext-Dimension noch nicht ein (offen: GUI-Eingabefeld
+        und HTML-Sektion); die Controller-Signatur ist vorbereitet und der
+        erhaltene Kontext wird im Rückgabe-Dict ausgewiesen, damit die GUI
+        die Übergabe später verdrahten kann.
         """
         if not text or not text.strip():
             raise ValueError("Text ist leer — Text eingeben oder Datei oeffnen.")
@@ -232,6 +241,10 @@ class DesktopController:
             "verdict": det.get("verdict"),
             "z_score": det.get("z_score"),
             "html_bytes": len(html.encode("utf-8")),
+            "context": {
+                "provided": bool(context),
+                "keys": sorted(context) if isinstance(context, dict) else [],
+            },
         }
 
     # ------------------------------------------------------------- sign/verify

@@ -253,6 +253,9 @@ def main() -> int:
     fi.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     fi.add_argument("--e-value", action="store_true", help="also run the anytime-valid e-process (E-Wert-Befund, Klasse C)")
     fi.add_argument("--delta-z", metavar="FILE_AFTER", default=None, help="also run the ΔZ comparison against FILE_AFTER (Vergleichsbefund, Klasse B)")
+    fi.add_argument("--institutional-rule", default=None, help="institutionelle KI-Regel (Evidenzklasse D): Regeltext, gegen den der Befund gehalten wird — setzt context_missing:false")
+    fi.add_argument("--origin-history", default=None, help="Entstehungshistorie (Evidenzklasse D): Entwürfe, Versionen, Betreuungsfeedback, Abgabedatum — setzt context_missing:false")
+    fi.add_argument("--frs", action="store_true", help="Forensic-Readiness-Score (12 Kriterien, 3 Gates, ehrliches Selbst-Assessment) in den Befund aufnehmen")
     fi.add_argument("--sign", default=None, help="HMAC secret: sign the finding report (signed_report)")
     fi.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
     fi.add_argument("-o", "--output", default=None, help="write the JSON report to a file instead of stdout")
@@ -822,9 +825,25 @@ def main() -> int:
             sign_secret = Path(args.sign_file).read_text(encoding="utf-8").strip()
         elif args.sign:
             sign_secret = args.sign
+        # Evidenzklasse D (Runde-3-Lücke E1): institutionelle Regel und
+        # Entstehungshistorie sind über eindeutige Flags übergebbar — sie
+        # kollidieren nicht mit --context (KGW-Fenster, int).
+        context = None
+        if args.institutional_rule or args.origin_history:
+            context = {}
+            if args.institutional_rule:
+                context["institutional_rule"] = args.institutional_rule
+            if args.origin_history:
+                context["origin_history"] = args.origin_history
+        frs_block = None
+        if getattr(args, "frs", False):
+            from .forensics.frs import compute_frs
+            frs_block = compute_frs()
         report = build_finding_report(
             results, key_id=key.get("key_id", key_arg),
+            context=context,
             sign_secret=sign_secret,
+            frs=frs_block,
         )
         rendered = json.dumps(report, ensure_ascii=False, indent=2)
         if args.output:

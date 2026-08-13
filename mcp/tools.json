@@ -83,11 +83,15 @@
       "name": "forensics_detect",
       "method": "POST",
       "path": "/api/forensics/detect",
-      "description": "Run multi-key forensics detection",
+      "description": "Run multi-key forensics detection (opt-in e_value / signature_filter, CLI-Parität)",
       "body_schema": {
         "text": "string",
         "operator": "string",
-        "window": "integer"
+        "window": "integer",
+        "level": "string",
+        "context": "integer",
+        "e_value": "boolean",
+        "signature_filter": "boolean"
       }
     },
     {
@@ -608,10 +612,11 @@
         "text": "string",
         "key_id": "string",
         "level": "string",
-        "context": "integer",
+        "context": "integer|object|null",
         "e_value": "boolean",
         "delta_z": "object|null",
-        "sign": "boolean"
+        "sign": "boolean",
+        "frs": "boolean"
       }
     },
     {

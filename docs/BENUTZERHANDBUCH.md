@@ -239,7 +239,7 @@ ai-wm tui
 
 Eine menügesteuerte Textual-Oberfläche (Installation mit
 `pip install text-watermark-studio[tui]`). Dunkles Studio-Theme, passend zur
-Hero-Infographic des Repos. 17 Menüpunkte — detect, clean, dilute, embed,
+Hero-Infographic des Repos. 25 Menüpunkte — detect, clean, dilute, embed,
 pipeline, report, rewrite, die vier Datei-Werkzeuge, SynthID-Scoring,
 Verzeichnis-Überwachung, beide Benchmarks, Systemstatus und Update.
 
@@ -257,7 +257,7 @@ Navigation:
 `pip install --upgrade text-watermark-studio` aus, wenn eine neuere Version
 existiert.
 
-**Burn-in:** `python benchmarks/tui_burnin.py` fährt alle 17 Aktionen
+**Burn-in:** `python benchmarks/tui_burnin.py` fährt alle 25 Aktionen
 headless gegen eine echte Beispieldatei und schlägt bei jeder Exception laut
 fehl — das Pre-Release-Gate für die Oberfläche.
 

@@ -100,7 +100,7 @@
     <div class="card"><div class="t">7 · Findings & watch</div><div class="d">Report as PDF/HTML + directory watcher: monitoring without manual routine.</div></div>
     <div class="card"><div class="t">8 · Corpus comparison</div><div class="d">MinHash similarity against your own documents — with quoted evidence, deterministic, offline.</div></div>
     <div class="card"><div class="t">9 · Measure robustness</div><div class="d">Attack matrix + SynthID sweep: what actually breaks a watermark?</div></div>
-    <div class="card"><div class="t">10 · Automation</div><div class="d">CLI, API (FastAPI) and a menu-driven TUI with 20 actions. For humans and machines.</div></div>
+    <div class="card"><div class="t">10 · Automation</div><div class="d">CLI, API (FastAPI) and a menu-driven TUI with 25 actions. For humans and machines.</div></div>
   </div>
   <h2>The honest foundation</h2>
   <div class="box">
@@ -306,7 +306,7 @@ ai-wm synthid-sweep --rate 0.5</pre>
       <li><b class="accent">API:</b> <code>ai-wm serve</code> — FastAPI endpoints for detect, clean, embed, similarity. JSON in, JSON out.</li>
       <li><b class="accent">Watch mode:</b> <code>ai-wm watch ./inbox --once</code> — fits into any cron job, deterministic JSON lines.</li>
       <li><b class="accent">CI gate:</b> <code>ai-wm detect</code> in the pipeline — check release artifacts for markers, exit code 1 breaks the build.</li>
-      <li><b class="accent">TUI for humans, CLI for machines:</b> the same 20 actions, two interfaces.</li>
+      <li><b class="accent">TUI for humans, CLI for machines:</b> the same 25 actions, two interfaces.</li>
     </ul>
   </div>
   <div class="box warn">
@@ -428,7 +428,7 @@ ai-wm tui                                       # start</pre>
     <p><b>Detection, marking and signed provenance — in one CLI, one API, one TUI.</b></p>
     <ul>
       <li>Statistical detection with your own key + active marking (post-hoc &amp; experimental generation-time) + signed file provenance (HMAC-SHA256, 8 formats)</li>
-      <li>25 CLI subcommands · 20 TUI actions · FastAPI · 80 MCP tools · strict exit-code contract 0/1/2</li>
+      <li>25 CLI subcommands · 25 TUI actions · FastAPI · 80 MCP tools · strict exit-code contract 0/1/2</li>
       <li>In contrast: SynthID is detection only (platform-bound), GPTZero/Originality are detection only without own keys</li>
     </ul>
   </div>
@@ -447,7 +447,7 @@ ai-wm tui                                       # start</pre>
     <p><b class="accent2">Try it now — 2 minutes to your first finding:</b></p>
     <pre>pip install "text-watermark-studio[bpe,tui]"
 ai-wm detect any-file.txt
-ai-wm tui   # 20 actions, arrow-key menu navigation</pre>
+ai-wm tui   # 25 actions, arrow-key menu navigation</pre>
     <p class="small">More: <span class="accent">docs/USER-GUIDE.md (EN)</span> · <span class="accent">docs/BENUTZERHANDBUCH.md (DE)</span> · PyPI: <span class="accent">text-watermark-studio</span> · GitHub: <span class="accent">mrmixx-max/text-watermark-studio</span> · MIT license</p>
   </div>
   <div style="text-align: center; margin-top: 14mm;">
