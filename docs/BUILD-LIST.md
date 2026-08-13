@@ -2,7 +2,7 @@
 
 > Lebendiges Dokument. Stand: 2026-08-13, nach Runde-2-Forschung (Markt + Repo + Literatur).
 > Regel: **Kein Block startet, bevor die laufenden Agents abgeschlossen sind.** Stale > 7 Tage → killen.
-> KPI-Basis: 290 Tests · 76 MCP-Tools · Commit `696d903`.
+> KPI-Basis: 306 Tests · 76 MCP-Tools · Commit `696d903`.
 
 ## Status der laufenden Agents (13.08.2026, ~13:15)
 

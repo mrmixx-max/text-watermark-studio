@@ -48,7 +48,7 @@ Verifizierte Audit-Befunde (2026-08), alle gefixt und getestet:
 
 ## Der Stack
 
-- **290 automatisierte Tests** (0 failed, CI grün auf Windows + Linux)
+- **306 automatisierte Tests** (0 failed, CI grün auf Windows + Linux)
 - **12-Stufen-Burn-in** inklusive KGW-E2E gegen ein echtes Modell
 - **20 CLI-Subcommands** mit hartem Exit-Code-Contract (0 = sauber, 1 = Funde, 2 = Input-Fehler)
 - **20 TUI-Aktionen**, **5 API-Routen**, **76 MCP-Tools** — jeder Pfad testbar, keine Stubs
