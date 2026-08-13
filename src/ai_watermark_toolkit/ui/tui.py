@@ -802,7 +802,7 @@ class StudioTUI(App):
         from ..ui.banner import render_banner
         banner = render_banner() if callable(render_banner) else "Text Watermark Studio 2.0.0"
         self._out(banner)
-        self._out("[dim]by Erik Gieske · MIT · 100% local, zero telemetry[/]")
+        self._out("[dim]MIT · 100% local, zero telemetry[/]")
 
     # ---- menu navigation ---------------------------------------------------
 
