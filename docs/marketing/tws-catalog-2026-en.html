@@ -74,7 +74,7 @@
     </div>
   </div>
   <div class="kpis" style="margin-top: 16mm;">
-    <div class="kpi"><div class="n">258</div><div class="l">automated tests</div></div>
+    <div class="kpi"><div class="n">281</div><div class="l">automated tests</div></div>
     <div class="kpi"><div class="n">20</div><div class="l">TUI actions</div></div>
     <div class="kpi"><div class="n">20</div><div class="l">CLI subcommands</div></div>
     <div class="kpi"><div class="n">8</div><div class="l">file formats</div></div>
@@ -311,7 +311,7 @@ ai-wm synthid-sweep --rate 0.5</pre>
   </div>
   <div class="box warn">
     <h3>The honest note</h3>
-    <p>Exit codes are strict: 0 = clean, 1 = finding/error/unavailable, 2 = input error. Automation builds on this contract — and the contract is tested (258 tests).</p>
+    <p>Exit codes are strict: 0 = clean, 1 = finding/error/unavailable, 2 = input error. Automation builds on this contract — and the contract is tested (281 tests).</p>
   </div>
   <h3>Examples</h3>
   <pre># CI gate
@@ -376,7 +376,7 @@ ai-wm tui                                       # start</pre>
     <div class="card"><div class="t">File formats</div><div class="d">txt, md, docx, pdf, html, csv, json, xml — metadata &amp; signatures</div></div>
     <div class="card"><div class="t">Integration</div><div class="d">CLI for cron/CI, FastAPI for services, MCP for agents</div></div>
     <div class="card"><div class="t">Documentation</div><div class="d">EN + DE, 20 chapters, reproducible PDFs</div></div>
-    <div class="card"><div class="t">Quality</div><div class="d">258 tests, release-gate burn-in, green CI</div></div>
+    <div class="card"><div class="t">Quality</div><div class="d">281 tests, release-gate burn-in, green CI</div></div>
     <div class="card"><div class="t">License</div><div class="d">MIT — commercial use, forkable, auditable</div></div>
   </div>
   <h2>Market comparison</h2>
@@ -428,7 +428,7 @@ ai-wm tui                                       # start</pre>
     <p><b>Detection, marking and signed provenance — in one CLI, one API, one TUI.</b></p>
     <ul>
       <li>Statistical detection with your own key + active marking (post-hoc &amp; experimental generation-time) + signed file provenance (HMAC-SHA256, 8 formats)</li>
-      <li>20 CLI subcommands · 20 TUI actions · FastAPI · 53 MCP tools · strict exit-code contract 0/1/2</li>
+      <li>20 CLI subcommands · 20 TUI actions · FastAPI · 76 MCP tools · strict exit-code contract 0/1/2</li>
       <li>In contrast: SynthID is detection only (platform-bound), GPTZero/Originality are detection only without own keys</li>
     </ul>
   </div>
@@ -437,7 +437,7 @@ ai-wm tui                                       # start</pre>
     <ul>
       <li>Honestly measured robustness: style rewrites hold (ΔZ≈−2), word shuffle collapses (ΔZ≈−12.8) — the same limits platform vendors document.</li>
       <li>Redlist sign semantics (z&lt;0) and context windows c∈{1,2,4,8} — tested, not claimed.</li>
-      <li><b>258 automated tests</b>, 12-stage burn-in, security audits with regression tests — the repo hunts its own bugs.</li>
+      <li><b>281 automated tests</b>, 12-stage burn-in, security audits with regression tests — the repo hunts its own bugs.</li>
       <li>No detector, no verdict: every finding ships with measurement, control group and a reproducible command.</li>
     </ul>
     <p class="small" style="margin-top: 4pt;">An instrument that does not lie — in a market that just discovered how much magic-speak is out there.</p>
