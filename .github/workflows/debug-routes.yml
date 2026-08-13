@@ -20,17 +20,14 @@ jobs:
       - name: Dump routes
         run: |
           python - <<'EOF'
-          import ai_watermark_toolkit, sys
-          print("PKG_FILE", ai_watermark_toolkit.__file__)
           import ai_watermark_toolkit.api.fastapi_app as fapp
-          print("APP_FILE", fapp.__file__)
-          from ai_watermark_toolkit.api.routes.text import router as tr
-          print("TEXT_ROUTER_ROUTES", len(tr.routes))
-          from ai_watermark_toolkit.api.routes.forensics import router as fr
-          print("FORENSICS_ROUTER_ROUTES", len(fr.routes))
-          from ai_watermark_toolkit.api.fastapi_app import app
-          paths = sorted({r.path for r in app.routes if hasattr(r, 'methods')})
-          print("TOTAL_ROUTES", len(paths))
-          for p in paths:
-              print("R", p)
+          app = fapp.app
+          print("AFTER_IMPORT", len(app.routes))
+          print("TEXT_ROUTER", len(fapp.text_router.routes))
+          print("HAS_ATTR_TEXT_ROUTER", hasattr(fapp, "text_router"))
+          # try including manually right now
+          app.include_router(fapp.text_router)
+          print("AFTER_MANUAL_INCLUDE", len(app.routes))
+          for r in app.routes:
+              print("R", getattr(r, "path", "?"))
           EOF
