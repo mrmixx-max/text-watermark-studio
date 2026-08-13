@@ -74,6 +74,8 @@ def main() -> int:
     d.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     d.add_argument("--e-value", action="store_true",
                    help="also run anytime-valid e-process detection (E >= 1/alpha, log-space, Bonferroni in multi-key runs); requires --key")
+    d.add_argument("--signature-filter", action="store_true",
+                   help="opt-in signature-token pre-filter: drop token types with share >= 0.25 AND |z_contribution| >= 3 before the green count — FPR control for texts dominated by one repetitive token (arXiv 2606.18430v2), NOT a TPR gain; requires --key")
 
     sp = sub.add_parser("splash", help="Show the studio banner and system state")
     sp.add_argument("--plain", action="store_true", help="no ANSI colors")
@@ -253,6 +255,9 @@ def main() -> int:
         if getattr(args, "e_value", False) and not key_arg:
             print("ai-wm: error: --e-value requires --key (e-process detection is keyed)", file=sys.stderr)
             return 2
+        if getattr(args, "signature_filter", False) and not key_arg:
+            print("ai-wm: error: --signature-filter requires --key (the filter only applies to the keyed KGW Z-test)", file=sys.stderr)
+            return 2
         if key_arg:
             # Keyed KGW detection path (real Z-score test, sign-preserving).
             from .forensics.key_registry import KeyRegistry
@@ -268,7 +273,8 @@ def main() -> int:
             result = detect_multi_key(text, [key],
                                       gamma=key.get('gamma') or DEFAULT_GAMMA,
                                       level=getattr(args, "level", "word"),
-                                      context=getattr(args, "context", 1))
+                                      context=getattr(args, "context", 1),
+                                      signature_filter=getattr(args, "signature_filter", False))
             best = result.get('best') or {}
             out = {
                 "verdict": best.get("verdict", "no_signal"),
@@ -281,6 +287,10 @@ def main() -> int:
                 "tested_keys": result.get("tested_keys"),
                 "kgw": result,
             }
+            if getattr(args, "signature_filter", False):
+                # Opt-in signature pre-filter: surface the per-key filter
+                # report at top level (removed types, before/after sizes).
+                out["signature_filtered"] = best.get("signature_filtered")
             e_value_result = None
             if getattr(args, "e_value", False):
                 # Anytime-valid e-process detection on the SAME key, same
