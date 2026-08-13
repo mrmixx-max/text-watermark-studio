@@ -43,7 +43,7 @@
 | # | Kandidat | Quelle | Aufwand | Priorität | Umsetzungs-Stand (Runde 2) |
 |---|---|---|---|---|---|
 | D1 | E-Prozess-Detektion (E-Wert statt/nach Z-Score; Early-Stop, Bonferroni via `E_max ≥ K/α`) | 2602.17608, 2607.21958 | S-M | **1** | ✅ **GELIEFERT 2026-08-13** (`6388339`, 381 Tests) — Sample-Effizienz: n=60 z=3.58 vs e detected (38/80 Seeds); early-stop Token 11/200; Bonferroni K/α |
-| D2 | ML-DSA-Befund-Signatur (FIPS 204) | FIPS 204 | S | **1** | ✅ Komplette API verifiziert + Größen/Perf gemessen (MLDSA-44: 2420 B sig, ~1.7 ms); 5 Fallstricke (verify-Reihenfolge, PrivKey=Seed, non-deterministisch, sign_mu 64 B, context b"") |
+| D2 | ML-DSA-Befund-Signatur (FIPS 204) — Anker in C3 (signed_report mldsa-44 + report-keygen) | FIPS 204 | S | **1** | 🔄 Härtung + Doku läuft (`deleg_46c50882`) — Fallstrick-Tests, MLDSA-65/87, PQC-Absatz |
 | D3 | Signature Filtering — **ehrlich eingeordnet: primär FPR-Kontrolle** (98%→0% bei dominantem Token verifiziert), 78-99%-TPR-Claim braucht MILP-Lernset (nicht naiv erreichbar) | 2606.18430v2 | S-M | 2 | ✅ **GELIEFERT 2026-08-13** (`8be4736`, 381 Tests) — FPR-Beweis: 29/30 Seeds Alarm ohne Filter → 0/30 mit Filter; Parität exakt (z=34.641); opt-in (default=False begründet) |
 | D4 | FRS-Report-Gates (G1 FPR/FNR dokumentiert+rechenbar, G2 Paradox-Rate <20%, G3 Cross-Session) | 2607.16010 | M | 2 | ✅ Pflicht-Feld-Liste pro Gate; **Report ehrlich "NICHT FORENSIC READY" kennzeichnen solange G1-G3 unbelegt** |
 | D5 | Threat-Model.md (SeedHijack-PRNG, DHMark, C2PA-Lücke) | 2605.28632, 2608.03093, 2604.24890 | S | 3 | Skizze aus Runde 1 |
