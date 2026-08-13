@@ -8,5 +8,6 @@ def test_llm_route_and_mcp_exist():
     assert (root / 'src/ai_watermark_toolkit/llm/providers.py').exists()
     data = json.loads((root / 'mcp/tools.json').read_text(encoding='utf-8'))
     names = {tool['name'] for tool in data['tools']}
-    assert 'llm_providers' in names
+    assert 'llm_status' in names
+    assert 'llm_configure' in names
     assert 'llm_rewrite' in names

@@ -117,7 +117,9 @@ bias, semantic/structure, localized provenance, training-time ownership.
 - Document layer (txt/md/rtf/docx/odt/pdf/epub), PyMuPDF-first extraction.
 - RAG chunking: fixed, recursive, markdown-aware, page-aware, semantic-lite.
 - LLM rewriting: provider abstraction for Ollama, OpenAI, Anthropic.
-- Prompt registry, automatic prompt optimization, multi-agent feedback loop.
+- Prompt registry, automatic prompt optimization. Multi-agent loop: minimal
+  demo scaffold (2 hardcoded drafts, API routes, MCP hooks) — not the full
+  critic/refiner loop; use the optimizer service for real evaluator loops.
 - Graph knowledge + community detection; auto-correction rewrite engine.
 - Unified export (Markdown/HTML/JSON/CSV/TXT); cloud upload; model routing.
 - MCP tool manifest (`mcp/tools.json`) and Hermes plugin bundle (`hermes/`).

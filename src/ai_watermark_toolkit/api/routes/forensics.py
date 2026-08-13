@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from ..middleware.auth import require_api_key
 from ...forensics.key_registry import KeyRegistry
 from ...forensics.ensemble import ensemble_detect
 from ...forensics.audit import AuditLogger
@@ -37,11 +38,16 @@ class EmbedRequest(BaseModel):
 
 @router.get('/keys', summary='List registered forensic keys')
 def list_keys():
-    return {'keys': keys.list_keys()}
+    # strip the secret field — a registry key's secret must never be
+    # readable through the API (audit 2026-08-13)
+    public = [{k: v for k, v in item.items() if k != 'secret'}
+              for item in keys.list_keys()]
+    return {'keys': public}
 
 
 @router.post('/keys', summary='Register a forensic detection key')
-def add_key(req: KeyCreateRequest):
+def add_key(req: KeyCreateRequest,
+            _auth: None = Depends(require_api_key)):
     item = keys.add_key(req.model_dump())
     audit.write({'event': 'add_key', 'key_id': item['key_id']})
     return item

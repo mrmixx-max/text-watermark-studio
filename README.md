@@ -18,6 +18,8 @@ Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin
 
 Requires Python 3.10+.
 
+> **Sales catalogs:** [English](docs/marketing/tws-catalog-2026-en.html) · [Deutsch](docs/marketing/tws-catalog-2026-de.html) — one tool, seven application fields. Guides: [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md).
+
 ```bash
 # Install from PyPI (the CLI + library)
 pip install text-watermark-studio
@@ -220,7 +222,9 @@ Production prompt optimization is usually framed as an evaluator-driven loop: de
 
 ## Multi-agent feedback loop
 
-A practical multi-agent prompt loop usually follows generator → critic → refiner → judge → promoter, with hard stop conditions on max iterations, no-improvement rounds, and score thresholds. Recent agent guidance emphasizes embedding evaluation in the workflow, tracking faithfulness, completeness and safety, and feeding failures back into the next prompt revision instead of treating evaluation as a separate afterthought. This edition adds the multi-agent loop service, a loop spec file, API routes, UI control, and MCP hooks for run/promote operations.
+A practical multi-agent prompt loop usually follows generator → critic → refiner → judge → promoter, with hard stop conditions on max iterations, no-improvement rounds, and score thresholds.
+
+**Status: minimal demo scaffold.** This edition ships the multi-agent service with API routes and MCP hooks, but the loop itself is a two-draft placeholder (`text.strip()` plus a fixed append) — there is no critic, refiner, judge, promoter, or scoring. The **prompt optimizer** (above) implements the real evaluator loop; do not rely on the multi-agent module for production. This honesty note matches the code, and the MCP manifest lists only routes that exist.
 
 ## Graph knowledge representation
 

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Text Watermark Studio — Sales Catalog 2026</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, Roboto, Helvetica, Arial, sans-serif;
+         background: #0a0f14; color: #dfe6ee; font-size: 9.5pt; line-height: 1.5; }
+  .page { width: 210mm; height: 297mm; page-break-after: always; overflow: hidden;
+          position: relative; padding: 18mm 16mm; background: #0a0f14; }
+  .page:last-child { page-break-after: auto; }
+  h1 { font-size: 26pt; font-weight: 800; letter-spacing: -0.5pt; color: #e8f6ff; }
+  h2 { font-size: 13pt; font-weight: 700; color: #7dd3fc; margin: 14pt 0 6pt; }
+  h3 { font-size: 10.5pt; font-weight: 700; color: #e8f6ff; margin: 10pt 0 4pt; }
+  p { margin: 4pt 0; }
+  .accent { color: #22d3ee; }
+  .accent2 { color: #a78bfa; }
+  .accent3 { color: #fbbf24; }
+  .muted { color: #8fa3b8; }
+  .small { font-size: 8pt; }
+  .grid { display: flex; flex-wrap: wrap; gap: 6pt; margin: 8pt 0; }
+  .card { background: #101a24; border: 1px solid #1d3345; border-radius: 6pt;
+          padding: 8pt 9pt; width: 31.5%; }
+  .card .t { font-weight: 700; color: #7dd3fc; font-size: 9.5pt; }
+  .card .d { font-size: 8pt; color: #aebfd0; margin-top: 2pt; }
+  .box { background: #101a24; border-left: 3px solid #22d3ee; border-radius: 4pt;
+         padding: 7pt 10pt; margin: 7pt 0; }
+  .box.warn { border-left-color: #fbbf24; }
+  .box.purple { border-left-color: #a78bfa; }
+  code { background: #16222f; border: 1px solid #2a4a63; border-radius: 3pt;
+         padding: 0.5pt 4pt; font-family: Consolas, 'Courier New', monospace;
+         font-size: 8pt; color: #7dd3fc; }
+  pre { background: #0d151d; border: 1px solid #1d3345; border-radius: 5pt;
+        padding: 7pt 9pt; margin: 6pt 0; font-family: Consolas, 'Courier New', monospace;
+        font-size: 7.6pt; line-height: 1.45; color: #c7e3f5; white-space: pre-wrap; }
+  table { border-collapse: collapse; width: 100%; margin: 7pt 0; font-size: 8.2pt; }
+  th { background: #16222f; color: #7dd3fc; text-align: left; padding: 4pt 6pt;
+       border: 1px solid #1d3345; }
+  td { border: 1px solid #1d3345; padding: 4pt 6pt; vertical-align: top; }
+  .kpis { display: flex; gap: 8pt; margin: 10pt 0; }
+  .kpi { flex: 1; text-align: center; background: #101a24; border: 1px solid #1d3345;
+         border-radius: 6pt; padding: 8pt 4pt; }
+  .kpi .n { font-size: 16pt; font-weight: 800; color: #22d3ee; }
+  .kpi .l { font-size: 7.5pt; color: #8fa3b8; margin-top: 2pt; }
+  .tag { display: inline-block; background: #0e3a4d; color: #7dd3fc; border-radius: 3pt;
+         padding: 1pt 6pt; font-size: 7.5pt; margin: 1pt; }
+  .ok { color: #34d399; }
+  .no { color: #f87171; }
+  .footer { position: absolute; bottom: 8mm; left: 16mm; right: 16mm; font-size: 7.5pt;
+            color: #5c7286; border-top: 1px solid #1d3345; padding-top: 4pt;
+            display: flex; justify-content: space-between; }
+  .section-title { font-size: 18pt; font-weight: 800; color: #e8f6ff;
+                   border-bottom: 2px solid #22d3ee; padding-bottom: 4pt; margin-bottom: 10pt; }
+  ul { margin: 4pt 0 4pt 14pt; }
+  li { margin: 2pt 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1: COVER ============ -->
+<div class="page">
+  <div style="margin-top: 34mm; text-align: center;">
+    <div style="font-size: 10pt; letter-spacing: 4pt; color: #22d3ee; margin-bottom: 8mm;">TEXT WATERMARK STUDIO</div>
+    <h1>The Verification<br>Toolbox</h1>
+    <div style="font-size: 13pt; color: #aebfd0; margin-top: 6mm; max-width: 130mm; margin-left: auto; margin-right: auto;">
+      For AI text, file provenance and document integrity.
+      One tool, seven application fields, zero compromises.
+    </div>
+    <div style="margin-top: 12mm;">
+      <span class="tag">100% local</span><span class="tag">Zero Telemetry</span><span class="tag">MIT</span>
+      <span class="tag">Open Source</span><span class="tag">pip install</span>
+    </div>
+  </div>
+  <div class="kpis" style="margin-top: 16mm;">
+    <div class="kpi"><div class="n">236</div><div class="l">automated tests</div></div>
+    <div class="kpi"><div class="n">20</div><div class="l">TUI actions</div></div>
+    <div class="kpi"><div class="n">19</div><div class="l">CLI subcommands</div></div>
+    <div class="kpi"><div class="n">8</div><div class="l">file formats</div></div>
+    <div class="kpi"><div class="n">$0</div><div class="l">free, MIT</div></div>
+  </div>
+  <div style="margin-top: 12mm; text-align: center; color: #8fa3b8; font-size: 9pt;">
+    Text Watermark Studio 2.0 · <span class="accent">by Erik Gieske</span><br>
+    <span class="small">Catalog of applications · August 2026</span>
+  </div>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 1 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 2: CAPABILITIES ============ -->
+<div class="page">
+  <div class="section-title">What the studio can do — ten capabilities, one tool</div>
+  <div class="grid">
+    <div class="card"><div class="t">1 · Detection</div><div class="d">KGW watermarks on word AND BPE level, Z-score instead of "confidence %". Your own keys, no black box.</div></div>
+    <div class="card"><div class="t">2 · Cleaning</div><div class="d">Expose and strip AI markers (clean/dilute) — with documented effect, measured instead of promised.</div></div>
+    <div class="card"><div class="t">3 · Your own marking</div><div class="d">Sign documents with your own key (embed) — invisible, verifiable, provable.</div></div>
+    <div class="card"><div class="t">4 · Provenance</div><div class="d">HMAC signatures + key registry: who signed what, when? Provable.</div></div>
+    <div class="card"><div class="t">5 · Metadata forensics</div><div class="d">EXIF/XMP/C2PA/coordinates across 8 formats — the digital DNA of a file.</div></div>
+    <div class="card"><div class="t">6 · Rewriting</div><div class="d">LLM rewrite with 6 modes (structural, backtranslate etc.) — local via Ollama, any model name.</div></div>
+    <div class="card"><div class="t">7 · Findings & watch</div><div class="d">Report as PDF/HTML + directory watcher: monitoring without manual routine.</div></div>
+    <div class="card"><div class="t">8 · Corpus comparison</div><div class="d">MinHash similarity against your own documents — with quoted evidence, deterministic, offline.</div></div>
+    <div class="card"><div class="t">9 · Measure robustness</div><div class="d">Attack matrix + SynthID sweep: what actually breaks a watermark?</div></div>
+    <div class="card"><div class="t">10 · Automation</div><div class="d">CLI, API (FastAPI) and a menu-driven TUI with 20 actions. For humans and machines.</div></div>
+  </div>
+  <h2>The honest foundation</h2>
+  <div class="box">
+    <p><b class="accent">Method over opinion.</b> The studio produces numbers you can recompute: a Z-score, a Jaccard coefficient, an HMAC hash. It does not claim to "reliably detect AI" — it shows evidence and names the limits. That is what separates it from detector SaaS with unpublished "99%" claims.</p>
+  </div>
+  <div class="box purple">
+    <p><b class="accent2">One command, all worlds.</b> <code>ai-wm tui</code> opens the menu UI (↑/↓ navigate, Enter runs). <code>ai-wm detect file.txt</code> for the CLI. <code>ai-wm serve</code> for the API. Same capabilities, three ways to work.</p>
+  </div>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 2 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 3: JOURNALISM ============ -->
+<div class="page">
+  <div class="section-title">Application 1 · Journalism &amp; Newsrooms</div>
+  <div class="box">
+    <h3>The problem</h3>
+    <p>Press releases, wire copy and "research leaks" are now partly machine-generated or post-processed. At the same time, source protection has become existential: upload source material to a cloud detector and you no longer control it.</p>
+  </div>
+  <div class="box purple">
+    <h3>The solution</h3>
+    <ul>
+      <li><b class="accent">Check incoming documents:</b> <code>ai-wm detect dpa-copy.txt --json</code> — style forensics, metadata, provenance in one finding.</li>
+      <li><b class="accent">Secure whistleblower material:</b> <code>ai-wm file-embed original.pdf</code> — HMAC signature, chain of custody, tamper proof.</li>
+      <li><b class="accent">Guard your own archive:</b> <code>ai-wm similarity new-text.txt --corpus archive/</code> — reprint or fresh interpretation?</li>
+      <li><b class="accent">Monitoring:</b> <code>ai-wm watch ~/Downloads --interval 5</code> — every new document scanned automatically.</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest note</h3>
+    <p>A Z-score is a lead, not a verdict. The studio shows evidence; the newsroom decides. No external server ever sees the material — <b class="accent3">everything stays on the newsroom machine.</b></p>
+  </div>
+  <h3>5-minute workflow</h3>
+  <pre># 1. Check material
+ai-wm detect source.pdf --json
+ai-wm file-inspect source.pdf        # metadata: who created what?
+
+# 2. Secure evidence (whistleblower file)
+ai-wm file-embed source.pdf          # attach HMAC signature
+ai-wm report source.pdf --key my-key # finding as PDF
+
+# 3. Archive check before publishing
+ai-wm similarity text.md --corpus ~/newsroom/archive</pre>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 3 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 4: SCIENCE ============ -->
+<div class="page">
+  <div class="section-title">Application 2 · Science &amp; Education</div>
+  <div class="box">
+    <h3>The problem</h3>
+    <p>Exam boards need evidence, not gut feelings. Typical detectors deliver a "confidence bar" without statistics — and fail in court. Students need clear, reproducible criteria.</p>
+  </div>
+  <div class="box purple">
+    <h3>The solution</h3>
+    <ul>
+      <li><b class="accent">Evidence instead of accusation:</b> <code>ai-wm detect thesis.txt --key examiner-key</code> — Z-score, token level, reproducible finding for the record.</li>
+      <li><b class="accent">Seminar-pool comparison:</b> <code>ai-wm similarity thesis.txt --corpus all_seminars/</code> — overlap with your own materials, evidence included.</li>
+      <li><b class="accent">Teaching:</b> the KGW method is <i>readable code</i> (MIT) — a lesson in statistical watermarks, Z-scores and honest evaluation.</li>
+      <li><b class="accent">Research:</b> attack matrix + sweep document robustness — for papers, no black box.</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest note</h3>
+    <p>No detector proves AI origin — it provides evidence. The studio declares its limits: style heuristics without a key, paraphrase weakening, no access to platform keys (e.g. SynthID). That honesty is the academic standard.</p>
+  </div>
+  <h3>Example finding</h3>
+  <pre>ai-wm detect term-paper.txt --key 2026-summer --json
+→ verdict: watermark_detected
+→ z_score: 4.12   (threshold: 4.0)
+→ token_level: bpe · gamma: 0.25 · key: 2026-summer
+→ "The finding is reproducible — any department can
+   recompute it with the same key."</pre>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 4 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 5: LEGAL ============ -->
+<div class="page">
+  <div class="section-title">Application 3 · Legal, Compliance &amp; Insurance</div>
+  <div class="box">
+    <h3>The problem</h3>
+    <p>Disputes revolve around documents: was the contract changed retroactively? Is this email real? Where does this piece of evidence come from? Metadata and signatures decide, not assumptions.</p>
+  </div>
+  <div class="box purple">
+    <h3>The solution</h3>
+    <ul>
+      <li><b class="accent">Integrity:</b> <code>ai-wm file-inspect contract.pdf</code> — modification time, author, editing software, GPS coordinates of creation.</li>
+      <li><b class="accent">Signed chain of custody:</b> <code>ai-wm file-embed</code> + registry — every version HMAC-protected, tampering visible instantly.</li>
+      <li><b class="accent">Clause comparison:</b> <code>ai-wm similarity new-contract.txt --corpus templates/</code> — which model clauses were reused, where does it deviate?</li>
+      <li><b class="accent">Inbound screening:</b> watch on email attachments — before the client signs.</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest note</h3>
+    <p>The studio does not replace an expert report — it produces reproducible findings an expert report can build on. HMAC proves integrity <i>since signing</i>, not the authenticity of the origin.</p>
+  </div>
+  <h3>Workflow "check an exhibit"</h3>
+  <pre>ai-wm file-inspect annex.pdf --json   # metadata report
+ai-wm file-embed annex.pdf            # close the chain of custody
+ai-wm report annex.pdf --key case-2026 --format pdf</pre>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 5 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 6: ENTERPRISE ============ -->
+<div class="page">
+  <div class="section-title">Application 4 · Enterprise, HR &amp; Marketing</div>
+  <div class="box">
+    <h3>The problem</h3>
+    <p>Job applications, vendor drafts and marketing deliverables are increasingly AI-generated — neither good nor bad, but it should be <i>detectable and documentable</i>. And internal documents leak metadata nobody sees.</p>
+  </div>
+  <div class="box purple">
+    <h3>The solution</h3>
+    <ul>
+      <li><b class="accent">Application screening:</b> <code>ai-wm detect resume.txt</code> — style forensics as a first filter, honestly framed as a "hint".</li>
+      <li><b class="accent">Deliverable protection:</b> <code>ai-wm file-embed</code> — sign client projects, provable in disputes.</li>
+      <li><b class="accent">Metadata hygiene:</b> <code>ai-wm file-clean</code> — before a document leaves the building: EXIF, author, history stripped.</li>
+      <li><b class="accent">Internal doc quality:</b> watch + report — automatic checks of the intranet archive.</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest note</h3>
+    <p>A style hint is not a disqualifier for candidates. The studio provides the evidence; the hiring decision stays human — and that is what the docs say.</p>
+  </div>
+  <h3>Example</h3>
+  <pre># Before sending to the client
+ai-wm file-clean quote.docx
+ai-wm file-inspect quote.docx --json   # "0 coordinates, 0 author leaks"
+
+# Ongoing archive checks
+ai-wm watch ./archive --interval 10 --report</pre>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 6 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 7: PUBLISHING ============ -->
+<div class="page">
+  <div class="section-title">Application 5 · Publishing, Content &amp; Creators</div>
+  <div class="box">
+    <h3>The problem</h3>
+    <p>Content producers want two things: (a) to prove what they created themselves, and (b) to spot when foreign content is reused without transformation. Platform watermarks (e.g. SynthID) only help the platform operator.</p>
+  </div>
+  <div class="box purple">
+    <h3>The solution</h3>
+    <ul>
+      <li><b class="accent">Your own mark:</b> <code>ai-wm embed article.md --key my-brand</code> — invisible watermark, verifiable anytime.</li>
+      <li><b class="accent">Reuse checks:</b> <code>ai-wm similarity</code> against competitor archives — with quoted evidence.</li>
+      <li><b class="accent">Editorial pipeline:</b> batch + watch — check 100 articles automatically before publication.</li>
+      <li><b class="accent">Secure AI-assisted production:</b> rewrite + detection — consistent processing of local-model output.</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest note</h3>
+    <p>"Pangram-safe" means: no known markers, no statistical signature, no steganography pattern. No guarantee against every future method — but a documented, traceable state in the release notes.</p>
+  </div>
+  <h3>Content pipeline</h3>
+  <pre>for f in ./manuscripts/*.md; do
+  ai-wm detect "$f" --json
+  ai-wm embed "$f" --key publisher-2026
+done
+ai-wm batch ./manuscripts --action clean   # strip metadata</pre>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 7 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 8: RESEARCH/SECURITY ============ -->
+<div class="page">
+  <div class="section-title">Application 6 · Research, Security &amp; OSINT</div>
+  <div class="box">
+    <h3>The problem</h3>
+    <p>Security and OSINT teams work with foreign files: torrents, leaks, captured documents. The questions are always the same: where does this come from? Is it manipulated? Does it carry hidden markers?</p>
+  </div>
+  <div class="box purple">
+    <h3>The solution</h3>
+    <ul>
+      <li><b class="accent">File triage:</b> <code>ai-wm file-inspect</code> — metadata report in seconds before opening an unknown file.</li>
+      <li><b class="accent">Marker search:</b> <code>ai-wm detect</code> on BPE level — the level real tokenizers feed.</li>
+      <li><b class="accent">Robustness research:</b> attack matrix (paraphrase, Unicode, shuffle) + SynthID sweep — what survives which attack? Reproducibly documented.</li>
+      <li><b class="accent">Your own experiments:</b> multi-model backend — any Ollama model as generator/checker for controlled trials.</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest note</h3>
+    <p>Statistical watermarks are no silver bullet: word permutation can break a KGW mark (measured in-repo: ΔZ ≈ −12.8). The studio documents these attack surfaces instead of hiding them — research needs exactly that truth.</p>
+  </div>
+  <h3>Experiment setup</h3>
+  <pre># Install a model (any Ollama model)
+ai-wm llm install hf.co/bartowski/EuroLLM-9B-Instruct-GGUF:Q4_K_M
+ai-wm llm list          # 22 models in the pool
+
+# Measure robustness
+ai-wm attack-matrix --fixture probe.txt
+ai-wm synthid-sweep --rate 0.5</pre>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 8 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 9: DEV ============ -->
+<div class="page">
+  <div class="section-title">Application 7 · Development &amp; Automation</div>
+  <div class="box">
+    <h3>The problem</h3>
+    <p>Processes need checks nobody runs manually. CI pipelines, email inboxes, upload folders — every organization has a point where documents arrive and should be checked, but aren't.</p>
+  </div>
+  <div class="box purple">
+    <h3>The solution</h3>
+    <ul>
+      <li><b class="accent">API:</b> <code>ai-wm serve</code> — FastAPI endpoints for detect, clean, embed, similarity. JSON in, JSON out.</li>
+      <li><b class="accent">Watch mode:</b> <code>ai-wm watch ./inbox --once</code> — fits into any cron job, deterministic JSON lines.</li>
+      <li><b class="accent">CI gate:</b> <code>ai-wm detect</code> in the pipeline — check release artifacts for markers, exit code 1 breaks the build.</li>
+      <li><b class="accent">TUI for humans, CLI for machines:</b> the same 20 actions, two interfaces.</li>
+    </ul>
+  </div>
+  <div class="box warn">
+    <h3>The honest note</h3>
+    <p>Exit codes are strict: 0 = clean, 1 = finding/error/unavailable, 2 = input error. Automation builds on this contract — and the contract is tested (236 tests).</p>
+  </div>
+  <h3>Examples</h3>
+  <pre># CI gate
+ai-wm detect build-artifact.md --key release-key \
+  || echo "Marker found — stop the build"
+
+# Cron watchdog
+*/10 * * * * ai-wm watch /srv/inbox --once --report
+
+# Python
+from ai_watermark_toolkit.forensics.detect import detect_text
+result = detect_text(open("document.txt").read(), key="my-key")</pre>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 9 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 10: MATRIX ============ -->
+<div class="page">
+  <div class="section-title">Capability matrix: CLI · TUI · API</div>
+  <table>
+    <tr><th>Capability</th><th>CLI</th><th>TUI</th><th>API</th><th>Example</th></tr>
+    <tr><td>Detection (KGW, word/BPE)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm detect</code></td></tr>
+    <tr><td>Cleaning / dilution</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm clean</code></td></tr>
+    <tr><td>Own marking</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm embed</code></td></tr>
+    <tr><td>Pipeline (detect→clean→embed)</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">–</td><td><code>ai-wm pipeline</code></td></tr>
+    <tr><td>Finding report (PDF/HTML)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm report</code></td></tr>
+    <tr><td>Directory watcher</td><td class="ok">✓</td><td class="no">–</td><td class="ok">✓</td><td><code>ai-wm watch</code></td></tr>
+    <tr><td>Rewrite (6 modes, local)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm rewrite --mode structural</code></td></tr>
+    <tr><td>Image score (SynthID)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm image-score</code></td></tr>
+    <tr><td>File metadata (8 formats)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm file-inspect</code></td></tr>
+    <tr><td>Strip metadata</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">–</td><td><code>ai-wm file-clean</code></td></tr>
+    <tr><td>Sign file (HMAC)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm file-embed</code></td></tr>
+    <tr><td>Verify file</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm file-detect</code></td></tr>
+    <tr><td>Corpus similarity (MinHash)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm similarity</code></td></tr>
+    <tr><td>Attack matrix / sweep</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">–</td><td><code>ai-wm attack-matrix</code></td></tr>
+    <tr><td>Prompt optimizer (eval loop)</td><td class="no">–</td><td class="ok">✓</td><td class="ok">✓</td><td>Menu 19</td></tr>
+    <tr><td>Model management (Ollama)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td><code>ai-wm llm install</code></td></tr>
+    <tr><td>Batch processing</td><td class="ok">✓</td><td class="ok">✓</td><td class="no">–</td><td><code>ai-wm batch</code></td></tr>
+    <tr><td>Server</td><td class="ok">✓</td><td class="no">–</td><td class="ok">✓</td><td><code>ai-wm serve</code></td></tr>
+  </table>
+  <div class="box" style="margin-top: 8pt;">
+    <p><b class="accent">Standalone extras:</b> <code>[dev]</code>, <code>[bpe]</code> (tiktoken), <code>[tui]</code> (Textual) — install only what you need. The core runs on the pure standard library.</p>
+  </div>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 10 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 11: PRICING ============ -->
+<div class="page">
+  <div class="section-title">Pricing, installation &amp; ecosystem</div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">$0</div><div class="l">license cost, forever</div></div>
+    <div class="kpi"><div class="n">~2 min</div><div class="l">to the first finding</div></div>
+    <div class="kpi"><div class="n">0</div><div class="l">telemetry, tracking, cloud</div></div>
+    <div class="kpi"><div class="n">22</div><div class="l">usable local models</div></div>
+  </div>
+  <h2>Installation</h2>
+  <pre>pip install text-watermark-studio               # core, standard library
+pip install "text-watermark-studio[bpe,tui]"    # BPE level + menu UI
+ai-wm tui                                       # start</pre>
+  <h2>Ecosystem</h2>
+  <div class="grid">
+    <div class="card"><div class="t">Local models</div><div class="d">Any Ollama model as rewrite/optimizer backend — <code>ai-wm llm install &lt;name&gt;</code></div></div>
+    <div class="card"><div class="t">File formats</div><div class="d">txt, md, docx, pdf, html, csv, json, xml — metadata &amp; signatures</div></div>
+    <div class="card"><div class="t">Integration</div><div class="d">CLI for cron/CI, FastAPI for services, MCP for agents</div></div>
+    <div class="card"><div class="t">Documentation</div><div class="d">EN + DE, 20 chapters, reproducible PDFs</div></div>
+    <div class="card"><div class="t">Quality</div><div class="d">236 tests, release-gate burn-in, green CI</div></div>
+    <div class="card"><div class="t">License</div><div class="d">MIT — commercial use, forkable, auditable</div></div>
+  </div>
+  <h2>Market comparison</h2>
+  <table>
+    <tr><th></th><th>Studio</th><th>Detector SaaS</th><th>Platform WM</th></tr>
+    <tr><td>Price</td><td class="ok">$0, MIT</td><td>$15–180/month</td><td>platform-only</td></tr>
+    <tr><td>Data</td><td class="ok">100% local</td><td>cloud upload</td><td>cloud</td></tr>
+    <tr><td>Statistics</td><td class="ok">open, recomputable</td><td>black box "99%"</td><td>not accessible</td></tr>
+    <tr><td>Your own keys</td><td class="ok">yes</td><td>no</td><td>no</td></tr>
+    <tr><td>Provenance/metadata</td><td class="ok">yes</td><td>no</td><td>partial</td></tr>
+  </table>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 11 / 12</span></div>
+</div>
+
+<!-- ============ PAGE 12: LIMITS + CTA ============ -->
+<div class="page">
+  <div class="section-title">Honest limits — and the next step</div>
+  <div class="box warn">
+    <h3>What the studio cannot do (and says so)</h3>
+    <ul>
+      <li>No access to platform keys (e.g. SynthID) — verification there is platform-only.</li>
+      <li>No "99%" claims — style heuristics without a key are evidence, not proof.</li>
+      <li>Paraphrase weakens statistical watermarks — the attack matrix measures how much.</li>
+      <li>No plagiarism crawler — only similarity to <i>your</i> documents.</li>
+      <li>No silver bullet against determined attackers — but documented, measurable robustness.</li>
+    </ul>
+    <p class="small" style="margin-top: 4pt;">This list is in the docs, not just in marketing. Honesty is the product.</p>
+  </div>
+  <h2>The next step</h2>
+  <div class="box purple">
+    <p><b class="accent2">Try it now — 2 minutes to your first finding:</b></p>
+    <pre>pip install "text-watermark-studio[bpe,tui]"
+ai-wm detect any-file.txt
+ai-wm tui   # 20 actions, arrow-key menu navigation</pre>
+    <p class="small">More: <span class="accent">docs/USER-GUIDE.md (EN)</span> · <span class="accent">docs/BENUTZERHANDBUCH.md (DE)</span> · PyPI: <span class="accent">text-watermark-studio</span> · GitHub: <span class="accent">mrmixx-max/text-watermark-studio</span> · MIT license</p>
+  </div>
+  <div style="text-align: center; margin-top: 14mm;">
+    <div style="font-size: 15pt; font-weight: 800; color: #e8f6ff;">One tool. Seven application fields.<br>Zero compromises on truth.</div>
+    <div style="margin-top: 6mm; font-size: 9.5pt; color: #8fa3b8;">Text Watermark Studio 2.0 · by Erik Gieske · August 2026</div>
+  </div>
+  <div class="footer"><span>Text Watermark Studio — Sales Catalog</span><span>Page 12 / 12</span></div>
+</div>
+
+</body>
+</html>

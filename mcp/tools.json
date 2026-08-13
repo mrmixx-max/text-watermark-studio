@@ -83,13 +83,24 @@
     {
       "name": "lab_pipeline",
       "method": "POST",
-      "path": "/api/text/pipeline",
+      "path": "/api/pipeline",
       "description": "Run the text pipeline",
       "body_schema": {
-        "text": "string",
-        "lang": "string",
-        "intensity": "string"
-      }
+        "text": {
+          "type": "string"
+        },
+        "lang": {
+          "type": "string"
+        },
+        "intensity": {
+          "type": "string"
+        }
+      },
+      "body": [
+        "text",
+        "lang",
+        "intensity"
+      ]
     },
     {
       "name": "streams_enqueue",
@@ -170,23 +181,26 @@
       }
     },
     {
-      "name": "llm_providers",
-      "method": "GET",
-      "path": "/api/llm/providers",
-      "description": "List supported LLM rewriting providers"
-    },
-    {
       "name": "llm_rewrite",
       "method": "POST",
-      "path": "/api/llm/rewrite",
+      "path": "/api/rewrite/run",
       "description": "Rewrite text through Ollama, OpenAI or Anthropic",
       "body_schema": {
-        "provider": "string",
-        "model": "string|null",
-        "style": "string",
-        "instruction": "string|null",
-        "text": "string"
-      }
+        "text": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "preserve": {
+          "type": "string"
+        }
+      },
+      "body": [
+        "text",
+        "mode",
+        "preserve"
+      ]
     },
     {
       "name": "prompt_templates",
@@ -215,23 +229,12 @@
       }
     },
     {
-      "name": "llm_rewrite_from_template",
-      "method": "POST",
-      "path": "/api/llm/rewrite-from-template",
-      "description": "Render a versioned prompt template and run LLM rewriting",
-      "body_schema": {
-        "template_id": "string",
-        "version": "string|null",
-        "variables": "object",
-        "provider": "string|null",
-        "model": "string|null"
-      }
-    },
-    {
       "name": "opt_baseline",
       "method": "GET",
-      "path": "/api/optimization/baselines",
-      "description": "Show baseline metadata for a prompt template"
+      "path": "/api/optimization/evals",
+      "description": "Show baseline metadata for a prompt template",
+      "body": [],
+      "body_schema": {}
     },
     {
       "name": "opt_candidates",
@@ -239,18 +242,13 @@
       "path": "/api/optimization/candidates",
       "description": "Generate optimizer candidate prompts",
       "body_schema": {
-        "template_id": "string"
-      }
-    },
-    {
-      "name": "opt_score",
-      "method": "POST",
-      "path": "/api/optimization/score",
-      "description": "Score a candidate prompt",
-      "body_schema": {
-        "template_id": "string",
-        "candidate": "object"
-      }
+        "system": {
+          "type": "string"
+        }
+      },
+      "body": [
+        "system"
+      ]
     },
     {
       "name": "opt_optimize",
@@ -258,8 +256,13 @@
       "path": "/api/optimization/optimize",
       "description": "Run prompt optimization and return the winner",
       "body_schema": {
-        "template_id": "string"
-      }
+        "system": {
+          "type": "string"
+        }
+      },
+      "body": [
+        "system"
+      ]
     },
     {
       "name": "opt_promote",
@@ -267,8 +270,17 @@
       "path": "/api/optimization/promote",
       "description": "Promote the winning optimized prompt into the registry",
       "body_schema": {
-        "template_id": "string"
-      }
+        "system": {
+          "type": "string"
+        },
+        "template_id": {
+          "type": "string"
+        }
+      },
+      "body": [
+        "system",
+        "template_id"
+      ]
     },
     {
       "name": "ma_spec",
@@ -282,8 +294,13 @@
       "path": "/api/multi-agent/run",
       "description": "Run the multi-agent feedback loop",
       "body_schema": {
-        "template_id": "string"
-      }
+        "text": {
+          "type": "string"
+        }
+      },
+      "body": [
+        "text"
+      ]
     },
     {
       "name": "ma_promote",
@@ -291,8 +308,13 @@
       "path": "/api/multi-agent/promote",
       "description": "Promote an approved multi-agent loop result",
       "body_schema": {
-        "template_id": "string"
-      }
+        "text": {
+          "type": "string"
+        }
+      },
+      "body": [
+        "text"
+      ]
     },
     {
       "name": "graph_schema",

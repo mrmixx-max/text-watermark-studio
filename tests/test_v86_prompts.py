@@ -12,4 +12,5 @@ def test_prompt_registry_and_routes_exist():
     assert 'prompt_templates' in names
     assert 'prompt_render' in names
     assert 'prompt_create_version' in names
-    assert 'llm_rewrite_from_template' in names
+    assert 'rewrite_run' in names
+    assert 'opt_promote' in names
