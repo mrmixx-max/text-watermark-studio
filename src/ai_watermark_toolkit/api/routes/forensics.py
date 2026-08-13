@@ -129,8 +129,8 @@ def report_sign(req: ReportSignRequest, _auth: None = Depends(require_api_key)):
 
     The secret NEVER travels in the request body: it is resolved from the
     KeyRegistry by key_id. Only hmac-sha256 is offered here (registry secrets
-    are symmetric); ML-DSA-44 keypairs are operator-managed via
-    ``ai-wm report-sign --algorithm mldsa-44``.
+    are symmetric); ML-DSA keypairs are operator-managed via
+    ``ai-wm report-sign --algorithm mldsa-44|65|87``.
     """
     key = next((k for k in keys.list_keys() if k.get('key_id') == req.key_id), None)
     if key is None:
@@ -141,7 +141,7 @@ def report_sign(req: ReportSignRequest, _auth: None = Depends(require_api_key)):
         raise HTTPException(
             status_code=400,
             detail='server-side signing uses registry secrets (hmac-sha256); '
-                   'for mldsa-44 run ai-wm report-sign with a local keypair')
+                   'for ML-DSA (mldsa-44/65/87) run ai-wm report-sign with a local keypair')
     return sign_report(req.payload, key['secret'], key_id=req.key_id,
                        algorithm='hmac-sha256')
 
@@ -160,10 +160,10 @@ def report_verify(req: ReportVerifyRequest, _auth: None = Depends(require_api_ke
         raise HTTPException(status_code=400, detail='key_id_required')
     if not isinstance(req.signed, dict) or not isinstance(sig, dict):
         raise HTTPException(status_code=400, detail='malformed_signed_document')
-    if sig.get('algorithm') == 'mldsa-44':
+    if isinstance(sig.get('algorithm'), str) and sig.get('algorithm').startswith('mldsa'):
         raise HTTPException(
             status_code=400,
-            detail='mldsa-44 verification requires the public key — '
+            detail='ML-DSA (mldsa-44/65/87) verification requires the public key — '
                    'run ai-wm report-verify with --public-key')
     key = next((k for k in keys.list_keys() if k.get('key_id') == key_id), None)
     if key is None:

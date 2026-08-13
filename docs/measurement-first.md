@@ -55,6 +55,16 @@ Verifizierte Audit-Befunde (2026-08), alle gefixt und getestet:
 - **0 €, MIT, Open Source** — der Code liegt auf GitHub, damit jeder die Messungen nachbauen kann
 - Kern lokal, deterministisch, offline — keine Cloud, kein Tracking, keine Datenabflüsse
 
+## Quantenfest signierte Befunde (ML-DSA, FIPS 204)
+
+Befunde, die Beweiskraft behalten sollen, müssen **nachprüfbar bleiben** — nicht nur heute, sondern auch nach dem Quantenübergang. Deshalb kann jeder Befund seit der C3-/D2-Runde selbst-signiert werden:
+
+- **Default: HMAC-SHA256** über das kanonische JSON — reine Standardbibliothek, null Abhängigkeiten, funktioniert überall.
+- **Optional: ML-DSA (FIPS 204)** — der NIST-standardisierte Quanten-Signaturalgorithmus, kein Hype, keine proprietäre Kurve. Drei Parametersätze: `mldsa-44` (Default, 2420 B Signatur), `mldsa-65` (3309 B), `mldsa-87` (4627 B) — gemessen, nicht geschätzt.
+- **Warum quantenfest bis 2030+:** FIPS 204 ist die behördlich anerkannte Antwort auf „Harvest now, decrypt later" — ein heute abgefangener HMAC- oder ECDSA-Befund ist mit einem Quantencomputer später entschlüsselbar; eine ML-DSA-Signatur nicht. Wer Befunde mit Langzeit-Beweiskraft archiviert (Audits, Rechtsstreit, Regulatorik), signiert mit ML-DSA-65/87.
+- **Die ehrliche Grenze:** ML-DSA braucht die optionale `cryptography`-Bibliothek (≥ 50). Ohne sie bleibt alles funktionsfähig — aber nur HMAC (synthetrisch, nicht quantenfest). Die Abhängigkeit ist dokumentiert, nicht versteckt; der stdlib-Pfad ist und bleibt der Default.
+- **Härtung statt Behauptung:** PEM-Roundtrip (Privatschlüssel = 128-B-Byte-Seed, Public Key wird beim Laden deterministisch abgeleitet), Non-Determinismus (zwei Signaturen desselben Payloads unterscheiden sich, beide verifizieren), verify-Reihenfolge-Falle (`verify(signature, data)` — Signatur zuerst), reiner Modus `context=b""` (kein Pre-Hash) und Label-Vertrauen (das Parametersatz-Label muss zum echten Schlüsseltyp passen) sind als Regressionstests abgesichert (`tests/test_v143_mldsa_hardening.py`).
+
 ## Was das Studio nicht kann (und sagt, dass es es nicht kann)
 
 - Kein Zugriff auf Plattform-Schlüssel (z.B. SynthID) — Verifikation dort nur über die Plattform.

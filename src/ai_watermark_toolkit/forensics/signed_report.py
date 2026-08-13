@@ -1,8 +1,11 @@
 """Signed forensic findings — make a detect/report run an auditable product.
 
 ``sign_report()`` turns any findings payload (dict) into a self-signed
-document: HMAC-SHA256 by default (pure stdlib), ML-DSA-44 optionally (when
+document: HMAC-SHA256 by default (pure stdlib), ML-DSA optionally (when
 the ``cryptography`` library with the ``mldsa`` module is installed).
+ML-DSA (FIPS 204) is offered in all three NIST parameter sets —
+``mldsa-44`` (default), ``mldsa-65`` and ``mldsa-87`` (higher security
+levels, larger signatures; see SUPPORTED_ALGORITHMS).
 ``verify_report()`` recomputes the signature and reports ``valid: true/false``
 plus a best-effort tamper diagnosis (which payload fields differ from the
 signed state, when that is observable).
@@ -18,11 +21,15 @@ Security model (honest boundaries, documented not hidden):
 - HMAC is symmetric: anyone holding the secret can forge. That is the right
   trust model for studio-internal attestation (the secret lives in the
   KeyRegistry / a --secret-file the operator controls).
-- ML-DSA-44 is asymmetric and non-deterministic: the private key signs, the
-  public key verifies, two signatures of the same payload differ. The public
-  key is embedded in the signature block for convenience; ``verify_report``
-  also accepts it as an explicit parameter. Note the API order trap:
-  ``public_key.verify(signature, data)`` — signature FIRST.
+- ML-DSA is asymmetric and non-deterministic: the private key signs, the
+  public key verifies, two signatures of the same payload differ (both must
+  verify). The public key is embedded in the signature block for
+  convenience; ``verify_report`` also accepts it as an explicit parameter.
+  Note the API order trap: ``public_key.verify(signature, data)`` —
+  signature FIRST (regression-tested in test_v143). The private key is a
+  short random seed; the PEM round-trip (save → reload → sign → verify) is
+  stable because the public key is derived from the seed at load time.
+  Signing uses the FIPS 204 pure mode, i.e. context = b"" (no pre-hash).
 - ``payload_sha256`` / ``field_hashes`` inside the signature block are
   diagnostics only (they are not covered by the signature — an attacker can
   recompute them trivially). They never carry security; they only make the
@@ -50,7 +57,11 @@ except Exception:  # pragma: no cover - optional dependency
     _MLDSA_AVAILABLE = False
     _CRYPTOGRAPHY_VERSION = None
 
-SUPPORTED_ALGORITHMS = ("hmac-sha256", "mldsa-44")
+# ML-DSA parameter sets (FIPS 204): NIST names -> cryptography class suffix.
+# All three are supported by cryptography >= 50 (MLDSA44PrivateKey etc.);
+# older versions expose only MLDSA44/65/87 classes with generate_private_key().
+MLDSA_ALGORITHMS = {"mldsa-44": "MLDSA44", "mldsa-65": "MLDSA65", "mldsa-87": "MLDSA87"}
+SUPPORTED_ALGORITHMS = ("hmac-sha256",) + tuple(MLDSA_ALGORITHMS)
 DEFAULT_ALGORITHM = "hmac-sha256"
 FORMAT_VERSION = 1
 
@@ -62,10 +73,11 @@ def mldsa_available() -> bool:
 
 
 def mldsa_status() -> dict:
-    """Feature probe for ML-DSA-44 — honest availability + install hint."""
+    """Feature probe for ML-DSA — honest availability + install hint."""
     return {
         "available": _MLDSA_AVAILABLE,
-        "algorithm": "mldsa-44",
+        "algorithms": list(MLDSA_ALGORITHMS) if _MLDSA_AVAILABLE else [],
+        "algorithm": "mldsa-44",  # back-compat default (v140 asserted this)
         "version": _CRYPTOGRAPHY_VERSION,
         "hint": None if _MLDSA_AVAILABLE else "pip install 'cryptography>=50'",
     }
@@ -125,8 +137,9 @@ def _hmac_digest(secret: str, data: bytes) -> str:
 
 def _mldsa_import_error() -> RuntimeError:
     return RuntimeError(
-        "mldsa-44 requires the cryptography library with the mldsa module — "
-        "pip install 'cryptography>=50' (stdlib HMAC stays available as hmac-sha256)"
+        "ML-DSA (mldsa-44/65/87) requires the cryptography library with the "
+        "mldsa module — pip install 'cryptography>=50' (stdlib HMAC stays "
+        "available as hmac-sha256)"
     )
 
 
@@ -156,34 +169,40 @@ def public_pem_of(private_key) -> str:
     ).decode("utf-8")
 
 
-def _generate_mldsa_key():
-    """Generate an ML-DSA-44 private key, tolerating both cryptography APIs.
+def _generate_mldsa_key(algorithm: str = "mldsa-44"):
+    """Generate an ML-DSA private key, tolerating both cryptography APIs.
 
     cryptography < 50 exposes ``mldsa.MLDSA44.generate_private_key()``;
     cryptography >= 50 renamed the class to ``MLDSA44PrivateKey.generate()``
     (verified against 50.0.0: sign(data, context=None),
     verify(signature, data, context=None) — signature FIRST — and
-    ~2420-byte signatures).
+    ~2420/3309/4627-byte signatures for 44/65/87).
     """
-    gen = getattr(mldsa, "MLDSA44", None)
-    if gen is not None:
-        return gen.generate_private_key()
-    return mldsa.MLDSA44PrivateKey.generate()
+    suffix = MLDSA_ALGORITHMS[algorithm]
+    legacy = getattr(mldsa, suffix, None)  # cryptography < 50 style class
+    if legacy is not None:
+        return legacy.generate_private_key()
+    return getattr(mldsa, suffix + "PrivateKey").generate()
 
 
 def generate_mldsa_keypair(algorithm: str = "mldsa-44") -> dict:
-    """Generate an ML-DSA-44 keypair (PEM). Requires cryptography + mldsa.
+    """Generate an ML-DSA keypair (PEM). Requires cryptography + mldsa.
 
-    The private key is a PKCS#8 PEM; the public key is a SubjectPublicKeyInfo
-    PEM. Key management stays the operator's business — the CLI ``report-keygen``
-    writes both files; ``sign_report``/``verify_report`` take the PEMs as
-    parameters.
+    ``algorithm`` selects the FIPS 204 parameter set: mldsa-44 (default),
+    mldsa-65 or mldsa-87. The private key is a PKCS#8 PEM (a short seed —
+    the public key is derived from it at load time, so the PEM round-trip
+    is stable); the public key is a SubjectPublicKeyInfo PEM. Key management
+    stays the operator's business — the CLI ``report-keygen`` writes both
+    files; ``sign_report``/``verify_report`` take the PEMs as parameters.
     """
     if not _MLDSA_AVAILABLE:
         raise _mldsa_import_error()
-    if algorithm != "mldsa-44":
-        raise ValueError("report-keygen supports only mldsa-44")
-    private_key = _generate_mldsa_key()
+    if algorithm not in MLDSA_ALGORITHMS:
+        raise ValueError(
+            f"unsupported ML-DSA parameter set: {algorithm} "
+            f"(supported: {sorted(MLDSA_ALGORITHMS)})"
+        )
+    private_key = _generate_mldsa_key(algorithm)
     private_pem = private_key.private_bytes(
         serialization.Encoding.PEM,
         serialization.PrivateFormat.PKCS8,
@@ -205,9 +224,11 @@ def sign_report(report_payload: dict, secret: str, *,
 
     - algorithm='hmac-sha256': ``signature.digest`` = hex HMAC-SHA256 over the
       canonical payload (signature block excluded), keyed with ``secret``.
-    - algorithm='mldsa-44': ``signature.signature_b64`` = base64 ML-DSA-44
-      signature over the canonical payload, made with ``private_key_pem``;
-      the public key is embedded as ``signature.public_key_pem``.
+    - algorithm='mldsa-44' | 'mldsa-65' | 'mldsa-87': ``signature.signature_b64``
+      = base64 ML-DSA (FIPS 204) signature over the canonical payload, made
+      with ``private_key_pem``; the public key is embedded as
+      ``signature.public_key_pem``. Signatures are non-deterministic: two
+      signatures of the same payload differ, and both verify.
     - Both record key_id (default 'default') and signature_date (UTC ISO).
     """
     if not isinstance(report_payload, dict):
@@ -235,7 +256,8 @@ def sign_report(report_payload: dict, secret: str, *,
             raise _mldsa_import_error()
         if not private_key_pem:
             raise ValueError(
-                "mldsa-44 requires private_key_pem (generate a keypair with ai-wm report-keygen)"
+                f"{algorithm} requires private_key_pem (generate a keypair "
+                "with ai-wm report-keygen --algorithm mldsa-44|65|87)"
             )
         private_key = serialization.load_pem_private_key(
             private_key_pem.encode("utf-8"), password=None
@@ -322,6 +344,16 @@ def verify_report(signed: dict, secret: str | None = None, *,
         return _vr(False, "missing_public_key", algorithm, key_id, sig_date)
     try:
         public_key = serialization.load_pem_public_key(pub_pem.encode("utf-8"))
+        # Label trust: the signature block advertises a parameter set (and
+        # with it a security level). The actual key type must match the
+        # label — a mldsa-44 key relabeled as mldsa-87 would otherwise
+        # verify while advertising a strength it does not have.
+        expected = MLDSA_ALGORITHMS.get(algorithm)
+        actual = type(public_key).__name__  # e.g. 'MLDSA44PublicKey'
+        if expected is not None and not actual.startswith(expected):
+            return _vr(False, "algorithm_mismatch", algorithm, key_id, sig_date,
+                       public_key_embedded=bool(sig.get("public_key_pem")),
+                       expected=f"{expected}PublicKey", actual=actual)
         _mldsa_verify(public_key, base64.b64decode(signature_b64), canonical)
         ok = True
     except Exception:
