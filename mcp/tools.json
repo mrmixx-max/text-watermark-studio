@@ -548,6 +548,26 @@
       }
     },
     {
+      "name": "forensics_report_sign",
+      "method": "POST",
+      "path": "/api/forensics/report-sign",
+      "description": "Sign a forensics report payload server-side (HMAC-SHA256, key from registry)",
+      "body_schema": {
+        "payload": "object",
+        "key_id": "string"
+      }
+    },
+    {
+      "name": "forensics_report_verify",
+      "method": "POST",
+      "path": "/api/forensics/report-verify",
+      "description": "Verify a signed forensics report (valid, reason, tampered_fields)",
+      "body_schema": {
+        "signed": "object",
+        "key_id": "string"
+      }
+    },
+    {
       "name": "forensics_embed",
       "method": "POST",
       "path": "/api/forensics/embed",

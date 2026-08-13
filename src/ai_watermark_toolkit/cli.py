@@ -25,6 +25,19 @@ def _resolve_key_arg(args) -> str | None:
     return getattr(args, "key", None)
 
 
+def _resolve_secret_arg(args) -> str | None:
+    """Effective signing secret: --secret-file content wins over --secret.
+
+    Same pattern as --key-file: lets a caller pass the HMAC secret without it
+    landing in shell history. The file content is stripped of surrounding
+    whitespace/newlines.
+    """
+    secret_file = getattr(args, "secret_file", None)
+    if secret_file:
+        return Path(secret_file).read_text(encoding="utf-8").strip()
+    return getattr(args, "secret", None)
+
+
 def _resolve_key(registry, key_arg: str) -> tuple[dict, bool]:
     """Resolve a --key argument (key_id OR raw secret) to (key_dict, from_registry).
 
@@ -116,6 +129,27 @@ def main() -> int:
     rp.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     rp.add_argument("--pdf", action="store_true", help="render to PDF via Edge headless (Windows)")
     rp.add_argument("-o", "--output", default=None, help="output path (default: tws-report-<ts>.html)")
+
+    rs = sub.add_parser("report-sign", help="sign a forensic findings payload into an auditable JSON document (HMAC-SHA256 stdlib or ML-DSA-44 optional)")
+    rs.add_argument("input", nargs="?", default="-", help="payload JSON file (or - for stdin)")
+    rs.add_argument("--secret", default=None, help="HMAC secret")
+    rs.add_argument("--secret-file", default=None, help="read the HMAC secret from a file (keeps it out of shell history); overrides --secret")
+    rs.add_argument("--key-id", default=None, help="key identifier recorded in the signature (default: default)")
+    rs.add_argument("--algorithm", default="hmac-sha256", choices=["hmac-sha256", "mldsa-44"])
+    rs.add_argument("--private-key", default=None, help="PEM private key for --algorithm mldsa-44 (generate with ai-wm report-keygen)")
+    rs.add_argument("-o", "--output", default="report-signed.json", help="output path (default report-signed.json)")
+
+    rv = sub.add_parser("report-verify", help="verify a signed forensic findings document (exit 0 valid / 1 invalid / 2 usage)")
+    rv.add_argument("input", help="signed JSON file")
+    rv.add_argument("--secret", default=None, help="HMAC secret")
+    rv.add_argument("--secret-file", default=None, help="read the HMAC secret from a file; overrides --secret")
+    rv.add_argument("--public-key", default=None, help="PEM public key for ML-DSA-44 signatures (default: embedded in the signature)")
+    rv.add_argument("--json", action="store_true", help="machine-readable output (JSON is the default)")
+
+    rk = sub.add_parser("report-keygen", help="generate an ML-DSA-44 keypair for signing forensic findings (needs cryptography)")
+    rk.add_argument("--algorithm", default="mldsa-44", choices=["mldsa-44"])
+    rk.add_argument("--output-dir", default=".", help="directory for the PEM files (default: current directory)")
+    rk.add_argument("--prefix", default="mldsa", help="file name prefix (default mldsa -> mldsa_private.pem / mldsa_public.pem)")
 
     wc = sub.add_parser("watch")
     wc.add_argument("directory")
@@ -434,6 +468,81 @@ def main() -> int:
             else:
                 print("PDF-Rendering übersprungen (Edge nicht gefunden) — HTML liegt vor.")
         return
+
+    if args.cmd == "report-sign":
+        from .forensics.signed_report import sign_report, mldsa_status
+        raw = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(encoding="utf-8")
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as e:
+            print(f"ai-wm: error: input is not valid JSON: {e}", file=sys.stderr)
+            return 2
+        if not isinstance(payload, dict):
+            print("ai-wm: error: payload must be a JSON object", file=sys.stderr)
+            return 2
+        secret = _resolve_secret_arg(args)
+        if args.algorithm == "hmac-sha256" and not secret:
+            print("ai-wm: error: --secret or --secret-file is required for hmac-sha256", file=sys.stderr)
+            return 2
+        private_key_pem = None
+        if args.algorithm == "mldsa-44":
+            status = mldsa_status()
+            if not status["available"]:
+                print(f"ai-wm: error: mldsa-44 unavailable — {status['hint']}", file=sys.stderr)
+                return 1
+            if not args.private_key:
+                print("ai-wm: error: --private-key <pem> is required for mldsa-44 (generate with ai-wm report-keygen)", file=sys.stderr)
+                return 2
+            private_key_pem = Path(args.private_key).read_text(encoding="utf-8")
+        signed = sign_report(payload, secret or "", key_id=args.key_id,
+                             algorithm=args.algorithm, private_key_pem=private_key_pem)
+        Path(args.output).write_text(
+            json.dumps(signed, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(json.dumps({"ok": True, "output": args.output,
+                          "algorithm": args.algorithm,
+                          "key_id": signed["signature"]["key_id"],
+                          "signature_date": signed["signature"]["signature_date"]},
+                         ensure_ascii=False, indent=2))
+        return 0
+
+    if args.cmd == "report-verify":
+        from .forensics.signed_report import verify_report, mldsa_status
+        try:
+            signed = json.loads(Path(args.input).read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"ai-wm: error: not valid JSON: {e}", file=sys.stderr)
+            return 2
+        secret = _resolve_secret_arg(args)
+        algorithm = (signed.get("signature") or {}).get("algorithm") if isinstance(signed, dict) else None
+        if algorithm == "hmac-sha256" and not secret:
+            print("ai-wm: error: --secret or --secret-file is required for hmac-sha256", file=sys.stderr)
+            return 2
+        if algorithm == "mldsa-44" and not mldsa_status()["available"]:
+            print(f"ai-wm: error: mldsa-44 unavailable — {mldsa_status()['hint']}", file=sys.stderr)
+            return 1
+        public_key_pem = (Path(args.public_key).read_text(encoding="utf-8")
+                          if args.public_key else None)
+        result = verify_report(signed, secret, public_key_pem=public_key_pem)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result["valid"] else 1
+
+    if args.cmd == "report-keygen":
+        from .forensics.signed_report import generate_mldsa_keypair, mldsa_status
+        status = mldsa_status()
+        if not status["available"]:
+            print(f"ai-wm: error: mldsa-44 unavailable — {status['hint']}", file=sys.stderr)
+            return 1
+        pair = generate_mldsa_keypair(args.algorithm)
+        out_dir = Path(args.output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        priv = out_dir / f"{args.prefix}_private.pem"
+        pub = out_dir / f"{args.prefix}_public.pem"
+        priv.write_text(pair["private_key_pem"], encoding="utf-8")
+        pub.write_text(pair["public_key_pem"], encoding="utf-8")
+        print(json.dumps({"ok": True, "algorithm": pair["algorithm"],
+                          "private_key": str(priv), "public_key": str(pub)},
+                         ensure_ascii=False, indent=2))
+        return 0
 
     if args.cmd == "similarity":
         from pathlib import Path as _P
