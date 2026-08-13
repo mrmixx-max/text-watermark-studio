@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .base import LabFamily
-from ...forensics.kgw import DEFAULT_GAMMA, detect_kgw, embed_kgw
+from ...forensics.kgw import DEFAULT_GAMMA, detect_kgw, mark_greenlist
 
 
 class FamilyPlugin(LabFamily):
@@ -16,15 +16,21 @@ class FamilyPlugin(LabFamily):
         if not secret:
             return {'family': self.slug, 'supported': True, 'score': 0.0,
                     'notes': ['kgw_detection_requires_registered_secret_key']}
-        r = detect_kgw(text, secret, gamma=opts.get('gamma', DEFAULT_GAMMA))
+        gamma = opts.get('gamma', DEFAULT_GAMMA)
+        level = opts.get('level', 'word')
+        context = opts.get('context', 1)
+        r = detect_kgw(text, secret, gamma=gamma, level=level, context=context)
         score = min(0.99, max(-0.99, (r['z_score'] or 0.0) / 4.0))
         return {'family': self.slug, 'supported': True, 'score': round(score, 4), 'kgw': r}
 
     def embed(self, text: str, options: dict | None = None) -> dict:
         """Post-hoc text rewrite (STANDARD path).
 
-        Rewrites existing text so its content words land in the greenlist.
-        The generation-time logit bias is a SEPARATE, experimental operation
+        Greenlist-marks existing text deterministically (mark_greenlist) so
+        its content words land in the greenlist and the detector recovers the
+        watermark (z > 4) with the same key. Respects the level/context/gamma
+        options the product's deterministic embed path exposes. The
+        generation-time logit bias is a SEPARATE, experimental operation
         (see demo()) that GENERATES new text under sampling bias rather than
         rewriting an existing text.
         """
@@ -33,7 +39,11 @@ class FamilyPlugin(LabFamily):
         if not secret:
             return {'family': self.slug, 'supported': True, 'text': text,
                     'notes': ['kgw_embedding_requires_registered_secret_key']}
-        result = embed_kgw(text, secret, gamma=opts.get('gamma', DEFAULT_GAMMA))
+        gamma = opts.get('gamma', DEFAULT_GAMMA)
+        level = opts.get('level', 'word')
+        context = opts.get('context', 1)
+        result = mark_greenlist(text, secret, gamma=gamma, level=level,
+                                context=context, seed=opts.get('seed'))
         result['family'] = self.slug
         result['supported'] = True
         return result

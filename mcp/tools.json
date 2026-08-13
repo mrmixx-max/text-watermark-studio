@@ -514,6 +514,220 @@
         "profile": "string",
         "config": "object"
       }
+    },
+    {
+      "name": "text_detect",
+      "method": "POST",
+      "path": "/api/detect",
+      "description": "Detect AI-generated text and invisible watermark signals in a text",
+      "body_schema": {
+        "text": "string",
+        "lang": "string",
+        "intensity": "string"
+      }
+    },
+    {
+      "name": "text_clean",
+      "method": "POST",
+      "path": "/api/clean",
+      "description": "Strip invisible watermark characters and normalize confusable text (NFKC)",
+      "body_schema": {
+        "text": "string",
+        "nfkc": "boolean",
+        "fold_confusables": "boolean"
+      }
+    },
+    {
+      "name": "text_dilute",
+      "method": "POST",
+      "path": "/api/dilute",
+      "description": "Dilute statistical AI-writing markers in a text",
+      "body_schema": {
+        "text": "string",
+        "intensity": "string"
+      }
+    },
+    {
+      "name": "forensics_embed",
+      "method": "POST",
+      "path": "/api/forensics/embed",
+      "description": "Embed a deterministic KGW watermark into text with a registered key",
+      "body_schema": {
+        "text": "string",
+        "key_id": "string",
+        "level": "string",
+        "context": "integer",
+        "seed": "integer|null",
+        "gamma": "number|null"
+      }
+    },
+    {
+      "name": "metadata_formats",
+      "method": "GET",
+      "path": "/api/metadata/formats",
+      "description": "List supported file formats for AI-provenance metadata cleaning"
+    },
+    {
+      "name": "metadata_inspect",
+      "method": "POST",
+      "path": "/api/metadata/inspect",
+      "description": "Inspect an uploaded file for AI provenance metadata (C2PA/EXIF/XMP)",
+      "body_schema": {
+        "file": "binary"
+      }
+    },
+    {
+      "name": "metadata_clean",
+      "method": "POST",
+      "path": "/api/metadata/clean",
+      "description": "Strip AI provenance metadata from an uploaded file, return cleaned bytes plus report",
+      "body_schema": {
+        "file": "binary"
+      }
+    },
+    {
+      "name": "metadata_embed",
+      "method": "POST",
+      "path": "/api/metadata/embed",
+      "description": "Embed a signed provenance mark (HMAC, keyed) into an uploaded file",
+      "body_schema": {
+        "key_id": "string",
+        "file": "binary"
+      }
+    },
+    {
+      "name": "metadata_detect",
+      "method": "POST",
+      "path": "/api/metadata/detect",
+      "description": "Detect and verify studio provenance marks in an uploaded file",
+      "body_schema": {
+        "file": "binary"
+      }
+    },
+    {
+      "name": "metadata_synthid_score",
+      "method": "POST",
+      "path": "/api/metadata/synthid-score",
+      "description": "Score an uploaded image for SynthID pixel marks (external checkout required)",
+      "body_schema": {
+        "file": "binary"
+      }
+    },
+    {
+      "name": "pdf_extract",
+      "method": "POST",
+      "path": "/api/pdf/extract",
+      "description": "Extract a text summary from a PDF text layer",
+      "body_schema": {
+        "text": "string"
+      }
+    },
+    {
+      "name": "queue_enqueue",
+      "method": "POST",
+      "path": "/api/queue/enqueue",
+      "description": "Enqueue a text-processing job on the Redis queue",
+      "body_schema": {
+        "text": "string",
+        "lang": "string",
+        "intensity": "string"
+      }
+    },
+    {
+      "name": "queue_depth",
+      "method": "GET",
+      "path": "/api/queue/depth",
+      "description": "Get Redis queue depth and backpressure status"
+    },
+    {
+      "name": "queue_get_job",
+      "method": "GET",
+      "path": "/api/queue/{job_id}",
+      "description": "Get a queued job by id"
+    },
+    {
+      "name": "jobs_create",
+      "method": "POST",
+      "path": "/api/jobs",
+      "description": "Create and run a batch text-processing job",
+      "body_schema": {
+        "input_dir": "string",
+        "output_dir": "string",
+        "mode": "string",
+        "intensity": "string",
+        "lang": "string"
+      }
+    },
+    {
+      "name": "jobs_get",
+      "method": "GET",
+      "path": "/api/jobs/{job_id}",
+      "description": "Get a batch job by id"
+    },
+    {
+      "name": "streams_get_job",
+      "method": "GET",
+      "path": "/api/streams/{job_id}",
+      "description": "Get a Redis Streams job status by id"
+    },
+    {
+      "name": "studio_diff",
+      "method": "POST",
+      "path": "/api/studio/diff",
+      "description": "Create a simple line diff between original and modified text",
+      "body_schema": {
+        "original": "string",
+        "modified": "string"
+      }
+    },
+    {
+      "name": "studio_export_zip",
+      "method": "POST",
+      "path": "/api/studio/export/zip",
+      "description": "Export pipeline output as a ZIP archive (text plus report)",
+      "body_schema": {
+        "text": "string",
+        "lang": "string",
+        "intensity": "string"
+      }
+    },
+    {
+      "name": "ops_dlq_replay",
+      "method": "POST",
+      "path": "/api/ops/dlq/replay/{job_id}",
+      "description": "Replay a dead-letter-queue job back into the main stream"
+    },
+    {
+      "name": "opt_history",
+      "method": "GET",
+      "path": "/api/optimization/history/{template_id}",
+      "description": "List all versions of a prompt template"
+    },
+    {
+      "name": "opt_rollback",
+      "method": "POST",
+      "path": "/api/optimization/rollback",
+      "description": "Restore a previous prompt template version as the new stable",
+      "body_schema": {
+        "template_id": "string",
+        "version": "string"
+      }
+    },
+    {
+      "name": "lab_demo",
+      "method": "POST",
+      "path": "/api/lab/demo",
+      "description": "Run the generation-time sampling-bias proof for one family",
+      "body_schema": {
+        "family": "string",
+        "gamma": "number",
+        "bias_strength": "number",
+        "context": "integer",
+        "n_tokens": "integer",
+        "seed": "integer"
+      },
+      "optional": true,
+      "note": "conditional: requires lab/ops subsystem availability at runtime"
     }
   ]
 }
