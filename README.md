@@ -95,7 +95,7 @@ Install into Hermes with `hermes skill install <path>` or copy the folder under 
 
 ## Document formats
 
-The v8.2 edition adds a document layer for txt, markdown, rtf, docx, odt, pdf and epub workflows. Pandoc is widely used as a universal document converter for docx, rtf, odt, epub, markdown and pdf-oriented flows, while specialized libraries like pypdf, python-docx, odfpy, EbookLib and striprtf cover format-specific extraction and manipulation use cases. Current API support focuses on normalization and export pathways through `/api/documents/*`, with Hermes/MCP exposure for agent use.
+The v1.0.0 edition adds a document layer for txt, markdown, rtf, docx, odt, pdf and epub workflows. Pandoc is widely used as a universal document converter for docx, rtf, odt, epub, markdown and pdf-oriented flows, while specialized libraries like pypdf, python-docx, odfpy, EbookLib and striprtf cover format-specific extraction and manipulation use cases. Current API support focuses on normalization and export pathways through `/api/documents/*`, with Hermes/MCP exposure for agent use.
 
 ## File metadata cleaning (C2PA / EXIF / XMP)
 
