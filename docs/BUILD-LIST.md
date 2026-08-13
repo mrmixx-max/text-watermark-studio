@@ -2,7 +2,7 @@
 
 > Lebendiges Dokument. Stand: 2026-08-13, nach Runde-2-Forschung (Markt + Repo + Literatur).
 > Regel: **Kein Block startet, bevor die laufenden Agents abgeschlossen sind.** Stale > 7 Tage → killen.
-> KPI-Basis: 338 Tests · 76 MCP-Tools · Commit `696d903`.
+> KPI-Basis: 361 Tests · 76 MCP-Tools · Commit `696d903`.
 
 ## Status der laufenden Agents (13.08.2026, ~13:15)
 
@@ -32,7 +32,7 @@
 |---|---|---|---|---|---|
 | C1 | **Repo-Relabeling: "unabhängige Verifikation"** (README-Tagline, PyPI-Description von "Detect, clean, dilute" umstellen, bei 0 Stars) | S | Positionierung | 1 | — |
 | C2 | **Windows-Desktop-App + Installer** (PySide6-GUI als dünner Wrapper um Core + PyInstaller + Inno Setup + CI `build-desktop.yml`; Code-Signing optional) | M-L | Institutional-Verkauf (€149-499 Kanzleien, €490-1.490 Unis) | 2 | Markt-Bestätigung ✅; Signing-Entscheidung (Budget) |
-| C3 | **Verifikations-Report als Produkt** (signierte Befunde: HMAC-SHA256 + ML-DSA-44 optional, CLI report-sign/verify/keygen, API + MCP; Tamper-Feld-Diff) | S-M | Gerichtsfestigkeit, Institutional | 1 | ✅ **GELIEFERT 2026-08-13** (1763874, 338 Tests) |
+| C3 | **Verifikations-Report als Produkt** (signierte Befunde: HMAC-SHA256 + ML-DSA-44 optional, CLI report-sign/verify/keygen, API + MCP; Tamper-Feld-Diff) | S-M | Gerichtsfestigkeit, Institutional | 1 | ✅ **GELIEFERT 2026-08-13** (1763874, 361 Tests) |
 | C4 | **ΔZ-Check als Service** (web, IMATAG-Muster, per-Authentifizierung) | M | Cleaner-Moat, Verifikation | 3 | C3; vor Anthropic-Detektor (Q4 26/Q1 27) |
 | C5 | **KI-Erklärungs-Report-Modul** (kostenlos für 5-10 Pilot-Prüfungsämter im Ouriginal-Migrationsfenster) — **Blaupause: `dissertation-ai-authorship-audit`** (Evidenzklassen A-D, Befund-Schema, 12-Schritte-Workflow, 15-Abschnitt-Report, Prüfpriorität 0-5 statt Schuld-Scoring) | M | Institutions-Play | 3 | C3 |
 
@@ -42,7 +42,7 @@
 
 | # | Kandidat | Quelle | Aufwand | Priorität | Umsetzungs-Stand (Runde 2) |
 |---|---|---|---|---|---|
-| D1 | E-Prozess-Detektion (E-Wert statt/nach Z-Score; Early-Stop, Bonferroni via `E_max ≥ K/α`) | 2602.17608, 2607.21958 | S-M | **1** | 🔄 läuft (`deleg_9c26fcb4`) — Formel + Code-Skizze fertig |
+| D1 | E-Prozess-Detektion (E-Wert statt/nach Z-Score; Early-Stop, Bonferroni via `E_max ≥ K/α`) | 2602.17608, 2607.21958 | S-M | **1** | ✅ **GELIEFERT 2026-08-13** (`6388339`, 361 Tests) — Sample-Effizienz: n=60 z=3.58 vs e detected (38/80 Seeds); early-stop Token 11/200; Bonferroni K/α |
 | D2 | ML-DSA-Befund-Signatur (FIPS 204) | FIPS 204 | S | **1** | ✅ Komplette API verifiziert + Größen/Perf gemessen (MLDSA-44: 2420 B sig, ~1.7 ms); 5 Fallstricke (verify-Reihenfolge, PrivKey=Seed, non-deterministisch, sign_mu 64 B, context b"") |
 | D3 | Signature Filtering — **ehrlich eingeordnet: primär FPR-Kontrolle** (98%→0% bei dominantem Token verifiziert), 78-99%-TPR-Claim braucht MILP-Lernset (nicht naiv erreichbar) | 2606.18430v2 | S-M | 2 | ✅ Heuristik-Skizze (Frequenz/χ²-Filter); kein öffentlicher Code gefunden |
 | D4 | FRS-Report-Gates (G1 FPR/FNR dokumentiert+rechenbar, G2 Paradox-Rate <20%, G3 Cross-Session) | 2607.16010 | M | 2 | ✅ Pflicht-Feld-Liste pro Gate; **Report ehrlich "NICHT FORENSIC READY" kennzeichnen solange G1-G3 unbelegt** |
