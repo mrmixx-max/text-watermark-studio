@@ -10,7 +10,11 @@ def test_forensics_files_exist():
     assert (root / "src/ai_watermark_toolkit/api/routes/forensics.py").exists()
 
 
-def test_demo_key_registry_present():
-    root = Path(__file__).resolve().parents[1]
-    data = json.loads((root / "data/key_registry.json").read_text(encoding="utf-8"))
-    assert len(data["keys"]) >= 2
+def test_demo_key_registry_present(tmp_path):
+    # Registry-Bootstrap erzeugt Demo-Keys — die Datei selbst ist bewusst
+    # untracked (data/ im .gitignore), also über die API testen, nicht über
+    # die Datei-Existenz im Checkout.
+    from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+    reg = KeyRegistry(str(tmp_path / "keys.json"))
+    keys = reg.list_keys()
+    assert len(keys) >= 2
