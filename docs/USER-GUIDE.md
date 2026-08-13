@@ -237,7 +237,9 @@ watch, both benchmarks, system state, and update.
 
 Navigation:
 
-- `↑`/`↓` move through the menu, `Enter` runs the selected action
+- `↑`/`↓` move through the menu from anywhere (app-level priority bindings
+  — cursor keys drive the menu even while the Path field is focused)
+- `Enter` runs the selected action
 - letter shortcuts: `d` detect · `c` clean · `e` embed · `p` pipeline ·
   `r` report · `s` splash · `q` quit · `^p` command palette
 - the Path field at the bottom takes a file or directory path; most actions

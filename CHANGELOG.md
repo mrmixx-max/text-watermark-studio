@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — prompt optimizer (real evaluator loop) + TUI cursor navigation
+
+- **Prompt optimizer rebuilt** (was a 20-line demo stub): locked eval set,
+  one-variable candidates, deterministic metrics with hard protected-term
+  guardrail, baseline hashing, promotion only on improvement, immutable
+  versioning + rollback through the prompt registry. API routes replace the
+  demo endpoints (`/api/optimization/evals|candidates|optimize|promote|history|rollback`).
+- **TUI**: cursor keys (↑/↓) now drive the menu from any focus (app-level
+  priority bindings); Enter runs the selected action everywhere.
+- **Prompt registry fix**: `get_template` now returns the newest stable
+  version by semver (previously first-in-list) — promotion/rollback target
+  the correct version.
+
 ## 2.0.0 — Model-grade detection + the measurement suite
 
 The major bump closes the detector's documented approximation gap and adds

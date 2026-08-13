@@ -245,7 +245,9 @@ Verzeichnis-Überwachung, beide Benchmarks, Systemstatus und Update.
 
 Navigation:
 
-- `↑`/`↓` bewegen durchs Menü, `Enter` führt die gewählte Aktion aus
+- `↑`/`↓` bewegen das Menü von überall aus (App-Ebene-Prioritäts-Bindings —
+  die Cursortasten steuern das Menü auch, während das Pfad-Feld fokussiert ist)
+- `Enter` führt die gewählte Aktion aus
 - Buchstaben-Shortcuts: `d` detect · `c` clean · `e` embed · `p` pipeline ·
   `r` report · `s` splash · `q` beenden · `^p` Befehlspalette
 - Das Pfad-Feld unten nimmt einen Datei- oder Verzeichnispfad; die meisten

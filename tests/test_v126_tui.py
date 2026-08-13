@@ -50,3 +50,34 @@ class TestCompose:
         bound = {b.key for b in app.BINDINGS}
         assert "q" in bound  # quit must always be reachable
         assert "enter" in bound
+        assert "up" in bound
+        assert "down" in bound
+
+
+class TestCursorNavigation:
+    def test_arrows_move_menu_from_input_focus(self):
+        import asyncio
+
+        async def nav():
+            app = StudioTUI()
+            async with app.run_test(size=(120, 36)) as pilot:
+                # focus sits on the Path input — arrows must still drive the menu
+                app.query_one("#path").focus()
+                await pilot.pause()
+                lv = app.query_one("#menu-list")
+                lv.index = 0
+                await pilot.press("down")
+                assert lv.index == 1
+                await pilot.press("down")
+                assert lv.index == 2
+                await pilot.press("up")
+                assert lv.index == 1
+                # clamp at both ends
+                lv.index = len(MENU) - 1
+                await pilot.press("down")
+                assert lv.index == len(MENU) - 1
+                lv.index = 0
+                await pilot.press("up")
+                assert lv.index == 0
+
+        asyncio.run(nav())

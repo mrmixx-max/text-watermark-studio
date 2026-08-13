@@ -1,0 +1,31 @@
+{
+  "locked": true,
+  "description": "Locked evaluation set for the prompt optimizer. Never mutated by optimization runs; changes to this file invalidate baseline comparisons.",
+  "evals": [
+    {
+      "id": "eval-001",
+      "text": "In today's rapidly evolving digital landscape, organizations must leverage innovative solutions to drive meaningful transformation and unlock unprecedented value across their entire operational ecosystem.",
+      "protected_terms": ["organizations"]
+    },
+    {
+      "id": "eval-002",
+      "text": "The quarterly report shows revenue growth of 12.4 percent in the first half of 2026, driven by the new subscription tier launched in March.",
+      "protected_terms": ["12.4", "2026", "March"]
+    },
+    {
+      "id": "eval-003",
+      "text": "Dive deep into the world of artificial intelligence as we explore cutting-edge advancements that are revolutionizing the way we think about technology.",
+      "protected_terms": ["artificial intelligence"]
+    },
+    {
+      "id": "eval-004",
+      "text": "Our comprehensive suite of solutions empowers teams to seamlessly integrate best-in-class workflows while maintaining robust security standards at every turn.",
+      "protected_terms": ["security"]
+    },
+    {
+      "id": "eval-005",
+      "text": "In conclusion, it is important to note that this groundbreaking innovation stands as a testament to what is possible when vision meets execution in the modern era.",
+      "protected_terms": ["innovation"]
+    }
+  ]
+}

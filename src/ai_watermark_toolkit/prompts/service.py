@@ -29,7 +29,15 @@ class PromptRegistryService:
         if version:
             return matches[0]
         stable = [m for m in matches if m.get('channel') == 'stable']
-        return stable[0] if stable else matches[0]
+        pool = stable or matches
+
+        def _ver_key(t):
+            try:
+                return tuple(int(p) for p in str(t.get('version', '0')).split('.')[:3])
+            except (ValueError, TypeError):
+                return (0, 0, 0)
+
+        return sorted(pool, key=_ver_key)[-1]  # newest stable (semver)
 
     def render(self, template_id: str, variables: dict, version: str | None = None):
         item = self.get_template(template_id, version)

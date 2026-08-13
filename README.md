@@ -168,7 +168,16 @@ The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectabil
 - **SynthID-style sweep**: `python benchmarks/synthid_sweep.py` — gamma × paraphrase-rate grid producing the detection curve.
 - **Findings report**: `ai-wm report file.txt --key <key> [--pdf]` — self-contained HTML forensics report, optional PDF via Edge headless.
 - **Directory watcher**: `ai-wm watch ./docs --once|--interval 5` — JSON lines with metadata + provenance findings per file.
-- **Menu-driven TUI**: `ai-wm tui` — Textual terminal UI, 17 menu actions, keyboard shortcuts, built-in check-and-upgrade. Needs `textual` (`pip install text-watermark-studio[tui]`).
+- **Prompt optimizer (real evaluator loop)**: locked eval set
+  (`data/optimization_evals.json`), candidates changing one variable each,
+  deterministic scoring (protected-term guardrail, length, marker reduction,
+  lexical balance), promotion only on improvement over a hashed baseline,
+  immutable versioning + rollback via the prompt registry. Offline
+  deterministic backend; LLM backend via `LOCAL_LLM_*`.
+- **Menu-driven TUI**: `ai-wm tui` — Textual terminal UI, 17 menu actions,
+  cursor-key navigation with app-level priority (works from any focus),
+  keyboard shortcuts, built-in check-and-upgrade. Needs `textual`
+  (`pip install text-watermark-studio[tui]`).
 
 ## What removing a text watermark costs (honest disclaimer)
 

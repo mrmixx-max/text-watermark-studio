@@ -86,13 +86,15 @@ class StudioTUI(App):
 
     BINDINGS = [
         Binding("q", "quit", "Quit", show=True),
+        Binding("up", "menu_up", "Menu up", show=True, priority=True),
+        Binding("down", "menu_down", "Menu down", show=True, priority=True),
+        Binding("enter", "run_selected", "Run", show=False, priority=True),
         Binding("d", "menu_detect", "Detect"),
         Binding("c", "menu_clean", "Clean"),
         Binding("e", "menu_embed", "Embed"),
         Binding("p", "menu_pipeline", "Pipeline"),
         Binding("r", "menu_report", "Report"),
         Binding("s", "menu_splash", "Splash"),
-        Binding("enter", "run_selected", "Run", show=False),
     ]
 
     def compose(self) -> ComposeResult:
@@ -402,23 +404,38 @@ class StudioTUI(App):
 
     # ---- keyboard shortcuts ------------------------------------------------
 
+    def _menu_list(self) -> ListView:
+        return self.query_one("#menu-list", ListView)
+
+    def action_menu_up(self) -> None:
+        """Cursor up: move the menu selection up (works from any focus)."""
+        lv = self._menu_list()
+        idx = lv.index if lv.index is not None else 0
+        lv.index = max(0, idx - 1)
+
+    def action_menu_down(self) -> None:
+        """Cursor down: move the menu selection down (works from any focus)."""
+        lv = self._menu_list()
+        idx = lv.index if lv.index is not None else 0
+        lv.index = min(len(MENU) - 1, idx + 1)
+
     def action_menu_detect(self):
-        self.query_one("#menu-list", ListView).index = 0
+        self._menu_list().index = 0
 
     def action_menu_clean(self):
-        self.query_one("#menu-list", ListView).index = 1
+        self._menu_list().index = 1
 
     def action_menu_embed(self):
-        self.query_one("#menu-list", ListView).index = 3
+        self._menu_list().index = 3
 
     def action_menu_pipeline(self):
-        self.query_one("#menu-list", ListView).index = 4
+        self._menu_list().index = 4
 
     def action_menu_report(self):
-        self.query_one("#menu-list", ListView).index = 5
+        self._menu_list().index = 5
 
     def action_menu_splash(self):
-        self.query_one("#menu-list", ListView).index = 15
+        self._menu_list().index = 15
 
 
 def main(argv: list[str] | None = None) -> int:
