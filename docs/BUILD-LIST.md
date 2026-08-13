@@ -32,7 +32,7 @@
 |---|---|---|---|---|---|
 | C1 | **Repo-Relabeling: "unabhängige Verifikation"** (README-Tagline, PyPI-Description von "Detect, clean, dilute" umstellen, bei 0 Stars) | S | Positionierung | 1 | — |
 | C2 | **Windows-Desktop-App + Installer** (PySide6-GUI als dünner Wrapper um Core + PyInstaller + Inno Setup + CI `build-desktop.yml`; Code-Signing optional) | M-L | Institutional-Verkauf (€149-499 Kanzleien, €490-1.490 Unis) | 2 | Markt-Bestätigung ✅; Signing-Entscheidung (Budget) |
-| C3 | **Verifikations-Report als Produkt** (signierte Befunde: JSON+PDF, HMAC/ML-DSA, auditierbar; deckt Feature-Research-Top-1 + Markt-Prio-1) | S-M | Gerichtsfestigkeit, Institutional | 1 | Block A (F2), Literatur-Skizze ML-DSA |
+| C3 | **Verifikations-Report als Produkt** (signierte Befunde: HMAC-SHA256 + ML-DSA-44 optional, CLI report-sign/verify/keygen, API + MCP; Tamper-Feld-Diff) | S-M | Gerichtsfestigkeit, Institutional | 1 | ✅ **GELIEFERT 2026-08-13** (1763874, 338 Tests) |
 | C4 | **ΔZ-Check als Service** (web, IMATAG-Muster, per-Authentifizierung) | M | Cleaner-Moat, Verifikation | 3 | C3; vor Anthropic-Detektor (Q4 26/Q1 27) |
 | C5 | **KI-Erklärungs-Report-Modul** (kostenlos für 5-10 Pilot-Prüfungsämter im Ouriginal-Migrationsfenster) — **Blaupause: `dissertation-ai-authorship-audit`** (Evidenzklassen A-D, Befund-Schema, 12-Schritte-Workflow, 15-Abschnitt-Report, Prüfpriorität 0-5 statt Schuld-Scoring) | M | Institutions-Play | 3 | C3 |
 
@@ -42,7 +42,7 @@
 
 | # | Kandidat | Quelle | Aufwand | Priorität | Umsetzungs-Stand (Runde 2) |
 |---|---|---|---|---|---|
-| D1 | E-Prozess-Detektion (E-Wert statt/nach Z-Score; Early-Stop, Bonferroni via `E_max ≥ K/α`) | 2602.17608, 2607.21958 | S-M | **1** | ✅ Formel + Code-Skizze (20 Zeilen), Demo: schwaches Signal z=0.01 vs e=0.10; δ fix ok (Validität δ-unabhängig) |
+| D1 | E-Prozess-Detektion (E-Wert statt/nach Z-Score; Early-Stop, Bonferroni via `E_max ≥ K/α`) | 2602.17608, 2607.21958 | S-M | **1** | 🔄 läuft (`deleg_9c26fcb4`) — Formel + Code-Skizze fertig |
 | D2 | ML-DSA-Befund-Signatur (FIPS 204) | FIPS 204 | S | **1** | ✅ Komplette API verifiziert + Größen/Perf gemessen (MLDSA-44: 2420 B sig, ~1.7 ms); 5 Fallstricke (verify-Reihenfolge, PrivKey=Seed, non-deterministisch, sign_mu 64 B, context b"") |
 | D3 | Signature Filtering — **ehrlich eingeordnet: primär FPR-Kontrolle** (98%→0% bei dominantem Token verifiziert), 78-99%-TPR-Claim braucht MILP-Lernset (nicht naiv erreichbar) | 2606.18430v2 | S-M | 2 | ✅ Heuristik-Skizze (Frequenz/χ²-Filter); kein öffentlicher Code gefunden |
 | D4 | FRS-Report-Gates (G1 FPR/FNR dokumentiert+rechenbar, G2 Paradox-Rate <20%, G3 Cross-Session) | 2607.16010 | M | 2 | ✅ Pflicht-Feld-Liste pro Gate; **Report ehrlich "NICHT FORENSIC READY" kennzeichnen solange G1-G3 unbelegt** |
