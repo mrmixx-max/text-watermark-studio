@@ -8,7 +8,7 @@
 
 Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling/logit bias, semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
 
-📖 **Documentation:** [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md)
+📖 **Documentation:** [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md) · [Measurement First — Manifest](docs/measurement-first.md)
 
 ![Local AI Watermark Laboratory — workstation concept](docs/lab-workstation.png)
 
