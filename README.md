@@ -56,32 +56,32 @@ docker compose up --build
 
 Windows users: the Makefile detects `OS=Windows_NT` and uses `.venv\Scripts` paths automatically. `scripts/publish-check.ps1` runs the full check (venv, install, tests, build) in PowerShell. Desktop packaging for Windows lives in `desktop/packaging/windows/build.ps1`.
 
-## Desktop-App (Windows)
+## Desktop app (Windows)
 
-Ein dünner PySide6-Wrapper um **dieselbe Core-Forensik**, die auch CLI/API/TUI
-nutzen — **kein Server, kein Netzwerk**: Menüs und Buttons rufen die
-Core-Funktionen direkt auf (Detect, Embed, Report, Sign, Verify, KGW-Beispiel).
-Der Einstieg für Nicht-Entwickler (Kanzleien, Institutionen): Text einfügen →
-Schlüssel wählen → Detektieren. Die App liegt unter
-`src/ai_watermark_toolkit/ui/desktop/` (Qt-freier `DesktopController` + PySide6-Shell).
+A thin PySide6 wrapper around **the same core forensics** that CLI/API/TUI
+use — **no server, no network**: menus and buttons call the core functions
+directly (Detect, Embed, Report, Sign, Verify, KGW demo). The entry point for
+non-developers (law firms, institutions): paste text → pick a key → detect.
+The app lives in `src/ai_watermark_toolkit/ui/desktop/` (Qt-free
+`DesktopController` + PySide6 shell).
 
 **Features**
 
-- **Detect** — KGW-Z-Score + e-process (anytime-valid) gegen den gewählten Key
-  oder alle registrierten Keys; JSON-Ergebnis im Panel
-- **Embed** — `mark_greenlist`: Text wird greenlist-markiert (garantiert
-  detektierbar, Z>4), Ergebnis ersetzt den Editor-Text (Ctrl+Z macht es rückgängig)
-- **Bericht** — selbstenthaltener HTML-Befund (`build_report`) nach `Downloads`
-  (Fallback: Temp-Verzeichnis)
-- **Signieren/Verifizieren** — Befund-JSON signieren (HMAC-SHA256, Registry-Secret;
-  ML-DSA (quantenfest) über die CLI: `ai-wm report-keygen`/`report-sign`) und verifizieren
-- **KGW-Beispiel** — synthetischer Generation-Time-Bias (Mechanik-Beweis, kein LLM)
-- Schlüssel-Auswahl, Statusleiste, JSON-Ergebnis-Panel, Datei-Dialog
+- **Detect** — KGW Z-score + e-process (anytime-valid) against the selected
+  key or all registered keys; JSON result in the panel
+- **Embed** — `mark_greenlist`: text is greenlist-marked (guaranteed
+  detectable, Z>4), result replaces the editor text (Ctrl+Z undoes it)
+- **Report** — self-contained HTML report (`build_report`) to `Downloads`
+  (fallback: temp directory)
+- **Sign/Verify** — sign report JSON (HMAC-SHA256, registry secret; ML-DSA
+  (quantum-resistant) via CLI: `ai-wm report-keygen`/`report-sign`) and verify
+- **KGW demo** — synthetic generation-time bias (mechanism proof, no LLM)
+- Key selection, status bar, JSON result panel, file dialog
 
-**Ausführen (Source)**
+**Run (source)**
 
 ```bash
-pip install PySide6        # optionale GUI-only-Dependency (Core bleibt stdlib-first, kein pyproject-Eintrag)
+pip install PySide6        # optional GUI-only dependency (core stays stdlib-first, no pyproject entry)
 python -m ai_watermark_toolkit.ui.desktop.app
 ```
 
@@ -94,24 +94,24 @@ pyinstaller packaging/tws-desktop.spec     # -> dist/tws-desktop.exe (onefile, w
 iscc packaging/tws-setup.iss              # -> dist/TWS-Setup.exe (Inno Setup)
 ```
 
-CI: `.github/workflows/build-desktop.yml` (manuell oder Tag `v*` auf
+CI: `.github/workflows/build-desktop.yml` (manual or tag `v*` on
 windows-latest: PyInstaller → choco Inno Setup → ISCC → Artifacts).
 
-**Installation und die ehrliche SmartScreen-Hürde**
+**Installation and the honest SmartScreen hurdle**
 
-`TWS-Setup.exe` installiert nach `%ProgramFiles%\TextWatermarkStudio`. Ohne
-Code-Signing-Zertifikat ist der Installer **unsigniert** — Windows SmartScreen
-zeigt „Unbekannter Herausgeber" und verlangt „Weitere Informationen → Trotzdem
-ausführen". Das ist erwartet und kein Fehler. Ein Code-Signing-Zertifikat
-(OV/EV, ~$100–300/Jahr) entfernt die Warnung; das ist eine Budget-Entscheidung —
-der optionale Signing-Schritt steht auskommentiert im Workflow (Zertifikat als
-Secret `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`).
+`TWS-Setup.exe` installs to `%ProgramFiles%\TextWatermarkStudio`. Without a
+code-signing certificate the installer is **unsigned** — Windows SmartScreen
+shows "Unknown publisher" and requires "More info → Run anyway". That is
+expected and not a bug. A code-signing certificate (OV/EV, ~$100–300/year)
+removes the warning; this is a budget decision — the optional signing step
+is commented out in the workflow (certificate as secret
+`WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`).
 
-**Keys**: Die App liest `data/key_registry.json` (nur lesend, gleicher Vertrag
-wie CLI/TUI). Keys anlegen über `POST /api/forensics/keys` (`ai-wm serve`) oder
-per Registry-Eintrag; ohne KGW-Key mit Secret meldet die App das ehrlich statt
-leise eine Registry anzulegen. Der Installer legt keine Schlüssel ab — die
-Registry bleibt Operator-Sache.
+**Keys**: the app reads `data/key_registry.json` (read-only, same contract as
+CLI/TUI). Create keys via `POST /api/forensics/keys` (`ai-wm serve`) or via
+registry entry; without a KGW key with a secret the app reports that honestly
+instead of silently creating a registry. The installer does not install any
+keys — the registry stays an operator concern.
 
 ## Why a lab edition
 
