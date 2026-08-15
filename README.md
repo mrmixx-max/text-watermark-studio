@@ -80,13 +80,19 @@ The app lives in `src/ai_watermark_toolkit/ui/desktop/` (Qt-free
 - **Detect** — KGW Z-score + e-process (anytime-valid) against the selected
   key or all registered keys; JSON result in the panel
 - **Embed** — `mark_greenlist`: text is greenlist-marked (guaranteed
-  detectable, Z>4), result replaces the editor text (Ctrl+Z undoes it)
+  detectable, Z>4), result replaces the editor text (Ctrl+Z undoes it);
+  every substituted token is **highlighted green** so you can see exactly
+  what the watermark changed (offsets come from the core via the
+  `substitutions` return key)
 - **Report** — self-contained HTML report (`build_report`) to `Downloads`
   (fallback: temp directory)
 - **Sign/Verify** — sign report JSON (HMAC-SHA256, registry secret; ML-DSA
   (quantum-resistant) via CLI: `ai-wm report-keygen`/`report-sign`) and verify
 - **KGW demo** — synthetic generation-time bias (mechanism proof, no LLM)
-- Key selection, status bar, JSON result panel, file dialog
+- Key selection, status bar (line/column, character & word count), JSON
+  result panel, file dialog, **drag & drop a file onto the editor**
+- **Real text editor**: line numbers, Find bar (Ctrl+F, Enter/Shift+Enter,
+  wrap-around), line-wrap toggle (Ctrl+Shift+W), current-line highlight
 
 **Run (source)**
 

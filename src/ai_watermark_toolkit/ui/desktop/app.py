@@ -20,10 +20,11 @@ import json
 import sys
 
 from .controller import DesktopController
+from .editor import EditorPane
 
 try:  # optional GUI layer — import fails gracefully, main() explains
     from PySide6.QtCore import Qt
-    from PySide6.QtGui import QAction, QKeySequence
+    from PySide6.QtGui import QAction, QKeySequence, QTextCursor
     from PySide6.QtWidgets import (
         QApplication,
         QComboBox,
@@ -83,6 +84,18 @@ class MainWindow(QMainWindow):
         act_quit.triggered.connect(self.close)
         m_file.addAction(act_quit)
 
+        m_edit = mbar.addMenu("&Bearbeiten")
+        act_find = QAction("&Suchen…", self)
+        act_find.setShortcut(QKeySequence.Find)
+        act_find.triggered.connect(self._show_find)
+        m_edit.addAction(act_find)
+        act_wrap = QAction("Zeilen&umbruch", self)
+        act_wrap.setShortcut("Ctrl+Shift+W")
+        act_wrap.setCheckable(True)
+        act_wrap.setChecked(True)
+        act_wrap.toggled.connect(self._toggle_wrap)
+        m_edit.addAction(act_wrap)
+
         m_actions = mbar.addMenu("&Aktionen")
         self._menu_actions = {}
         for label, shortcut, slot in (
@@ -134,16 +147,19 @@ class MainWindow(QMainWindow):
             toolbar.addWidget(btn)
         left_layout.addLayout(toolbar)
 
-        self.editor = QPlainTextEdit()
+        self.editor = EditorPane()
         self.editor.setPlaceholderText(
-            "Text hier einfuegen oder Datei > Oeffnen… waehlen.\n\n"
+            "Text hier einfuegen, Datei > Oeffnen… waehlen oder Datei "\
+            "hineinziehen.\n\n"
             "Detektieren: KGW-Z-Score + e-process gegen den gewaehlten Key "
             "(oder alle Keys).\n"
-            "Einbetten: Text greenlist-markieren (Ergebnis ersetzt den Text "
-            "im Editor, rueckgaengig mit Ctrl+Z).\n"
+            "Einbetten: Text greenlist-markieren — die ersetzten Woerter "
+            "werden gruen hervorgehoben (rueckgaengig mit Ctrl+Z).\n"
             "Bericht: HTML-Befund nach Downloads (oder tmp).\n"
-            "Signieren/Verifizieren: JSON aus dem Ergebnis-Panel."
+            "Signieren/Verifizieren: JSON aus dem Ergebnis-Panel.\n"
+            "Suchen: Ctrl+F · Zeilenumbruch: Ctrl+Shift+W."
         )
+        self.editor.fileDropped.connect(self._on_file_dropped)
         left_layout.addWidget(self.editor)
         splitter.addWidget(left)
 
@@ -156,6 +172,10 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(1, 2)
 
         self.setCentralWidget(splitter)
+        self._pos_label = QLabel("Ln 1, Col 1 · 0 Zeichen")
+        self.statusBar().addPermanentWidget(self._pos_label)
+        self.editor.cursorPositionChanged.connect(self._update_status_pos)
+        self.editor.textChanged.connect(self._update_status_pos)
         self.statusBar().showMessage("Bereit")
 
     def _refresh_keys(self) -> None:
@@ -222,6 +242,43 @@ class MainWindow(QMainWindow):
             self.results.setPlainText(str(result))
         self.statusBar().showMessage(ok_status, 8000)
 
+    # ------------------------------------------------- editor status/edits
+    def _update_status_pos(self) -> None:
+        cursor = self.editor.textCursor()
+        line = cursor.blockNumber() + 1
+        col = cursor.positionInBlock() + 1
+        chars = len(self.editor.toPlainText())
+        words = len(self.editor.toPlainText().split())
+        self._pos_label.setText(
+            f"Ln {line}, Col {col} · {chars} Zeichen · {words} Woerter"
+        )
+
+    def _show_find(self) -> None:
+        self.editor.show_find_bar()
+
+    def _toggle_wrap(self, checked: bool) -> None:
+        self.editor.set_wrap(checked)
+
+    def _on_file_dropped(self, path: str) -> None:
+        try:
+            text = self.controller.load_file(path)
+        except Exception as e:
+            self.results.setPlainText(
+                json.dumps(
+                    {"error": type(e).__name__, "message": str(e)},
+                    ensure_ascii=False, indent=2,
+                )
+            )
+            self.statusBar().showMessage(f"Fehler: {e}", 8000)
+            return
+        self.editor.setPlainText(text)
+        self.editor.clear_markings()
+        self.results.setPlainText(
+            json.dumps({"loaded": path, "chars": len(text)},
+                       ensure_ascii=False, indent=2)
+        )
+        self.statusBar().showMessage(f"Geladen: {path}", 5000)
+
     # ------------------------------------------------------------- actions
     def open_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -273,16 +330,25 @@ class MainWindow(QMainWindow):
                                                self._require_key()),
             ok_status="Text greenlist-markiert",
         )
-        # Non-destructive takeover of the marked text (undoable via Ctrl+Z).
+        # Non-destructive takeover of the marked text (undoable via Ctrl+Z),
+        # then paint the greenlist substitutions so the user SEES the marks.
         try:
-            marked = json.loads(self.results.toPlainText()).get("text")
+            data = json.loads(self.results.toPlainText())
+            marked = data.get("text")
         except Exception:
-            marked = None
+            data, marked = None, None
         if marked:
             cursor = self.editor.textCursor()
-            cursor.select(cursor.Document)
+            cursor.select(QTextCursor.SelectionType.Document)
             cursor.insertText(marked)
             self.editor.textCursor().clearSelection()
+            self.editor.set_markings(
+                (data or {}).get("substitutions") or []
+            )
+            self.statusBar().showMessage(
+                f"Greenlist: {len((data or {}).get('substitutions') or [])} "
+                "Woerter ersetzt (gruen markiert)", 8000,
+            )
 
     def build_report(self) -> None:
         self._run(

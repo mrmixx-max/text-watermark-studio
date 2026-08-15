@@ -569,6 +569,7 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
 
     parts = _SPLIT_RE.split(text)
     replaced = 0
+    subs_raw: list[tuple[int, str, str]] = []  # (index, original, replacement)
     # Rolling window of the last `context` finalized (post-substitution) words.
     # BPE keeps a window of 1 (single predecessor word).
     win = collections.deque(maxlen=context if level == "word" else 1)
@@ -601,10 +602,31 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         if green_pick is not None:
             parts[i] = _restore_case(green_pick, token)
             replaced += 1
+            subs_raw.append((i, token, parts[i]))
             win.append(green_pick.lower())
         else:
             win.append(lower)
     new_text = "".join(parts)
+    # Substitution positions in the FINAL text (post-substitution offsets —
+    # replacements may change token length, so offsets are computed by
+    # walking the joined parts once, not by tracking during substitution).
+    subs_by_idx = {i: (orig, rep) for i, orig, rep in subs_raw}
+    substitutions: list[dict] = []
+    offset = 0
+    for i, part in enumerate(parts):
+        if i % 2 == 0:
+            offset += len(part)
+            continue
+        entry = subs_by_idx.get(i)
+        if entry is not None:
+            orig, rep = entry
+            substitutions.append({
+                "start": offset,
+                "end": offset + len(rep),
+                "original": orig,
+                "replacement": rep,
+            })
+        offset += len(part)
     if level == "bpe":
         # Report the SAME green rate the detector sees: word-boundary pairs
         # (last subword of prev word, first subword of curr word), not every
@@ -625,6 +647,7 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         "replacements": replaced,
         "total_tokens": total_tokens,
         "green_rate_after": round(green_now / n, 4) if n else None,
+        "substitutions": substitutions,
     }
 
 
