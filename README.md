@@ -54,6 +54,16 @@ Alternatively, run the whole stack via Docker:
 docker compose up --build
 ```
 
+Or pull the published image from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/mrmixx-max/text-watermark-studio:latest
+docker run -p 8080:8080 ghcr.io/mrmixx-max/text-watermark-studio
+```
+
+The GHCR image runs the FastAPI service as a non-root user on port 8080 —
+fully local, no cloud, zero telemetry.
+
 Windows users: the Makefile detects `OS=Windows_NT` and uses `.venv\Scripts` paths automatically. `scripts/publish-check.ps1` runs the full check (venv, install, tests, build) in PowerShell. Desktop packaging for Windows lives in `desktop/packaging/windows/build.ps1`.
 
 ## Desktop app (Windows)
@@ -139,6 +149,17 @@ Every detect/report run can be turned into a **self-signed, auditable document**
 - Semantic / structure
 - Localized provenance
 - Training-time / ownership
+
+## MarkLLM-compatible interop (reference-verified)
+
+`src/ai_watermark_toolkit/interop/markllm.py` reimplements the exact KGW
+greenlist scheme from the **MarkLLM reference toolkit** (THU-BPM/MarkLLM,
+EMNLP 2024, Apache-2.0): `torch.randperm` PRF seeded by `(hash_key * f)`,
+left-window context, `time`/`f` scheme, and the same Z-score formula. The
+interop tests (`tests/test_markllm_interop.py`) verify **byte-identical
+greenlists and identical z-scores against the real MarkLLM implementation** —
+texts watermarked by the reference toolkit are detected by this detector with
+the same key, and vice versa. Optional extra: `pip install "text-watermark-studio[markllm]"`.
 
 ## Important limit
 

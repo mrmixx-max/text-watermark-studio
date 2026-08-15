@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-watermark-studio"
-version = "2.0.1"
+version = "2.1.0"
 description = "Independent, offline verification of AI text watermarks — keyed detection, marking, provenance, measurement"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,6 +25,8 @@ dependencies = ["fastapi>=0.115", "uvicorn>=0.30", "python-dotenv>=1.0", "redis>
 dev = ["pytest>=8.0", "httpx>=0.27", "build>=1.2", "twine>=5.1", "pytest-timeout>=2.2", "tiktoken>=0.7", "markdown>=3.5"]
 bpe = ["tiktoken>=0.7"]
 tui = ["textual>=8.0"]
+# MarkLLM interop (reference-compatible KGW detection); heavy: pulls torch/transformers
+markllm = ["markllm==0.1.5"]
 
 [project.scripts]
 ai-wm = "ai_watermark_toolkit.cli:main"
