@@ -151,3 +151,57 @@ def test_cli_finding_lang_default_de(tmp_path, marked):
     rep = json.loads(r.stdout)
     assert rep["lang"] == "de"
     assert "Wasserzeichen" in rep["findings"][0]["observation"]
+
+
+# ---------------------------------------------------------------- Desktop-UI
+DESKTOP_KEY = {
+    "key_id": "desktop-i18n-1",
+    "family": "kgw",
+    "status": "active",
+    "owner": "test",
+    "trigger_phrase": "",
+    "notes": "i18n test key",
+    "secret": KEY,
+    "gamma": 0.25,
+}
+
+
+def _desktop_controller(tmp_path):
+    from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+    from ai_watermark_toolkit.ui.desktop import DesktopController
+    registry = tmp_path / "registry-i18n.json"
+    KeyRegistry(registry).add_key(dict(DESKTOP_KEY))
+    return DesktopController(registry_path=registry)
+
+
+def test_desktop_detect_finding_de_default(tmp_path, marked):
+    """Ergebnis-Panel-Befund (Desktop) bleibt deutsch ohne Sprachwahl."""
+    ctrl = _desktop_controller(tmp_path)
+    out = ctrl.detect_text(marked, DESKTOP_KEY["key_id"])
+    assert "finding" in out
+    f = out["finding"]
+    assert "Wasserzeichen" in f["observation"]
+    assert f["beleg"]["z_score"] > 4.0  # KGW-Detektion sicher vorhanden
+
+
+def test_desktop_detect_finding_en(tmp_path, marked):
+    """Ergebnis-Panel-Befund (Desktop) folgt der Sprachwahl (en)."""
+    ctrl = _desktop_controller(tmp_path)
+    out_de = ctrl.detect_text(marked, DESKTOP_KEY["key_id"], lang="de")
+    out_en = ctrl.detect_text(marked, DESKTOP_KEY["key_id"], lang="en")
+    f_de, f_en = out_de["finding"], out_en["finding"]
+    # Strukturfelder sprachneutral
+    assert f_de["evidence_class"] == f_en["evidence_class"]
+    assert f_de["category"] == f_en["category"]
+    assert f_de["beleg"] == f_en["beleg"]
+    # Textfelder übersetzt
+    assert "Wasserzeichen" in f_de["observation"]
+    assert "watermark" in f_en["observation"].lower()
+    assert "Wasserzeichen" not in f_en["observation"]
+    assert all("ä" not in s and "ö" not in s and "ü" not in s
+               for s in f_en["possible_explanations"]
+               + f_en["exculpatory"] + f_en["recommended_next_steps"])
+    # Kern-Detektionsfelder unverändert (lang beeinflusst nur den Befund)
+    assert out_de["verdict"] == out_en["verdict"]
+    assert out_de["z_score"] == out_en["z_score"]
+

@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ...forensics.e_value import e_detect, e_detect_multi
+from ...forensics.finding import classify_finding
 from ...forensics.key_registry import DEFAULT_PATH, KeyRegistry, mask_secret_key_id
 from ...forensics.kgw import (
     DEFAULT_GAMMA,
@@ -131,14 +132,16 @@ class DesktopController:
 
     # ------------------------------------------------------------- detect
     def detect_text(self, text: str,
-                    key_id_or_secret: str | None = None) -> dict:
+                    key_id_or_secret: str | None = None,
+                    lang: str = "de") -> dict:
         """KGW Z-score (+ e-process) detection of the given text.
 
         With a key argument: that single key (registry key_id or raw
         secret) is tested. Without: every registered KGW key is tested
         (multi-key, Bonferroni note). The e-process is the anytime-valid
         companion (stdlib, always available). Result shape mirrors the CLI
-        ``ai-wm detect --key`` JSON.
+        ``ai-wm detect --key`` JSON, plus a localized ``finding`` block
+        (``lang``: ``"de"`` or ``"en"``) with the forensic verdict text.
         """
         if not text or not text.strip():
             raise ValueError("Text ist leer — Text eingeben oder Datei oeffnen.")
@@ -156,7 +159,7 @@ class DesktopController:
                                       level="word", context=1)
             e_result = e_detect_multi(text, keys, gamma=gamma)
         best = result.get("best") or {}
-        return {
+        out = {
             "verdict": best.get("verdict", "no_signal"),
             "signal": best.get("signal"),
             "z_score": best.get("z_score"),
@@ -170,11 +173,18 @@ class DesktopController:
             "kgw": result,
             "text_length": len(text),
         }
+        out["finding"] = classify_finding(
+            out,
+            key_id=best.get("key_id") or "unknown",
+            lang=lang,
+        )
+        return out
 
     def detect_file(self, path: str | Path,
-                    key_id_or_secret: str | None = None) -> dict:
+                    key_id_or_secret: str | None = None,
+                    lang: str = "de") -> dict:
         """Detect a text file (registry key_id or raw secret, optional)."""
-        return self.detect_text(self.load_file(path), key_id_or_secret)
+        return self.detect_text(self.load_file(path), key_id_or_secret, lang=lang)
 
     # ------------------------------------------------------------- embed
     def embed_text(self, text: str, key_id: str, gamma: float | None = None,

@@ -328,7 +328,9 @@ class MainWindow(QMainWindow):
 
     def detect(self) -> None:
         self._run(
-            lambda: self.controller.detect_text(self._editor_text(), self._selected_key()),
+            lambda: self.controller.detect_text(self._editor_text(),
+                                                self._selected_key(),
+                                                lang=self._report_lang()),
             ok_status="Detektion abgeschlossen",
         )
 
