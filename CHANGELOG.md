@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.2.1 — Editor marking invalidation fix
+
+- **Stale highlight fix** (`ui/desktop/editor.py`): greenlist substitution
+  markings are now cleared the moment the editor text changes (typing,
+  paste, undo, wrap toggle). Previously, offsets were only invalidated on
+  file load, so editing after an embed painted the highlights on the wrong
+  words — including after Ctrl+Z, which the placeholder text promises.
+- **Cleanup** (`ui/desktop/editor.py`): removed dead `textCursor()` base
+  assignments in `_repaint_markings`, removed a redundant module-level
+  `QTextDocument` import (already imported at the top) with a misleading
+  comment, and dropped an inline `QTextEdit` import.
+- **Tests**: `tests/test_v100_desktop_editor.py` covers typing, undo, and
+  re-embed after edits (offscreen, PySide6 optional dep).
+
 ## 2.2.0 — Desktop text editor with substitution highlighting
 
 - **Desktop editor** (`ui/desktop`): the text area is now a real editor —

@@ -77,6 +77,7 @@ class EditorPane(QPlainTextEdit):
         super().__init__(parent)
         self._line_numbers = _LineNumberArea(self)
         self._markings: list[dict] = []
+        self._markings_text: str | None = None
         self._wrap = True
 
         # --- find bar -------------------------------------------------
@@ -103,6 +104,7 @@ class EditorPane(QPlainTextEdit):
         self._find_bar.hide()
 
         # --- signals ----------------------------------------------------
+        self.textChanged.connect(self._on_text_changed)
         self.blockCountChanged.connect(self._update_line_numbers)
         self.updateRequest.connect(self._on_update_request)
         self.cursorPositionChanged.connect(self._highlight_current_line)
@@ -243,7 +245,6 @@ class EditorPane(QPlainTextEdit):
 
         extra = []
         for c, fmt in selections:
-            sel = self.textCursor()  # base
             sel = self._selection_from(c, fmt)
             extra.append(sel)
         self.setExtraSelections(extra)
@@ -264,10 +265,18 @@ class EditorPane(QPlainTextEdit):
         "replacement": str}`` — offsets into the CURRENT editor text.
         """
         self._markings = list(markings or [])
+        self._markings_text = self.toPlainText() if self._markings else None
         self._repaint_markings()
 
     def clear_markings(self) -> None:
         self.set_markings([])
+
+    def _on_text_changed(self) -> None:
+        """Invalidate greenlist markings when the text they were computed
+        against no longer matches — typing, undo, paste, wrap all change
+        offsets, and stale highlights would paint the wrong words."""
+        if self._markings and self.toPlainText() != self._markings_text:
+            self.clear_markings()
 
     # --------------------------------------------------------------- find
     def find_next(self) -> None:
@@ -323,5 +332,4 @@ class EditorPane(QPlainTextEdit):
         super().dropEvent(event)
 
 
-# Keep QTextDocument import reachable at module level (used in find_prev).
-from PySide6.QtGui import QTextDocument  # noqa: E402  (imported after use)
+

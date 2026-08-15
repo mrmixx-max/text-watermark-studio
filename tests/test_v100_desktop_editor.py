@@ -180,3 +180,36 @@ def test_main_window_embed_paints_markings(monkeypatch):
     for m in win.editor._markings:
         assert text[m["start"]:m["end"]] == m["replacement"]
     assert "gruen markiert" in win.statusBar().currentMessage()
+
+
+def test_editor_markings_invalidate_on_text_change(monkeypatch):
+    """Typing or undo after embed must drop stale green highlights."""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+    from ai_watermark_toolkit.ui.desktop.editor import EditorPane
+
+    app = QApplication.instance() or QApplication([])
+    ed = EditorPane()
+    result = mark_greenlist(_PLAIN, REG_KEY["secret"], REG_KEY["gamma"])
+    subs = result["substitutions"]
+    assert subs
+
+    ed.setPlainText(result["text"])
+    ed.set_markings(subs)
+    assert ed._markings
+
+    # typing anywhere shifts offsets -> highlights must vanish
+    ed.insertPlainText("XY")
+    assert ed._markings == []
+
+    # undo back to the marked text: no stale highlights either
+    ed.undo()
+    assert ed.toPlainText() == result["text"]
+    assert ed._markings == []
+
+    # re-embed after edits: fresh markings work again
+    ed.set_markings(subs)
+    assert len(ed._markings) == len(subs)
+    assert ed.toPlainText() == result["text"]
+
