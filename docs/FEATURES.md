@@ -116,3 +116,22 @@ Current gateway and routing guidance recommends putting all model calls behind a
 ## Debugging and hardening
 
 HTMX + FastAPI integrations often fail in a few recurring places: unchecked checkboxes disappear from the request body instead of sending `false`, `json-enc` forms need explicit JSON handling, and HTMX usually expects HTML fragments rather than raw JSON when targeting DOM nodes. Current debugging guidance recommends inspecting actual request payloads, normalizing checkbox values on the server, and returning HTML partials whenever `HX-Request: true` is present. This edition hardens the app by adding unified HTMX/JSON response helpers, checkbox normalization, metadata parsing for export requests, HTML fragment responses for HTMX calls, and a repaired rewrite module.
+
+## Roadmap: MarkDiffusion (image watermarking) — planned, not built
+
+Evaluated integrating MarkDiffusion (THU-BPM, JMLR, Apache-2.0) for image
+watermarking (Tree-Ring, RIGL, Gaussian Shading). Decision: **roadmap item,
+not a current build** — scope discipline over feature sprawl.
+
+Why deferred:
+- MarkDiffusion requires a real Stable Diffusion model (multi-GB download) for
+  every mark/detect run; interop verification without the model would be
+  showcase measurement, not evidence.
+- 42 dependencies (diffusers, transformers, accelerate, opencv) — heavy for an
+  image feature outside the text-watermark core.
+- CI cost explodes (diffusion sampling = minutes, not seconds).
+
+If image watermarking moves forward, it should be a **sibling repository**
+(image-watermark-studio) with the same measurement-first philosophy, dedicated
+GPU runners, and its own release cycle — not a dependency expansion of this
+package. Tracking: GitHub issue #1.
