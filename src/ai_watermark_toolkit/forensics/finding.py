@@ -44,6 +44,249 @@ Z_THRESHOLD = 4.0
 CONTEXT_KEYS = ("institutional_rule", "origin_history", "rules", "history",
                 "institution")
 
+# ---------------------------------------------------------------- i18n
+# Report language. Default "de" keeps the existing contract; "en" switches
+# every human-readable text field (observation, explanations, exculpatory,
+# next steps, verdict, schlussfolgerung_hinweis) to English. The structured
+# fields (evidence_class, category, priority, risk, beleg) stay language-
+# neutral by design.
+LANGS = ("de", "en")
+
+_TEXTS: dict[str, dict[str, str]] = {
+    "de": {
+        "obs_redlist": ("Reproduzierbares Redlist-Vorzeichen (z = {z}): Die "
+                        "Token-Auswahl meidet die Hash-basierte Tokenmenge des "
+                        "Schlüssels — ein keyed-Verifikations-Artefakt, keine "
+                        "Stil-Heuristik."),
+        "obs_delta_removed": ("Der ΔZ-Vergleich belegt einen messbaren "
+                              "Signalabfall (ΔZ = {delta_z}): Das "
+                              "Wasserzeichen-Signal war vorher nachweisbar "
+                              "(z = {z_before}) und danach nicht mehr "
+                              "(z = {z_after})."),
+        "obs_delta_kept": ("Der ΔZ-Vergleich zeigt keinen nachweisbaren "
+                           "Signalwechsel (ΔZ = {delta_z}, removed: false)."),
+        "obs_e_detected": ("Der E-Wert-Prozess überschreitet die Schwelle "
+                           "(e = {e_value} >= {threshold}). Technischer "
+                           "Indikator — kein Beweis für KI-Beteiligung."),
+        "obs_e_clean": ("Der E-Wert-Prozess bleibt unter der Schwelle "
+                        "(e = {e_value} < {threshold})."),
+        "obs_class_a": ("Überprüfbarer Dokumentbefund: Bonferroni-adjustierter "
+                        "p-Wert {p_adj} unter der Signifikanzschwelle bzw. "
+                        "konsistente Segment-Z-Werte — ein reproduzierbares "
+                        "Artefakt."),
+        "obs_signal": ("Statistisches Wasserzeichen-Signal (z = {z}, "
+                       "p = {p}). Technischer Indikator der Evidenzklasse C — "
+                       "nie allein beweisend."),
+        "obs_none": ("Kein statistisches Wasserzeichen-Signal mit dem "
+                     "angegebenen Schlüssel nachweisbar."),
+        "exp_redlist_1": ("Der Text wurde mit einem Redlist-Verfahren unter "
+                          "dem rechten Schlüssel erzeugt (reproduzierbares "
+                          "Artefakt)."),
+        "exp_redlist_2": ("Ein Bearbeitungs- oder Filterungsprozess hat Token "
+                          "vermieden, die zufällig der Hash-Tokenmenge des "
+                          "Schlüssels entsprechen."),
+        "exp_redlist_3": ("Zufällige Unterrepräsentation: bei vielen hundert "
+                          "Token ist die Wahrscheinlichkeit sehr klein, aber "
+                          "nicht mathematisch null."),
+        "exp_delta_removed_1": ("Der Text wurde nachweislich verändert "
+                                "(z. B. Shuffle oder Neuschreibung), sodass "
+                                "das Signal verschwand."),
+        "exp_delta_removed_2": ("Der Vergleich misst einen Signalwechsel, "
+                                "beweist aber nicht die Ursache (auch "
+                                "vollständige Neuformulierung entfernt das "
+                                "Signal ohne ‚Reinigung')."),
+        "exp_delta_kept_1": ("Die Transformation hat das Signal nicht berührt "
+                             "(tokens unverändert) — die Marke ist weiterhin "
+                             "messbar."),
+        "exp_delta_kept_2": ("Das Signal war bereits vorher schwach oder "
+                             "nicht vorhanden — kein Signalwechsel ist "
+                             "messbar."),
+        "exp_e_1": ("Der Text wurde mit dem rechten Schlüssel markiert — der "
+                    "E-Wert-Prozess sammelt die Greenlist-Abweichung "
+                    "tokenweise an."),
+        "exp_e_2": ("Koinzidenz bei vielen Token-Positionen: ein einzelner "
+                    "Text kann auch ohne Markierung überzufällig viele grüne "
+                    "Token enthalten."),
+        "exp_a_1": ("Der Text trägt ein unter dem rechten Schlüssel "
+                    "verifizierbares Wasserzeichen-Artefakt (keyed-"
+                    "Verifikation)."),
+        "exp_a_2": ("Eine strukturelle Text-Eigenschaft (z. B. extrem "
+                    "repetitive Tokenstruktur) kann statistische Tests ohne "
+                    "Markierung beeinflussen — FPR-Kontrollen sind zu "
+                    "dokumentieren."),
+        "exp_signal_1": ("Der Text wurde mit dem rechten Schlüssel markiert "
+                         "oder KI-generiert (keyed-Verifikation schlägt an)."),
+        "exp_signal_2": ("Koinzidenz oder stilistische Varianz: ein einzelner "
+                         "Text kann ohne Markierung überzufällig viele grüne "
+                         "Token enthalten (zweiseitiger p-Wert, kein "
+                         "deterministischer Beweis)."),
+        "exp_signal_3": ("Ein anderer Prozess mit ähnlicher Token-Statistik "
+                         "(z. B. maschinelle Übersetzung mit stabiler "
+                         "Wortwahl)."),
+        "exp_none_1": ("Der Text ist unmarkiert — kein KGW-Signal unter dem "
+                       "rechten Schlüssel."),
+        "exp_none_2": ("Der Text wurde markiert und anschließend so "
+                       "verändert, dass das Signal zerstört wurde (Paraphrase, "
+                       "Shuffle, Neuformulierung)."),
+        "exp_none_3": ("Der Text ist zu kurz für einen statistischen Test "
+                       "(n < 10 bewertete Token-Positionen)."),
+        "excu_1": ("Technische Detektorwerte sind nie allein beweisend "
+                   "(Evidenzklasse-C-Regel): Sie belegen ein Signal, keine "
+                   "Autorenschaft und keine Täuschungsabsicht."),
+        "excu_2": ("Keine Aussage über menschliche vs. KI-Autorenschaft "
+                   "möglich — ein statistischer Befund ersetzt keine "
+                   "fachliche Prüfung."),
+        "excu_ctx": ("Keine institutionelle Regel / Entstehungshistorie "
+                     "geprüft — ohne Kontext ist die Aussagekraft begrenzt "
+                     "(Evidenzklasse D nicht belegbar)."),
+        "step_1": ("Entstehungshistorie prüfen (Entwürfe, Versionsvergleich, "
+                   "Betreuungsfeedback, Abgabedatum)."),
+        "step_2": ("Institutionelle KI-Regel und Deklarationspflicht einholen "
+                   "und den Befund dagegen halten."),
+        "step_3": ("Fachliches Gespräch zur Entstehung des Textes führen "
+                   "(Forschungsfrage, Methodenwahl, Quellen)."),
+        "step_redlist": ("Befund mit einem zweiten unabhängigen Verfahren "
+                         "gegenprüfen (z. B. E-Wert-Prozess, Segment-Analyse)."),
+        "step_delta": ("Quelltext-Vergleich: welche Transformation hat das "
+                       "Signal entfernt (Shuffle/Paraphrase statt ‚Cleaner')?"),
+        "step_sign": ("Befund signieren lassen (sign_report), wenn er "
+                      "archiviert oder übergeben wird."),
+        "verdict_none": ("Herkunft nicht bestimmbar — keine technischen "
+                         "Indikatoren vorgelegt."),
+        "verdict_a": ("Die Befunde sind mit KI-Unterstützung vereinbar, "
+                      "beweisen sie aber nicht. Eine vertiefte Prüfung ist "
+                      "dringend angezeigt."),
+        "verdict_b": ("Ein messbarer Signalwechsel wurde belegt "
+                      "(Vergleichsbefund) — mit KI-Unterstützung vereinbar, "
+                      "beweist sie aber nicht. Die Herkunft des Textes ist "
+                      "ohne weitere Prüfung nicht bestimmbar."),
+        "verdict_prio3": ("Die technischen Indikatoren sind mit "
+                          "KI-Unterstützung vereinbar, beweisen sie aber "
+                          "nicht. Herkunft nicht bestimmbar."),
+        "verdict_low": ("Herkunft nicht bestimmbar — keine belastbaren "
+                        "technischen Indikatoren."),
+        "verdict_ctx": (" Ohne institutionelle Regel und Entstehungshistorie "
+                        "bleibt die Aussagekraft begrenzt."),
+        "schluss": ("Dieser Befund stellt keine KI-Nutzung, kein Plagiat und "
+                    "keine Täuschung fest. ‚Herkunft nicht bestimmbar' ist "
+                    "eine legitime Schlussfolgerung."),
+    },
+    "en": {
+        "obs_redlist": ("Reproducible redlist sign (z = {z}): the token "
+                        "selection avoids the key's hash-based token set — a "
+                        "keyed verification artifact, not a style heuristic."),
+        "obs_delta_removed": ("The ΔZ comparison shows a measurable signal "
+                              "drop (ΔZ = {delta_z}): the watermark signal "
+                              "was present before (z = {z_before}) and gone "
+                              "after (z = {z_after})."),
+        "obs_delta_kept": ("The ΔZ comparison shows no measurable signal "
+                           "change (ΔZ = {delta_z}, removed: false)."),
+        "obs_e_detected": ("The e-value process exceeds the threshold "
+                           "(e = {e_value} >= {threshold}). Technical "
+                           "indicator — not proof of AI involvement."),
+        "obs_e_clean": ("The e-value process stays below the threshold "
+                        "(e = {e_value} < {threshold})."),
+        "obs_class_a": ("Verifiable document finding: Bonferroni-adjusted "
+                        "p-value {p_adj} below the significance threshold or "
+                        "consistent segment Z-values — a reproducible "
+                        "artifact."),
+        "obs_signal": ("Statistical watermark signal (z = {z}, p = {p}). "
+                       "Evidence-class-C technical indicator — never "
+                       "conclusive on its own."),
+        "obs_none": ("No statistical watermark signal detectable with the "
+                     "given key."),
+        "exp_redlist_1": ("The text was produced with a redlist procedure "
+                          "under the correct key (reproducible artifact)."),
+        "exp_redlist_2": ("An editing or filtering process avoided tokens "
+                          "that happen to match the key's hash token set."),
+        "exp_redlist_3": ("Random under-representation: across many hundreds "
+                          "of tokens the probability is very small, but not "
+                          "mathematically zero."),
+        "exp_delta_removed_1": ("The text was verifiably altered (e.g. "
+                                "shuffle or rewrite), so the signal "
+                                "disappeared."),
+        "exp_delta_removed_2": ("The comparison measures a signal change but "
+                                "does not prove the cause (even a full "
+                                "rewrite removes the signal without "
+                                "‘cleaning')."),
+        "exp_delta_kept_1": ("The transformation did not touch the signal "
+                             "(tokens unchanged) — the mark stays "
+                             "measurable."),
+        "exp_delta_kept_2": ("The signal was already weak or absent before — "
+                             "no signal change is measurable."),
+        "exp_e_1": ("The text was marked with the correct key — the e-value "
+                    "process accumulates the greenlist deviation token by "
+                    "token."),
+        "exp_e_2": ("Coincidence across many token positions: a single text "
+                    "can contain more green tokens than expected by chance "
+                    "without being marked."),
+        "exp_a_1": ("The text carries a watermark artifact verifiable under "
+                    "the correct key (keyed verification)."),
+        "exp_a_2": ("A structural text property (e.g. extremely repetitive "
+                    "token structure) can influence statistical tests without "
+                    "a mark — FPR controls must be documented."),
+        "exp_signal_1": ("The text was marked with the correct key or "
+                         "AI-generated (keyed verification fires)."),
+        "exp_signal_2": ("Coincidence or stylistic variance: a single text "
+                         "can contain more green tokens than expected by "
+                         "chance without a mark (two-sided p-value, no "
+                         "deterministic proof)."),
+        "exp_signal_3": ("Another process with similar token statistics "
+                         "(e.g. machine translation with stable word "
+                         "choice)."),
+        "exp_none_1": ("The text is unmarked — no KGW signal under the "
+                       "correct key."),
+        "exp_none_2": ("The text was marked and then altered in a way that "
+                       "destroyed the signal (paraphrase, shuffle, rewrite)."),
+        "exp_none_3": ("The text is too short for a statistical test "
+                       "(n < 10 evaluated token positions)."),
+        "excu_1": ("Technical detector values are never conclusive on their "
+                   "own (evidence-class-C rule): they show a signal, not "
+                   "authorship and not intent to deceive."),
+        "excu_2": ("No statement about human vs. AI authorship is possible — "
+                   "a statistical finding does not replace expert review."),
+        "excu_ctx": ("No institutional rule / origin history reviewed — "
+                     "without context the evidentiary power is limited "
+                     "(evidence class D cannot be established)."),
+        "step_1": ("Review the origin history (drafts, version comparison, "
+                   "supervisor feedback, submission date)."),
+        "step_2": ("Obtain the institutional AI rule and declaration duty and "
+                   "hold the finding against it."),
+        "step_3": ("Conduct an expert conversation about how the text came to "
+                   "be (research question, method choice, sources)."),
+        "step_redlist": ("Cross-check the finding with a second independent "
+                         "method (e.g. e-value process, segment analysis)."),
+        "step_delta": ("Source comparison: which transformation removed the "
+                       "signal (shuffle/paraphrase instead of ‘cleaner')?"),
+        "step_sign": ("Have the finding signed (sign_report) if it is "
+                      "archived or handed over."),
+        "verdict_none": ("Origin undetermined — no technical indicators "
+                         "presented."),
+        "verdict_a": ("The findings are consistent with AI assistance but do "
+                      "not prove it. Deeper review is urgently indicated."),
+        "verdict_b": ("A measurable signal change was established "
+                      "(comparison finding) — consistent with AI assistance "
+                      "but not proof. The text's origin cannot be determined "
+                      "without further review."),
+        "verdict_prio3": ("The technical indicators are consistent with AI "
+                          "assistance but do not prove it. Origin "
+                          "undetermined."),
+        "verdict_low": ("Origin undetermined — no reliable technical "
+                        "indicators."),
+        "verdict_ctx": (" Without an institutional rule and origin history "
+                        "the evidentiary power stays limited."),
+        "schluss": ("This finding does not establish AI use, plagiarism, or "
+                    "deception. ‘Origin undetermined' is a legitimate "
+                    "conclusion."),
+    },
+}
+
+
+def _lang_text(lang: str, key: str) -> str:
+    """Resolve a human-readable report text for the requested language."""
+    table = _TEXTS.get(lang, _TEXTS["de"])
+    return table.get(key, _TEXTS["de"].get(key, key))
+
 # ---------------------------------------------------------------- internals
 def _context_missing(context) -> bool:
     """True when no institutional rule / origin history was supplied.
@@ -173,161 +416,88 @@ def _priority_risk(result: dict, cls: str, category: str) -> tuple[int, str]:
 
 
 # ---------------------------------------------------------------- observations
-def _observation(result: dict, cls: str, category: str) -> str:
-    """Klare deutsche Beschreibung dessen, was konkret messbar sichtbar ist."""
+def _observation(result: dict, cls: str, category: str,
+                 lang: str = "de") -> str:
+    """Clear description of what is concretely measurable — localized."""
     z = result.get("z_score")
     p = result.get("p_value")
     if category == "Redlist":
-        return (
-            f"Reproduzierbares Redlist-Vorzeichen (z = {z}): Die Token-Auswahl "
-            f"meidet die Hash-basierte Tokenmenge des Schlüssels — ein "
-            f"keyed-Verifikations-Artefakt, keine Stil-Heuristik."
-        )
+        return _lang_text(lang, "obs_redlist").format(z=z)
     if category == "Delta-Z":
         removed = result.get("removed")
         if removed:
-            return (
-                f"Der ΔZ-Vergleich belegt einen messbaren Signalabfall "
-                f"(ΔZ = {result.get('delta_z')}): Das Wasserzeichen-Signal war "
-                f"vorher nachweisbar (z = {result.get('z_before')}) und danach "
-                f"nicht mehr (z = {result.get('z_after')})."
-            )
-        return (
-            f"Der ΔZ-Vergleich zeigt keinen nachweisbaren Signalwechsel "
-            f"(ΔZ = {result.get('delta_z')}, removed: false)."
-        )
+            return _lang_text(lang, "obs_delta_removed").format(
+                delta_z=result.get('delta_z'),
+                z_before=result.get('z_before'),
+                z_after=result.get('z_after'))
+        return _lang_text(lang, "obs_delta_kept").format(
+            delta_z=result.get('delta_z'))
     if category == "E-Wert":
         ev = result.get("e_value")
         if result.get("detected"):
-            return (
-                f"Der E-Wert-Prozess überschreitet die Schwelle "
-                f"(e = {ev:.3g} >= {result.get('threshold')}). Technischer "
-                f"Indikator — kein Beweis für KI-Beteiligung."
-            )
-        return (
-            f"Der E-Wert-Prozess bleibt unter der Schwelle "
-            f"(e = {ev:.3g} < {result.get('threshold')})."
-        )
+            return _lang_text(lang, "obs_e_detected").format(
+                e_value=f"{ev:.3g}", threshold=result.get('threshold'))
+        return _lang_text(lang, "obs_e_clean").format(
+            e_value=f"{ev:.3g}", threshold=result.get('threshold'))
     if cls == "A":
-        return (
-            f"Überprüfbarer Dokumentbefund: Bonferroni-adjustierter p-Wert "
-            f"{result.get('best_p_adjusted')} unter der Signifikanzschwelle "
-            f"bzw. konsistente Segment-Z-Werte — ein reproduzierbares Artefakt."
-        )
+        return _lang_text(lang, "obs_class_a").format(
+            p_adj=result.get('best_p_adjusted'))
     if z is not None and isinstance(z, (int, float)) and abs(z) >= 2.0:
-        return (
-            f"Statistisches Wasserzeichen-Signal (z = {z}, p = {p}). "
-            f"Technischer Indikator der Evidenzklasse C — nie allein beweisend."
-        )
-    return "Kein statistisches Wasserzeichen-Signal mit dem angegebenen Schlüssel nachweisbar."
+        return _lang_text(lang, "obs_signal").format(z=z, p=p)
+    return _lang_text(lang, "obs_none")
 
 
-def _explanations(result: dict, cls: str, category: str) -> list[str]:
-    """Mindestens zwei plausible Erklärungen — inklusive Gegenhypothese."""
+def _explanations(result: dict, cls: str, category: str,
+                  lang: str = "de") -> list[str]:
+    """At least two plausible explanations — including counter-hypothesis."""
     z = result.get("z_score")
     if category == "Redlist":
-        return [
-            "Der Text wurde mit einem Redlist-Verfahren unter dem rechten "
-            "Schlüssel erzeugt (reproduzierbares Artefakt).",
-            "Ein Bearbeitungs- oder Filterungsprozess hat Token vermieden, "
-            "die zufällig der Hash-Tokenmenge des Schlüssels entsprechen.",
-            "Zufällige Unterrepräsentation: bei vielen hundert Token ist die "
-            "Wahrscheinlichkeit sehr klein, aber nicht mathematisch null.",
-        ]
+        return [_lang_text(lang, k) for k in
+                ("exp_redlist_1", "exp_redlist_2", "exp_redlist_3")]
     if category == "Delta-Z" and result.get("removed"):
-        return [
-            "Der Text wurde nachweislich verändert (z. B. Shuffle oder "
-            "Neuschreibung), sodass das Signal verschwand.",
-            "Der Vergleich misst einen Signalwechsel, beweist aber nicht die "
-            "Ursache (auch vollständige Neuformulierung entfernt das Signal "
-            "ohne ‚Reinigung').",
-        ]
+        return [_lang_text(lang, k) for k in
+                ("exp_delta_removed_1", "exp_delta_removed_2")]
     if category == "Delta-Z":
-        return [
-            "Die Transformation hat das Signal nicht berührt (tokens "
-            "unverändert) — die Marke ist weiterhin messbar.",
-            "Das Signal war bereits vorher schwach oder nicht vorhanden — "
-            "kein Signalwechsel ist messbar.",
-        ]
+        return [_lang_text(lang, k) for k in
+                ("exp_delta_kept_1", "exp_delta_kept_2")]
     if category == "E-Wert":
-        return [
-            "Der Text wurde mit dem rechten Schlüssel markiert — der "
-            "E-Wert-Prozess sammelt die Greenlist-Abweichung tokenweise an.",
-            "Koinzidenz bei vielen Token-Positionen: ein einzelner Text kann "
-            "auch ohne Markierung überzufällig viele grüne Token enthalten.",
-        ]
+        return [_lang_text(lang, k) for k in ("exp_e_1", "exp_e_2")]
     if cls == "A":
-        return [
-            "Der Text trägt ein unter dem rechten Schlüssel verifizierbares "
-            "Wasserzeichen-Artefakt (keyed-Verifikation).",
-            "Eine strukturelle Text-Eigenschaft (z. B. extrem repetitive "
-            "Tokenstruktur) kann statistische Tests ohne Markierung "
-            "beeinflussen — FPR-Kontrollen sind zu dokumentieren.",
-        ]
+        return [_lang_text(lang, k) for k in ("exp_a_1", "exp_a_2")]
     if z is not None and isinstance(z, (int, float)) and abs(z) >= 2.0:
-        return [
-            "Der Text wurde mit dem rechten Schlüssel markiert oder "
-            "KI-generiert (keyed-Verifikation schlägt an).",
-            "Koinzidenz oder stilistische Varianz: ein einzelner Text kann "
-            "ohne Markierung überzufällig viele grüne Token enthalten "
-            "(zweiseitiger p-Wert, kein deterministischer Beweis).",
-            "Ein anderer Prozess mit ähnlicher Token-Statistik (z. B. "
-            "maschinelle Übersetzung mit stabiler Wortwahl).",
-        ]
-    return [
-        "Der Text ist unmarkiert — kein KGW-Signal unter dem rechten "
-        "Schlüssel.",
-        "Der Text wurde markiert und anschließend so verändert, dass das "
-        "Signal zerstört wurde (Paraphrase, Shuffle, Neuformulierung).",
-        "Der Text ist zu kurz für einen statistischen Test (n < 10 bewertete "
-        "Token-Positionen).",
-    ]
+        return [_lang_text(lang, k) for k in
+                ("exp_signal_1", "exp_signal_2", "exp_signal_3")]
+    return [_lang_text(lang, k) for k in
+            ("exp_none_1", "exp_none_2", "exp_none_3")]
 
 
-def _exculpatory(result: dict, cls: str, context_missing: bool) -> list[str]:
-    """Entlastende Aspekte — was gegen vorschnelle Schlüsse spricht."""
-    out = [
-        "Technische Detektorwerte sind nie allein beweisend (Evidenzklasse-C-"
-        "Regel): Sie belegen ein Signal, keine Autorenschaft und keine "
-        "Täuschungsabsicht.",
-        "Keine Aussage über menschliche vs. KI-Autorenschaft möglich — ein "
-        "statistischer Befund ersetzt keine fachliche Prüfung.",
-    ]
+def _exculpatory(result: dict, cls: str, context_missing: bool,
+                 lang: str = "de") -> list[str]:
+    """Exculpatory aspects — what speaks against rushed conclusions."""
+    out = [_lang_text(lang, "excu_1"), _lang_text(lang, "excu_2")]
     if context_missing:
-        out.append(
-            "Keine institutionelle Regel / Entstehungshistorie geprüft — ohne "
-            "Kontext ist die Aussagekraft begrenzt (Evidenzklasse D nicht "
-            "belegbar)."
-        )
+        out.append(_lang_text(lang, "excu_ctx"))
     return out
 
 
-def _next_steps(result: dict, cls: str, category: str) -> list[str]:
-    """Konkrete, priorisierte Prüfaktionen für die Fachperson."""
-    steps = [
-        "Entstehungshistorie prüfen (Entwürfe, Versionsvergleich, "
-        "Betreuungsfeedback, Abgabedatum).",
-        "Institutionelle KI-Regel und Deklarationspflicht einholen und den "
-        "Befund dagegen halten.",
-        "Fachliches Gespräch zur Entstehung des Textes führen "
-        "(Forschungsfrage, Methodenwahl, Quellen).",
-    ]
+def _next_steps(result: dict, cls: str, category: str,
+                lang: str = "de") -> list[str]:
+    """Concrete, prioritized review actions for the expert."""
+    steps = [_lang_text(lang, k) for k in ("step_1", "step_2", "step_3")]
     if category == "Redlist":
-        steps.insert(0, "Befund mit einem zweiten unabhängigen Verfahren "
-                        "gegenprüfen (z. B. E-Wert-Prozess, Segment-Analyse).")
+        steps.insert(0, _lang_text(lang, "step_redlist"))
     if category == "Delta-Z" and result.get("removed"):
-        steps.insert(0, "Quelltext-Vergleich: welche Transformation hat das "
-                        "Signal entfernt (Shuffle/Paraphrase statt ‚Cleaner')?")
+        steps.insert(0, _lang_text(lang, "step_delta"))
     if cls == "A" or result.get("removed"):
-        steps.append("Befund signieren lassen (sign_report), wenn er "
-                     "archiviert oder übergeben wird.")
+        steps.append(_lang_text(lang, "step_sign"))
     return steps
 
 
 # ---------------------------------------------------------------- public API
 def classify_finding(detect_result: dict, context: dict | None = None, *,
                      alpha: float = DEFAULT_ALPHA,
-                     key_id: str = "unknown") -> dict:
+                     key_id: str = "unknown",
+                     lang: str = "de") -> dict:
     """Übersetzt ein Detektor-Ergebnis in einen Befund mit Evidenzklasse.
 
     ``detect_result`` akzeptiert die Ergebnisformen der Produktpfade:
@@ -374,13 +544,15 @@ def classify_finding(detect_result: dict, context: dict | None = None, *,
         "finding_id": _finding_id(detect_result, category, key_id),
         "evidence_class": cls,
         "category": category,
-        "observation": _observation(detect_result, cls, category),
+        "observation": _observation(detect_result, cls, category, lang=lang),
         "beleg": beleg,
-        "possible_explanations": _explanations(detect_result, cls, category),
-        "exculpatory": _exculpatory(detect_result, cls, cm),
+        "possible_explanations": _explanations(detect_result, cls, category,
+                                               lang=lang),
+        "exculpatory": _exculpatory(detect_result, cls, cm, lang=lang),
         "risk": risk,
         "priority": priority,
-        "recommended_next_steps": _next_steps(detect_result, cls, category),
+        "recommended_next_steps": _next_steps(detect_result, cls, category,
+                                              lang=lang),
         "context_missing": cm,
     }
     if not cm and isinstance(context, dict):
@@ -391,29 +563,22 @@ def classify_finding(detect_result: dict, context: dict | None = None, *,
     return finding
 
 
-def _verdict_text(findings: list[dict], priority: int) -> str:
-    """Ehrliche Schlussformulierung — NIE „KI-generiert" als Feststellung."""
+def _verdict_text(findings: list[dict], priority: int,
+                  lang: str = "de") -> str:
+    """Honest final wording — never "AI-generated" as a statement."""
     if not findings:
-        return ("Herkunft nicht bestimmbar — keine technischen Indikatoren "
-                "vorgelegt.")
+        return _lang_text(lang, "verdict_none")
     classes = [f["evidence_class"] for f in findings]
     if "A" in classes:
-        base = ("Die Befunde sind mit KI-Unterstützung vereinbar, beweisen sie "
-                "aber nicht. Eine vertiefte Prüfung ist dringend angezeigt.")
+        base = _lang_text(lang, "verdict_a")
     elif "B" in classes:
-        base = ("Ein messbarer Signalwechsel wurde belegt (Vergleichsbefund) — "
-                "mit KI-Unterstützung vereinbar, beweist sie aber nicht. Die "
-                "Herkunft des Textes ist ohne weitere Prüfung nicht "
-                "bestimmbar.")
+        base = _lang_text(lang, "verdict_b")
     elif priority >= 3:
-        base = ("Die technischen Indikatoren sind mit KI-Unterstützung "
-                "vereinbar, beweisen sie aber nicht. Herkunft nicht "
-                "bestimmbar.")
+        base = _lang_text(lang, "verdict_prio3")
     else:
-        base = "Herkunft nicht bestimmbar — keine belastbaren technischen Indikatoren."
+        base = _lang_text(lang, "verdict_low")
     if all(f.get("context_missing") for f in findings):
-        base += (" Ohne institutionelle Regel und Entstehungshistorie bleibt "
-                 "die Aussagekraft begrenzt.")
+        base += _lang_text(lang, "verdict_ctx")
     return base
 
 
@@ -421,7 +586,8 @@ def build_finding_report(results: dict, key_id: str = "unknown", *,
                          context: dict | None = None,
                          alpha: float = DEFAULT_ALPHA,
                          sign_secret: str | None = None,
-                         frs: dict | None = None) -> dict:
+                         frs: dict | None = None,
+                         lang: str = "de") -> dict:
     """Bündelt detect + e_value + delta_z zu einem strukturierten Befund.
 
     ``results`` ist entweder ein einzelnes Detektor-Ergebnis (flach) oder ein
@@ -458,7 +624,7 @@ def build_finding_report(results: dict, key_id: str = "unknown", *,
         modules.append(("delta_z", results["delta_z"]))
 
     findings = [classify_finding(r, context=context, alpha=alpha,
-                                 key_id=key_id) for _, r in modules]
+                                 key_id=key_id, lang=lang) for _, r in modules]
     priority = max((f["priority"] for f in findings), default=0)
     classes = [f["evidence_class"] for f in findings]
 
@@ -480,6 +646,7 @@ def build_finding_report(results: dict, key_id: str = "unknown", *,
 
     report = {
         "report_type": "ki-erklaerungs-befund",
+        "lang": lang,
         "key_id": key_id,
         "summary": {
             "findings_total": len(findings),
@@ -492,12 +659,8 @@ def build_finding_report(results: dict, key_id: str = "unknown", *,
         "findings": findings,
         "evidence_matrix": evidence_matrix,
         "priority": priority,
-        "verdict_text": _verdict_text(findings, priority),
-        "schlussfolgerung_hinweis": (
-            "Dieser Befund stellt keine KI-Nutzung, kein Plagiat und keine "
-            "Täuschung fest. ‚Herkunft nicht bestimmbar' ist eine legitime "
-            "Schlussfolgerung."
-        ),
+        "verdict_text": _verdict_text(findings, priority, lang=lang),
+        "schlussfolgerung_hinweis": _lang_text(lang, "schluss"),
     }
     if frs is not None:
         report["frs"] = frs

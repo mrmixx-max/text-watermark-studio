@@ -113,6 +113,9 @@ class FindingRequest(BaseModel):
     # Forensic Readiness Score (Runde-3-Lücke E5): frs=true hängt den
     # ehrlichen Selbst-Assessment-Block an den Report (wird MIT-signiert).
     frs: bool = False
+    # Report language: 'de' (default) or 'en'. All human-readable text
+    # fields (observation, explanations, verdict_text, ...) are localized.
+    lang: str = 'de'
 
 
 @router.get('/keys', summary='List registered forensic keys')
@@ -357,7 +360,8 @@ def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)
         results, key_id=req.key_id,
         context=evidence_context,
         sign_secret=key['secret'] if req.sign else None,
-        frs=compute_frs() if req.frs else None)
+        frs=compute_frs() if req.frs else None,
+        lang=req.lang)
     audit.write({'event': 'finding', 'key_id': req.key_id,
                  'e_value': req.e_value, 'delta_z': bool(req.delta_z),
                  'priority': report.get('priority'), 'signed': req.sign,

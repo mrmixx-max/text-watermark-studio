@@ -208,7 +208,8 @@ class DesktopController:
     # ------------------------------------------------------------- report
     def build_report(self, text: str, key_id: str,
                      output_dir: str | Path | None = None,
-                     context: dict | None = None) -> dict:
+                     context: dict | None = None,
+                     lang: str = "de") -> dict:
         """Build the self-contained HTML forensic report (build_report).
 
         Writes the HTML to ``output_dir`` (default: Downloads, fallback
@@ -221,6 +222,9 @@ class DesktopController:
         und HTML-Sektion); die Controller-Signatur ist vorbereitet und der
         erhaltene Kontext wird im Rückgabe-Dict ausgewiesen, damit die GUI
         die Übergabe später verdrahten kann.
+
+        ``lang`` selects the report language (``"de"`` default, ``"en"``
+        available); every human-readable string is localized.
         """
         if not text or not text.strip():
             raise ValueError("Text ist leer — Text eingeben oder Datei oeffnen.")
@@ -230,7 +234,8 @@ class DesktopController:
                 f"Key '{key_id}' ist nicht in der Registry — der Bericht "
                 "benoetigt einen registrierten Key mit Secret."
             )
-        html = _build_report_html(text, key["secret"], key_label=key_id)
+        html = _build_report_html(text, key["secret"], key_label=key_id,
+                                  lang=lang)
         target = Path(output_dir) if output_dir is not None \
             else (self.report_dir or _default_report_dir())
         target.mkdir(parents=True, exist_ok=True)

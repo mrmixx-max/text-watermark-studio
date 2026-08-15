@@ -134,7 +134,7 @@ def main() -> int:
     rp.add_argument("--stdin", action="store_true")
     rp.add_argument("--key", help="key_id / secret for the KGW test")
     rp.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
-    rp.add_argument("--lang", default="en", choices=["en", "de"])
+    rp.add_argument("--lang", default="de", choices=["en", "de"])
     rp.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
     rp.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     rp.add_argument("--pdf", action="store_true", help="render to PDF via Edge headless (Windows)")
@@ -262,6 +262,7 @@ def main() -> int:
     fi.add_argument("--institutional-rule", default=None, help="institutionelle KI-Regel (Evidenzklasse D): Regeltext, gegen den der Befund gehalten wird — setzt context_missing:false")
     fi.add_argument("--origin-history", default=None, help="Entstehungshistorie (Evidenzklasse D): Entwürfe, Versionen, Betreuungsfeedback, Abgabedatum — setzt context_missing:false")
     fi.add_argument("--frs", action="store_true", help="Forensic-Readiness-Score (12 Kriterien, 3 Gates, ehrliches Selbst-Assessment) in den Befund aufnehmen")
+    fi.add_argument("--lang", default="de", choices=["de", "en"], help="report language: de (default) or en")
     fi.add_argument("--sign", default=None, help="HMAC secret: sign the finding report (signed_report)")
     fi.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
     fi.add_argument("-o", "--output", default=None, help="write the JSON report to a file instead of stdout")
@@ -861,6 +862,7 @@ def main() -> int:
             context=context,
             sign_secret=sign_secret,
             frs=frs_block,
+            lang=args.lang,
         )
         rendered = json.dumps(report, ensure_ascii=False, indent=2)
         if args.output:

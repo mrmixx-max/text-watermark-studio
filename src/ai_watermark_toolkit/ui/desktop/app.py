@@ -134,6 +134,14 @@ class MainWindow(QMainWindow):
         )
         toolbar.addWidget(self.key_combo)
         toolbar.addStretch(1)
+        toolbar.addWidget(QLabel("Sprache:"))
+        self.lang_combo = QComboBox()
+        self.lang_combo.addItem("Deutsch", "de")
+        self.lang_combo.addItem("English", "en")
+        self.lang_combo.setToolTip(
+            "Sprache des Berichts (findings/report) — de oder en"
+        )
+        toolbar.addWidget(self.lang_combo)
         for label, slot in (
             ("Detektieren", self.detect),
             ("Einbetten", self.embed),
@@ -352,10 +360,19 @@ class MainWindow(QMainWindow):
 
     def build_report(self) -> None:
         self._run(
-            lambda: self.controller.build_report(self._editor_text(),
-                                                 self._require_key()),
+            lambda: self.controller.build_report(
+                self._editor_text(),
+                self._require_key(),
+                lang=self._report_lang()),
             ok_status="HTML-Bericht geschrieben",
         )
+
+    def _report_lang(self) -> str:
+        """Selected report language from the toolbar combo (default de)."""
+        combo = getattr(self, "lang_combo", None)
+        if combo is None:
+            return "de"
+        return str(combo.currentData() or "de")
 
     def sign(self) -> None:
         self._run(

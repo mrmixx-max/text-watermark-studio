@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.2.1 — Editor marking invalidation fix
+## 2.2.1 — Editor marking invalidation + report language selection
 
 - **Stale highlight fix** (`ui/desktop/editor.py`): greenlist substitution
   markings are now cleared the moment the editor text changes (typing,
@@ -11,8 +11,20 @@
   assignments in `_repaint_markings`, removed a redundant module-level
   `QTextDocument` import (already imported at the top) with a misleading
   comment, and dropped an inline `QTextEdit` import.
+- **Report language** (`forensics/finding.py`, `forensics/report.py`):
+  every human-readable text field (observation, possible_explanations,
+  exculpatory, recommended_next_steps, verdict_text,
+  schlussfolgerung_hinweis, HTML report badge/sections/recommendation) is
+  now localized. Default stays `"de"` (backward compatible — all existing
+  tests match unchanged); `lang="en"` switches the text fields to English.
+  Structured fields (evidence_class, category, priority, risk, beleg)
+  stay language-neutral by design. Surface: `--lang de|en` on the CLI
+  finding command, `lang` field on the `/finding` API request, and a
+  language combo in the desktop toolbar.
 - **Tests**: `tests/test_v100_desktop_editor.py` covers typing, undo, and
-  re-embed after edits (offscreen, PySide6 optional dep).
+  re-embed after edits (offscreen, PySide6 optional dep);
+  `tests/test_v148_finding_lang.py` covers DE default, EN switch, unknown
+  lang fallback, HTML report and CLI paths.
 
 ## 2.2.0 — Desktop text editor with substitution highlighting
 
