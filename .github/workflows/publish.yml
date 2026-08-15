@@ -71,6 +71,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip_existing: true
 
   publish-pypi:
     needs: build
@@ -85,3 +86,7 @@ jobs:
 
       - name: Publish to PyPI (OIDC)
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Idempotent: re-publishing an existing version skips instead of
+          # failing with 400 "File already exists" (noise notifications).
+          skip_existing: true
