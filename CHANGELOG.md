@@ -1,28 +1,67 @@
 # Changelog
 
-## Unreleased — prompt optimizer (real evaluator loop) + TUI cursor navigation
+## 2.2.0 — Desktop text editor with substitution highlighting
 
+- **Desktop editor** (`ui/desktop`): the text area is now a real editor —
+  line numbers, find bar (Ctrl+F, Enter/Shift+Enter, wrap-around, yellow
+  match highlight), current-line highlight, status bar (line/column +
+  character count), soft-wrap toggle (Bearbeiten menu), and drag-and-drop
+  file loading. The editor replaces the plain text box for embed/detect
+  workflows.
+- **Substitution highlighting**: `mark_greenlist` and `embed_kgw` now
+  return `substitutions` — exact character offsets in the *final* text
+  (`start`, `end`, `original`, `replacement`) plus `green_rate_after`.
+  Backwards compatible: new keys only, existing consumers unaffected. The
+  desktop app highlights every greenlist-substituted token green after
+  embed, so you see exactly what the watermark changed.
+- **CI**: publish workflow is idempotent (`skip_existing` instead of a 400
+  failure on re-publish).
+- **Docs**: MarkDiffusion roadmap decision recorded (issue #1, no code).
+
+## 2.1.0 — MarkLLM-compatible KGW interop + GHCR
+
+- **MarkLLM interop**: KGW mark/detect is byte-identical to the reference
+  MarkLLM implementation (verified against `markllm==0.1.5`, `interop/markllm.py`).
+- **GHCR image**: `ghcr.io/mrmixx-max/text-watermark-studio` published on
+  tags via `docker-publish` workflow; README documents Docker + MarkLLM
+  usage.
+
+## 2.0.1 — Hardening, forensics suite, desktop app
+
+Released incrementally; highlights from the v2.0.0..v2.0.1 range (see git
+history for the full list):
+
+- **Desktop app** (`ui/desktop`): Qt-free `DesktopController` over the core
+  forensics, PySide6 main window, PyInstaller + Inno Setup installer,
+  `build-desktop` CI.
+- **Forensics depth**: e-value detection (LR-martingale, anytime-valid,
+  Bonferroni), signature filtering with honest FPR control, delta-Z checks,
+  signed forensic reports (HMAC + optional ML-DSA-44), AI-explanatory
+  finding reports (evidence classes A-D), invariant-feature watermarking
+  (Yoo et al. 2023), generation-time sampling bias (synthetic sampler MVP,
+  honestly labeled as post-hoc approximation).
 - **Local corpus similarity** (`ai-wm similarity`): MinHash fingerprinting
   against a user-owned corpus with fundstelle evidence and an explicit
   honest boundary — literal overlap, not plagiarism claims, no web crawl.
-- **TUI**: header sub-title "by Erik Gieske" + splash credit line.
-
 - **Multi-model local backend**: `ai-wm llm install|list|use|status` — pull
   any model through the Ollama API (streamed progress, verified, config
   updated), switch between installed models, list everything the local
   Ollama knows. TUI menu entry 18 does the same from the Path field. Not
   locked to EuroLLM anymore.
-
 - **Prompt optimizer rebuilt** (was a 20-line demo stub): locked eval set,
   one-variable candidates, deterministic metrics with hard protected-term
   guardrail, baseline hashing, promotion only on improvement, immutable
   versioning + rollback through the prompt registry. API routes replace the
   demo endpoints (`/api/optimization/evals|candidates|optimize|promote|history|rollback`).
-- **TUI**: cursor keys (↑/↓) now drive the menu from any focus (app-level
-  priority bindings); Enter runs the selected action everywhere.
+- **TUI**: menu-driven Textual interface (`ai-wm tui`), cursor keys (↑/↓)
+  drive the menu from any focus; Enter runs the selected action everywhere;
+  header sub-title "by Erik Gieske".
 - **Prompt registry fix**: `get_template` now returns the newest stable
   version by semver (previously first-in-list) — promotion/rollback target
   the correct version.
+- Security hardening (F1-F6), MCP manifest to 76 tools, OpenAPI 3.1 spec,
+  EN user guide + DE Benutzerhandbuch (print PDFs via maintainer script),
+  repo relabel to independent verification.
 
 ## 2.0.0 — Model-grade detection + the measurement suite
 
