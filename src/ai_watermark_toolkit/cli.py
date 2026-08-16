@@ -242,9 +242,13 @@ def main() -> int:
     dz.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
     dz.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
     dz.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
-    dz.add_argument("--transform", default=None, choices=["clean", "truncate", "shuffle", "reformat"],
-                    help="apply a stdlib transform to the single input file and measure its ΔZ (no second file)")
+    dz.add_argument("--transform", default=None, choices=["clean", "truncate", "shuffle", "reformat", "rewrite"],
+                    help="apply a transform to the single input file and measure its ΔZ (no second file)")
     dz.add_argument("--truncate-fraction", type=float, default=0.6, help="fraction of leading tokens kept by --transform truncate (default 0.6)")
+    dz.add_argument("--rewrite-mode", default="structural", choices=["clarity", "concise", "plain", "formal", "structural", "backtranslate"],
+                    help="RewriteService mode for --transform rewrite (default structural — rule-based, no LLM)")
+    dz.add_argument("--use-llm", action="store_true",
+                    help="with --transform rewrite: call the local Ollama backend instead of the rule-based path")
     dz.add_argument("--seed", type=int, default=42, help="RNG seed for --transform shuffle (default 42)")
     dz.add_argument("--sign", default=None, help="HMAC secret: sign the ΔZ result (signed_report) for an auditable document")
     dz.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
@@ -810,6 +814,7 @@ def main() -> int:
                 level=args.level, context=args.context,
                 registry=KeyRegistry('data/key_registry.json'),
                 seed=args.seed, truncate_fraction=args.truncate_fraction,
+                rewrite_mode=args.rewrite_mode, use_llm=args.use_llm,
             )
         else:
             if args.stdin or not (args.before and args.after):

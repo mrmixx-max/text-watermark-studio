@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.3.1 — Rewrite/Paraphrase in the ΔZ core
+
+- **`rewrite` transform in `ai-wm delta-z`** (`forensics/delta_z.py`): the
+  paraphrase path is now a first-class transform — no longer "deliberately
+  NOT part of the product path". `ai-wm delta-z <file> --transform rewrite
+  --key <key>` measures what an actual paraphrase attack does to the KGW
+  signal. Rule-based `structural` mode is the default (no LLM, CI-safe);
+  `--rewrite-mode <clarity|concise|plain|formal|structural|backtranslate>`
+  and `--use-llm` select modes / the local Ollama backend.
+  Honest boundary (documented in module + CLI): a strong LLM rewrite can
+  collapse z (`removed:true`), but that is REGENERATION, not "cleaning" —
+  ΔZ proves signal change, never cleaner honesty. Light structural edits
+  keep `removed:false` (measured: ΔZ ≈ 0.8–0.9 on a z=13.6 mark).
+- **API**: `/api/forensics/delta-z` accepts `rewrite_mode` + `use_llm` for
+  transform mode; docstring documents the 5th transform.
+- **Bugfix**: `RewriteService._protect` replaced finditer+replace (index
+  shifting mangled URLs — the word pattern hit "Com" inside "example.com" —
+  and leaked nested protected tokens) with a single `re.sub` callback pass.
+  URLs are matched first. Numbers, URLs, quotes and proper nouns now survive
+  every rewrite mode.
+- **Tests**: `tests/test_v149_delta_z_rewrite.py` (8 tests: transform
+  method, rule-based no-LLM path, honest no-false-removal, protected-token
+  survival, mode validation, CLI exit 0 / mode flag / JSON output file).
+
 ## 2.3.0 — Z-score trajectory, multi-bit payload, adversarial evaluation
 
 - **Z-score trajectory** (`forensics/trace.py`, `ai-wm trace`): sliding-window

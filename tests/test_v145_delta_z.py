@@ -198,7 +198,7 @@ class TestDeltaZCore:
         assert r["transformed_text"]  # short text -> included
 
     def test_transform_methods_constant(self):
-        assert TRANSFORM_METHODS == ("clean", "truncate", "shuffle", "reformat")
+        assert TRANSFORM_METHODS == ("clean", "truncate", "shuffle", "reformat", "rewrite")
 
 
 # ---------------------------------------------------------------- core: report
@@ -305,8 +305,10 @@ class TestCliDeltaZ:
 # ---------------------------------------------------------------- API
 class TestApiDeltaZ:
     def _client(self, tmp_path, monkeypatch):
+        from types import SimpleNamespace
         from fastapi.testclient import TestClient
         from ai_watermark_toolkit.api import fastapi_app
+        from ai_watermark_toolkit.api.middleware import auth as auth_mod
         from ai_watermark_toolkit.api.routes import forensics as forensics_route
 
         reg = KeyRegistry(str(tmp_path / "keys.json"))
@@ -314,6 +316,14 @@ class TestApiDeltaZ:
         # audit writes data/audit.log — silence it (no data/ writes in tests)
         monkeypatch.setattr(forensics_route, "audit",
                             type("DummyAudit", (), {"write": lambda self, p: p})())
+        # Deterministic fail-open: these API tests are written for the
+        # documented dev convention (AI_WM_API_KEY empty -> open in
+        # development). A local .env with AI_WM_API_KEY set would make every
+        # request 401 (fail-closed). Patch the auth settings to the empty-key
+        # dev default so the suite is environment-independent;
+        # test_api_requires_auth overrides this itself.
+        monkeypatch.setattr(auth_mod, "settings",
+                            SimpleNamespace(api_key="", app_env="development"))
         return TestClient(fastapi_app.app)
 
     def _register(self, client, key_id="dz-api-1", secret=KEY):

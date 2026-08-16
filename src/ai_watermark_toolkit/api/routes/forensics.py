@@ -77,6 +77,8 @@ class DeltaZRequest(BaseModel):
     transform: str | None = None
     truncate_fraction: float = 0.6
     seed: int = 42
+    rewrite_mode: str = 'structural'
+    use_llm: bool = False
     sign: bool = False
 
 
@@ -256,8 +258,12 @@ def delta_z_endpoint(req: DeltaZRequest, _auth: None = Depends(require_api_key))
     Two modes, selected by the body:
     - two-text: ``{text_before, text_after, key_id}`` — measures the ΔZ
       between the two texts.
-    - transform: ``{text, key_id, transform}`` — applies a stdlib transform
-      (clean|truncate|shuffle|reformat) server-side and measures its ΔZ.
+    - transform: ``{text, key_id, transform}`` — applies a transform
+      (clean|truncate|shuffle|reformat|rewrite) server-side and measures its
+      ΔZ. ``rewrite`` is the paraphrase path via RewriteService (rule-based
+      structural by default; ``rewrite_mode`` + ``use_llm`` select a mode /
+      the local Ollama backend) — ΔZ measures the real-world attack, and
+      regeneration is called regeneration in the report.
 
     The key secret is ALWAYS resolved server-side from the KeyRegistry —
     a raw secret in the body is never accepted (the key_id must be
@@ -279,6 +285,7 @@ def delta_z_endpoint(req: DeltaZRequest, _auth: None = Depends(require_api_key))
             req.text, req.key_id, method=req.transform,
             level=req.level, context=req.context, registry=keys,
             seed=req.seed, truncate_fraction=req.truncate_fraction,
+            rewrite_mode=req.rewrite_mode, use_llm=req.use_llm,
         )
     else:
         if req.text_before is None or req.text_after is None:

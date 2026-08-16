@@ -13,8 +13,10 @@ Honest boundaries (documented, not hidden):
   could rewrite the text completely (paraphrase) — the signal disappears
   while the "cleaning" was actually regeneration. `removed: true` means:
   the watermark signal is no longer measurable with this key, nothing more.
-  Paraphrase/regeneration is NOT covered by the stdlib transforms here
-  (it needs an LLM); it is documented as open in TRANSFORM_NOTES.
+  The paraphrase/rewrite path is now a first-class transform (`rewrite`,
+  via RewriteService — rule-based structural, or the local Ollama backend
+  with `--use-llm`), measured like any other transform: ΔZ is the evidence,
+  and regeneration is called regeneration in the report.
 - **Only your own KGW scheme and key are measured.** Detection fires only
   for texts embedded with this exact scheme (greenlist hash over
   key + context + token). An unknown vendor scheme needs its own key.
@@ -45,12 +47,13 @@ from .key_registry import KeyRegistry, mask_secret_key_id
 from .kgw import DEFAULT_GAMMA, detect_multi_key
 
 # ------------------------------------------------------------------ transforms
-# The stdlib-deterministic transformations lifted from
-# benchmarks/attack_matrix_v2.py (ATTACKS_RULE_BASED): the repo-available
-# attacks are clean (unicode/metadata hygiene), truncate, word-shuffle and
-# reformat. Paraphrase needs an LLM call and is deliberately NOT part of the
-# product path (see TRANSFORM_NOTES).
-TRANSFORM_METHODS = ("clean", "truncate", "shuffle", "reformat")
+# The transformations lifted from benchmarks/attack_matrix_v2.py
+# (ATTACKS_RULE_BASED): clean (unicode/metadata hygiene), truncate, word-shuffle
+# and reformat are stdlib-deterministic. `rewrite` is the paraphrase path via
+# RewriteService (rule-based structural when no LLM backend, or the local
+# Ollama backend when --use-llm) — it measures what an actual paraphrase
+# attack does to the KGW signal instead of leaving it undocumented.
+TRANSFORM_METHODS = ("clean", "truncate", "shuffle", "reformat", "rewrite")
 
 TRANSFORM_NOTES = {
     "clean": "unicode/metadata hygiene (sanitize_unicode: strips ZWSP, bidi "
@@ -65,6 +68,15 @@ TRANSFORM_NOTES = {
                "~0. The provable removal demonstration.",
     "reformat": "whitespace normalization + one sentence per line. Tokens are "
                 "unchanged -> mark strength preserved (removed:false).",
+    "rewrite": "paraphrase via RewriteService. Rule-based 'structural' mode "
+               "rotates sentences and varies openings without an LLM; with "
+               "--use-llm the local Ollama backend rewrites through a model "
+               "(or backtranslates DE->EN->DE). Paraphrase changes the token "
+               "surface -> the greenlist hash changes, so ΔZ measures the "
+               "real-world attack. Honest boundary: a strong rewrite can "
+               "collapse z (removed:true), but that is REGENERATION, not "
+               "'cleaning' — ΔZ proves signal change, never cleaner honesty. "
+               "Light structural edits typically keep removed:false.",
 }
 
 _TRANSFORM_META = {
@@ -72,6 +84,7 @@ _TRANSFORM_META = {
     "truncate": "first N word tokens (fraction)",
     "shuffle": "word shuffle, fixed seed",
     "reformat": "whitespace normalization, sentence-per-line",
+    "rewrite": "paraphrase (RewriteService: structural rule-based, or local LLM backend)",
 }
 
 
@@ -103,12 +116,51 @@ def _transform_reformat(text: str) -> str:
     return "\n".join(s.strip() for s in sentences if s.strip())
 
 
+def _transform_rewrite(text: str, mode: str = "structural", use_llm: bool = False) -> tuple[str, dict]:
+    """Paraphrase via RewriteService (lazy import — keeps the core stdlib-light).
+
+    ``mode`` is one of RewriteService's modes (clarity/concise/plain/formal/
+    structural/backtranslate). ``use_llm=False`` (default) runs the rule-based
+    structural path with no external call; ``use_llm=True`` calls the local
+    Ollama backend (OpenAI-compatible, LOCAL_LLM_BASE_URL / LOCAL_LLM_MODEL).
+
+    Returns (rewritten_text, meta) where meta records mode/backend so a
+    measured result is reproducible. The service protects numbers, URLs,
+    quotes and proper nouns across the rewrite (preserve=True).
+
+    Raises ValueError for an unknown mode (RewriteService itself silently
+    ignores unknown modes on the rule-based path — the ΔZ core must not).
+    """
+    _VALID_MODES = {"clarity", "concise", "plain", "formal", "structural", "backtranslate"}
+    if mode not in _VALID_MODES:
+        raise ValueError(
+            f"unknown rewrite mode: {mode} (supported: {sorted(_VALID_MODES)})"
+        )
+    from ..rewrite.service import RewriteService
+
+    svc = RewriteService(llm_backend=use_llm)
+    res = svc.rewrite(text, mode=mode, preserve=True, use_llm=use_llm)
+    metrics = res.get("metrics", {})
+    meta = {
+        "method": "rewrite",
+        "mode": mode,
+        "backend": res.get("backend", "local-llm" if use_llm else "rule-based"),
+        "similarity_ratio": metrics.get("similarity_ratio"),
+        "note": _TRANSFORM_META["rewrite"],
+    }
+    return res["rewritten"], meta
+
+
 def _apply_transform(text: str, method: str, *, seed: int = 42,
-                     truncate_fraction: float = 0.6) -> tuple[str, dict]:
-    """Apply a stdlib transform; returns (transformed_text, transform_meta).
+                     truncate_fraction: float = 0.6,
+                     rewrite_mode: str = "structural",
+                     use_llm: bool = False) -> tuple[str, dict]:
+    """Apply a transform; returns (transformed_text, transform_meta).
 
     ``method`` must be one of TRANSFORM_METHODS. The meta dict records the
-    parameters used so a measured result is reproducible.
+    parameters used so a measured result is reproducible. ``rewrite`` is the
+    paraphrase path (RewriteService); it is the only method that may perform
+    an external LLM call — only when ``use_llm=True`` (default: rule-based).
     """
     if method == "clean":
         before = len(text)
@@ -130,6 +182,9 @@ def _apply_transform(text: str, method: str, *, seed: int = 42,
     if method == "reformat":
         out = _transform_reformat(text)
         return out, {"method": method, "note": _TRANSFORM_META[method]}
+    if method == "rewrite":
+        out, meta = _transform_rewrite(text, mode=rewrite_mode, use_llm=use_llm)
+        return out, meta
     raise ValueError(
         f"unknown transform method: {method} (supported: {sorted(TRANSFORM_METHODS)})"
     )
@@ -256,29 +311,36 @@ def delta_z_transform(text: str, key_id_or_secret: str,
                       registry: KeyRegistry | None = None,
                       seed: int = 42,
                       truncate_fraction: float = 0.6,
+                      rewrite_mode: str = "structural",
+                      use_llm: bool = False,
                       max_transformed_chars: int = 1000) -> dict:
-    """Apply a stdlib transform, then measure the ΔZ it causes.
+    """Apply a transform, then measure the ΔZ it causes.
 
-    ``method`` in TRANSFORM_METHODS (clean/truncate/shuffle/reformat — the
-    repo-available stdlib attacks lifted from benchmarks/attack_matrix_v2.py;
-    paraphrase needs an LLM and is documented as open). The transform is
+    ``method`` in TRANSFORM_METHODS (clean/truncate/shuffle/reformat/rewrite —
+    the repo-available attacks lifted from benchmarks/attack_matrix_v2.py, plus
+    the paraphrase path via RewriteService). ``rewrite_mode`` selects the
+    RewriteService mode (structural default — rule-based, no LLM; other modes
+    with ``use_llm=True`` call the local Ollama backend). The transform is
     applied to ``text`` and :func:`delta_z` measures text vs transformed.
 
     Returns the delta_z result plus::
 
         "method": str,              # transform used
-        "transform_meta": dict,     # reproducible parameters (seed, fraction, ...)
+        "transform_meta": dict,     # reproducible parameters (seed, fraction, mode, ...)
         "transformed_text": str,    # only when short (<= max_transformed_chars)
         "transformed_text_omitted": bool,  # True when the text was too long
 
     Honest boundaries: same as :func:`delta_z` — ΔZ proves signal change, not
     cleaner honesty. ``removed:false`` for clean/reformat is EXPECTED (mark
-    strength survives hygiene); shuffle is the provable removal path.
+    strength survives hygiene); shuffle is the provable removal path; rewrite
+    measures the paraphrase attack (a strong LLM rewrite can collapse z, but
+    that is regeneration, not 'cleaning').
     """
     if not isinstance(text, str):
         raise ValueError("text must be a string")
     transformed, meta = _apply_transform(
-        text, method, seed=seed, truncate_fraction=truncate_fraction
+        text, method, seed=seed, truncate_fraction=truncate_fraction,
+        rewrite_mode=rewrite_mode, use_llm=use_llm,
     )
     result = delta_z(text, transformed, key_id_or_secret,
                      level=level, context=context, registry=registry)

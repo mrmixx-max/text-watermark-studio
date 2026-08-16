@@ -81,23 +81,34 @@ class RewriteService:
         return ' '.join([sentences[0]] + rotated + [sentences[-1]])
 
     def _protect(self, text: str):
+        """Protect numbers, URLs, quotes and proper nouns from rewrite edits.
+
+        Uses a single ``re.sub`` pass with a callback so matches are replaced
+        at their ORIGINAL positions — the old finditer+replace approach shifted
+        indices as it went and mangled URLs (the word pattern hit "Com" inside
+        "example.com") and leaked nested protected tokens. URLs are matched
+        FIRST so later word patterns never see inside them.
+        """
         protected: Dict[str, str] = {}
         patterns = [
+            r'https?://[^\s"\']+',
             r'\b\d+(?:[\.,]\d+)?%?\b',
             r'\b[A-Z][a-zA-Z0-9_-]{1,}\b',
             r'"[^"]+"',
             r"'[^']+'",
         ]
+        combined = "|".join(f"({p})" for p in patterns)
         idx = 0
-        for pat in patterns:
-            for m in list(re.finditer(pat, text)):
-                original = m.group(0)
-                token = f'__PROTECTED_{idx}__'
-                if original in text:
-                    text = text.replace(original, token, 1)
-                    protected[token] = original
-                    idx += 1
-        return text, protected
+
+        def _sub(m):
+            nonlocal idx
+            original = m.group(0)
+            token = f'__PROTECTED_{idx}__'
+            protected[token] = original
+            idx += 1
+            return token
+
+        return re.sub(combined, _sub, text), protected
 
     def _restore(self, text: str, protected: Dict[str, str]):
         for k, v in protected.items():
