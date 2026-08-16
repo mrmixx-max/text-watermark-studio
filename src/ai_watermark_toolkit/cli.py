@@ -267,6 +267,19 @@ def main() -> int:
     fi.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
     fi.add_argument("-o", "--output", default=None, help="write the JSON report to a file instead of stdout")
 
+    tr = sub.add_parser("trace", help="KGW Z-score trajectory: sliding-window detection over a long document (find WHERE the watermark is, not just IF)")
+    tr.add_argument("input", nargs="?")
+    tr.add_argument("--stdin", action="store_true")
+    tr.add_argument("--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret")
+    tr.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
+    tr.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
+    tr.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
+    tr.add_argument("--window", type=int, default=500, help="sliding window size in words (default 500)")
+    tr.add_argument("--step", type=int, default=0, help="step between windows in words (default = window, i.e. non-overlapping)")
+    tr.add_argument("--threshold", type=float, default=4.0, help="Z threshold for a finding window (default 4.0)")
+    tr.add_argument("--json", action="store_true", help="emit the full JSON trajectory instead of the human report")
+    tr.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
+
     args = p.parse_args()
 
     if args.cmd == "splash":
@@ -869,6 +882,48 @@ def main() -> int:
             Path(args.output).write_text(rendered, encoding="utf-8")
         else:
             print(rendered)
+        return 0
+
+    if args.cmd == "trace":
+        # Z-score trajectory: sliding-window detection over a long document.
+        # The trajectory IS the result — exit 0 on any successful measurement
+        # (findings are findings, not errors). Exit 2 for usage/input errors.
+        from .forensics.trace import trace_kgw, format_trace
+        from .forensics.key_registry import KeyRegistry
+        from .forensics.kgw import DEFAULT_GAMMA
+        if args.stdin:
+            text = read_text(stdin_text=sys.stdin.read()).text
+        elif args.input:
+            text = read_text(path=args.input).text
+        else:
+            print("ai-wm: error: trace requires an input file (or --stdin)", file=sys.stderr)
+            return 2
+        key_arg = _resolve_key_arg(args)
+        if not key_arg:
+            print("ai-wm: error: trace requires --key (key_id or raw secret)", file=sys.stderr)
+            return 2
+        registry = KeyRegistry('data/key_registry.json')
+        key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
+        if key is None:
+            key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+        if not key.get('secret'):
+            print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
+            return 2
+        gamma = key.get('gamma') or DEFAULT_GAMMA
+        result = trace_kgw(
+            text, key['secret'], gamma=gamma,
+            level=args.level, context=args.context,
+            window=args.window, step=args.step or None,
+            threshold=args.threshold,
+        )
+        if args.json or args.output:
+            rendered = json.dumps(result, ensure_ascii=False, indent=2, default=str)
+            if args.output:
+                Path(args.output).write_text(rendered, encoding="utf-8")
+            else:
+                print(rendered)
+        else:
+            print(format_trace(result, text=text))
         return 0
 
     if args.cmd == "serve":
