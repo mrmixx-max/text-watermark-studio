@@ -25,6 +25,9 @@ def test_detect_invalid_args():
         assert 'Traceback' not in out.stderr, f'CLI crashed on path {bad_path!r}: {out.stderr}'
 
 def test_yaml_injection():
+    # Guard: PyYAML is an optional dep (not in the core CI image); skip when
+    # absent instead of failing the whole run.
+    pytest.importorskip("yaml")
     # versuche YAML-Injection via config
     malicious = 'key: !!python/object/apply:os.system ["echo pwned"]'
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
