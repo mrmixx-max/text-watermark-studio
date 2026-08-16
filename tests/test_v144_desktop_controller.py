@@ -252,6 +252,182 @@ def test_controller_module_has_no_qt(controller):
     assert not re.search(r"^\s*(import|from)\s+(PySide6|PyQt)", src, re.M)
 
 
+# ================================================== TUI-Paritaet (Text-Tools)
+def test_clean_text_strips_unicode_layer(controller):
+    result = controller.clean_text("hallo\u200b welt\ufe0f")
+    assert result["unicode_removed"] >= 1
+    assert "hallo welt" in result["text"]
+
+
+def test_clean_text_empty_raises(controller):
+    with pytest.raises(ValueError):
+        controller.clean_text("   ")
+
+
+def test_dilute_text_rewrites_phrasing(controller):
+    text = ("In conclusion, it is important to note that the utilization "
+            "of this methodology demonstrates significant potential. "
+            "Furthermore, the implementation thereof yields results. ") * 3
+    result = controller.dilute_text(text)
+    assert result["changed"] >= 1
+    assert isinstance(result["text"], str)
+    assert result["intensity"] == "standard"
+
+
+def test_rewrite_text_structural(controller):
+    text = ("The quick brown fox jumps over the lazy dog. "
+            "It is a beautiful day in the neighborhood. ") * 4
+    result = controller.rewrite_text(text, mode="structural")
+    assert result["rewritten"]
+    assert result["mode"] == "structural"
+    assert "similarity_ratio" in result.get("metrics", {})
+
+
+def test_run_pipeline_full_chain(controller):
+    text = ("This is a completely normal sentence without any markers. "
+            "The weather is nice and people are happy. ") * 8
+    result = controller.run_pipeline(text)
+    assert "output" in result
+    assert "report" in result
+    assert isinstance(result["report"], dict)
+
+
+# =============================================== TUI-Paritaet (Datei-Aktionen)
+def test_inspect_file_unsupported_format_hint(controller, tmp_path):
+    p = tmp_path / "blob.bin"
+    p.write_bytes(b"\x00\x01\x02binary")
+    result = controller.inspect_file(p)
+    assert result.get("format") == "bin"
+    assert "unsupported_format" in result.get("actions", [])
+
+
+def test_inspect_file_missing_raises(controller, tmp_path):
+    with pytest.raises(FileNotFoundError):
+        controller.inspect_file(tmp_path / "missing.bin")
+
+
+def test_clean_file_writes_clean_copy(controller, tmp_path):
+    p = tmp_path / "meta.txt"
+    p.write_text("# T\n<meta name='generator' content='X'>\nbody", encoding="utf-8")
+    result = controller.clean_file(p)
+    out = Path(result["output_path"])
+    assert out.exists()
+    assert out.name == "meta-clean.txt"
+
+
+def test_embed_file_signs_and_detects_roundtrip(controller, tmp_path):
+    p = tmp_path / "doc.txt"
+    p.write_text("provenance roundtrip payload", encoding="utf-8")
+    emb = controller.embed_file(p, REG_KEY["key_id"])
+    assert emb["key_id"] == REG_KEY["key_id"]
+    out = Path(emb["output_path"])
+    assert out.exists()
+    det = controller.detect_file_provenance(out)
+    assert det["found"] is True
+    assert det["valid"] is True
+    assert det["key_id"] == REG_KEY["key_id"]
+
+
+def test_detect_file_provenance_no_secrets_raises(empty_controller, tmp_path):
+    p = tmp_path / "doc.txt"
+    p.write_text("plain", encoding="utf-8")
+    with pytest.raises(ValueError):
+        empty_controller.detect_file_provenance(p)
+
+
+def test_watch_once_scans_directory(controller, tmp_path):
+    (tmp_path / "a.txt").write_text("one", encoding="utf-8")
+    (tmp_path / "b.md").write_text("two", encoding="utf-8")
+    result = controller.watch_once(tmp_path)
+    assert result["reported"] >= 2
+    assert any("a.txt" in line for line in result["lines"])
+
+
+def test_watch_once_requires_directory(controller, tmp_path):
+    p = tmp_path / "file.txt"
+    p.write_text("x", encoding="utf-8")
+    with pytest.raises(NotADirectoryError):
+        controller.watch_once(p)
+
+
+def test_benchmark_missing_script_hint(controller):
+    with pytest.raises(FileNotFoundError):
+        controller._run_benchmark("does-not-exist.py")
+
+
+def test_system_state_returns_version_and_banner(controller):
+    result = controller.system_state()
+    assert result["local"] is True
+    assert result["telemetry"] == "none"
+    assert result["version"]
+
+
+def test_check_update_network_failure_is_error(controller, monkeypatch):
+    import urllib.request
+
+    def _boom(*_a, **_k):
+        raise OSError("no network")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _boom)
+    with pytest.raises(OSError):
+        controller.check_update()
+
+
+def test_install_llm_model_empty_name_raises(controller):
+    with pytest.raises(ValueError):
+        controller.install_llm_model("   ")
+
+
+def test_similarity_requires_corpus_dir(controller, tmp_path):
+    target = tmp_path / "t.txt"
+    target.write_text("some text", encoding="utf-8")
+    with pytest.raises(FileNotFoundError):
+        controller.similarity(target, tmp_path / "no-such-dir")
+
+
+def test_delta_z_without_keys_raises(empty_controller, tmp_path):
+    before = tmp_path / "before.txt"
+    after = tmp_path / "after.txt"
+    before.write_text("alpha beta gamma", encoding="utf-8")
+    after.write_text("alpha beta gamma delta", encoding="utf-8")
+    with pytest.raises(ValueError):
+        empty_controller.delta_z(before, after)
+
+
+def test_finding_report_builds(controller, tmp_path):
+    p = tmp_path / "marked.txt"
+    p.write_text(_marked_text(), encoding="utf-8")
+    report = controller.finding_report(p, key_id=REG_KEY["key_id"])
+    assert "category" in report or "findings" in report
+    assert report.get("key_id") == REG_KEY["key_id"]
+
+
+def test_sign_verify_report_file_roundtrip(controller, tmp_path):
+    payload = {"verdict": "watermark_detected", "z_score": 4.5}
+    src = tmp_path / "finding.json"
+    src.write_text(json.dumps(payload), encoding="utf-8")
+    signed = controller.sign_report_file(src, key_id=REG_KEY["key_id"])
+    out = Path(signed["output_path"])
+    assert out.exists()
+    assert signed["key_id"] == REG_KEY["key_id"]
+    verify = controller.verify_report_file(out, key_id=REG_KEY["key_id"])
+    assert verify["valid"] is True
+    assert verify["reason"] == "ok"
+
+
+def test_generate_keypair_requires_mldsa_or_hint(controller, tmp_path):
+    """Either cryptography is available (real keypair) or we get the
+    honest install hint — never a crash."""
+    try:
+        result = controller.generate_keypair(tmp_path)
+    except RuntimeError as e:
+        assert "install" in str(e).lower() or "cryptography" in str(e).lower()
+        return
+    assert (tmp_path / "mldsa_private.pem").exists()
+    assert (tmp_path / "mldsa_public.pem").exists()
+    assert result["algorithm"].startswith("mldsa")
+
+
 # ============================================================== UI smoke
 def test_ui_smoke_offscreen(monkeypatch):
     """Window constructible offscreen: title, widgets, clean close.
@@ -270,11 +446,11 @@ def test_ui_smoke_offscreen(monkeypatch):
         assert window.editor is not None
         assert window.results.isReadOnly() is True
         assert window.key_combo is not None
-        # Menu structure present
+        # Menu structure present (English UI, submenus)
         menus = [a.text() for a in window.menuBar().actions()]
-        assert any("Datei" in m for m in menus)
-        assert any("Aktionen" in m for m in menus)
-        assert any("Hilfe" in m for m in menus)
+        assert any("File" in m for m in menus)
+        assert any("Actions" in m for m in menus)
+        assert any("Help" in m for m in menus)
         # Action wiring: menu actions exist for detect/embed
         assert callable(window.detect)
         assert callable(window.embed)
@@ -282,6 +458,49 @@ def test_ui_smoke_offscreen(monkeypatch):
         assert callable(window.sign)
         assert callable(window.verify)
         assert callable(window.kgw_sample)
+        # TUI-Parität: neue Untermenü-Slots sind verdrahtet
+        for slot in ("clean_text", "dilute_text", "rewrite_text",
+                     "run_pipeline", "inspect_file", "clean_file",
+                     "embed_file", "detect_file_prov", "image_score",
+                     "watch_once", "attack_matrix", "synthid_sweep",
+                     "run_optimizer", "similarity", "system_state",
+                     "check_update", "install_llm_model", "delta_z",
+                     "finding_report", "sign_report_file",
+                     "verify_report_file", "generate_keypair"):
+            assert callable(getattr(window, slot)), slot
+        # Untermenü-Struktur im Actions-Menü (TUI-Parität, deterministisch)
+        actions_menu = next(m for m in window.menuBar().actions()
+                            if m.text() == "&Actions")
+        # Submenu QActions are alive and attached to the Actions menu
+        # (C++-owned; the underlying QMenu is retained by the window).
+        sub_actions = [a for a in actions_menu.menu().actions()
+                       if a.menu() is not None]
+        sub_titles = [a.text() for a in sub_actions]
+        assert sub_titles == ["&Text Tools", "&File Tools", "&Findings",
+                              "&Benchmarks", "&System"], sub_titles
+        expected_items = {
+            "&Text Tools": ["&Clean Unicode Layer", "&Dilute AI Phrasing",
+                            "&Rewrite (Structural)",
+                            "&Pipeline (detect→clean→dilute→rewrite)"],
+            "&File Tools": ["&Inspect Metadata…", "&Clean Metadata…",
+                            "&Embed Provenance…", "&Detect Provenance…",
+                            "&Image Score (SynthID)…", "&Watch Directory…"],
+            "&Findings": ["&ΔZ Check…", "&Findings Report (A–D)…",
+                          "&Sign Findings JSON…", "&Verify Signed JSON…",
+                          "&Generate ML-DSA Keypair…"],
+            "&Benchmarks": ["&Attack Matrix…", "&SynthID Sweep…",
+                            "&Prompt Optimizer…", "&Corpus Similarity…"],
+            "&System": ["&System State", "&Check for Updates…",
+                        "&Install Local Model…"],
+        }
+        for title, items in expected_items.items():
+            # Read through the window's retained Python references (they keep
+            # the C++ QMenu alive); the QAction→menu mapping was verified above.
+            key = title.lstrip("&").replace(" (A–D)", "")
+            sub = window._submenu_menus[key]
+            got = [a.text() for a in sub.actions()
+                   if not a.isSeparator()]
+            assert got == items, f"{title}: {got}"
         assert callable(app_mod.main)
     finally:
         window.close()

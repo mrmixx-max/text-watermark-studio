@@ -100,6 +100,8 @@ class MainWindow(QMainWindow):
         m_edit.addAction(act_wrap)
 
         m_actions = mbar.addMenu("&Actions")
+        self._top_menus = {"File": m_file, "Edit": m_edit,
+                           "Actions": m_actions}
         self._menu_actions = {}
         for label, shortcut, slot in (
             ("&Detect", "Ctrl+D", self.detect),
@@ -114,6 +116,90 @@ class MainWindow(QMainWindow):
             act.triggered.connect(slot)
             m_actions.addAction(act)
             self._menu_actions[shortcut] = act
+
+        m_actions.addSeparator()
+
+        # Alle Untermenüs + Aktionen werden im Window referenziert, damit
+        # PySide6 sie nicht vorzeitig garbage-collected (C++-Seite lebt).
+        self._submenus: dict[str, list] = {}
+        self._submenu_menus: dict[str, object] = {}
+
+        # --- Text Tools (TUI-Parität 2/3/5/7) ---------------------------
+        m_text = m_actions.addMenu("&Text Tools")
+        self._submenu_menus["Text Tools"] = m_text
+        self._submenus["Text Tools"] = []
+        for label, slot in (
+            ("&Clean Unicode Layer", self.clean_text),
+            ("&Dilute AI Phrasing", self.dilute_text),
+            ("&Rewrite (Structural)", self.rewrite_text),
+            ("&Pipeline (detect→clean→dilute→rewrite)", self.run_pipeline),
+        ):
+            act = QAction(label, self)
+            act.triggered.connect(slot)
+            m_text.addAction(act)
+            self._submenus["Text Tools"].append(act)
+
+        # --- File Tools (TUI-Parität 8-13) ------------------------------
+        m_files = m_actions.addMenu("&File Tools")
+        self._submenu_menus["File Tools"] = m_files
+        self._submenus["File Tools"] = []
+        for label, slot in (
+            ("&Inspect Metadata…", self.inspect_file),
+            ("&Clean Metadata…", self.clean_file),
+            ("&Embed Provenance…", self.embed_file),
+            ("&Detect Provenance…", self.detect_file_prov),
+            ("&Image Score (SynthID)…", self.image_score),
+            ("&Watch Directory…", self.watch_once),
+        ):
+            act = QAction(label, self)
+            act.triggered.connect(slot)
+            m_files.addAction(act)
+            self._submenus["File Tools"].append(act)
+
+        # --- Findings (TUI-Parität 21-25) -------------------------------
+        m_findings = m_actions.addMenu("&Findings")
+        self._submenu_menus["Findings"] = m_findings
+        self._submenus["Findings"] = []
+        for label, slot in (
+            ("&ΔZ Check…", self.delta_z),
+            ("&Findings Report (A–D)…", self.finding_report),
+            ("&Sign Findings JSON…", self.sign_report_file),
+            ("&Verify Signed JSON…", self.verify_report_file),
+            ("&Generate ML-DSA Keypair…", self.generate_keypair),
+        ):
+            act = QAction(label, self)
+            act.triggered.connect(slot)
+            m_findings.addAction(act)
+            self._submenus["Findings"].append(act)
+
+        # --- Benchmarks (TUI-Parität 14-15, 19) -------------------------
+        m_bench = m_actions.addMenu("&Benchmarks")
+        self._submenu_menus["Benchmarks"] = m_bench
+        self._submenus["Benchmarks"] = []
+        for label, slot in (
+            ("&Attack Matrix…", self.attack_matrix),
+            ("&SynthID Sweep…", self.synthid_sweep),
+            ("&Prompt Optimizer…", self.run_optimizer),
+            ("&Corpus Similarity…", self.similarity),
+        ):
+            act = QAction(label, self)
+            act.triggered.connect(slot)
+            m_bench.addAction(act)
+            self._submenus["Benchmarks"].append(act)
+
+        # --- System (TUI-Parität 16-18, 20) -----------------------------
+        m_sys = m_actions.addMenu("&System")
+        self._submenu_menus["System"] = m_sys
+        self._submenus["System"] = []
+        for label, slot in (
+            ("&System State", self.system_state),
+            ("&Check for Updates…", self.check_update),
+            ("&Install Local Model…", self.install_llm_model),
+        ):
+            act = QAction(label, self)
+            act.triggered.connect(slot)
+            m_sys.addAction(act)
+            self._submenus["System"].append(act)
 
         m_help = mbar.addMenu("&Help")
         act_about = QAction("&About", self)
@@ -455,6 +541,166 @@ class MainWindow(QMainWindow):
             lambda: self.controller.kgw_sample(self._editor_text()),
             ok_status="KGW sample generated",
         )
+
+    # --------------------------------------------- TUI-Paritaet: neue Slots
+    # Text-Tools: wirken auf den Editor-Inhalt (wie Detect/Embed).
+    def clean_text(self) -> None:
+        self._run(lambda: self.controller.clean_text(self._editor_text()),
+                  ok_status="Unicode layer cleaned")
+
+    def dilute_text(self) -> None:
+        self._run(lambda: self.controller.dilute_text(self._editor_text()),
+                  ok_status="AI phrasing diluted")
+
+    def rewrite_text(self) -> None:
+        self._run(lambda: self.controller.rewrite_text(self._editor_text()),
+                  ok_status="Text rewritten")
+
+    def run_pipeline(self) -> None:
+        self._run(lambda: self.controller.run_pipeline(self._editor_text()),
+                  ok_status="Pipeline complete")
+
+    # Datei-basierte Aktionen: Pfad kommt aus einem native Dialog.
+    def _pick_file(self, caption: str,
+                   filter_: str = "All files (*)") -> str | None:
+        path, _ = QFileDialog.getOpenFileName(self, caption, "", filter_)
+        return path or None
+
+    def _pick_dir(self, caption: str) -> str | None:
+        path = QFileDialog.getExistingDirectory(self, caption, "")
+        return path or None
+
+    def inspect_file(self) -> None:
+        p = self._pick_file("Inspect metadata")
+        if not p:
+            return
+        self._run(lambda: self.controller.inspect_file(p),
+                  ok_status="Metadata inspected")
+
+    def clean_file(self) -> None:
+        p = self._pick_file("Clean metadata")
+        if not p:
+            return
+        self._run(lambda: self.controller.clean_file(p),
+                  ok_status="Metadata cleaned")
+
+    def embed_file(self) -> None:
+        p = self._pick_file("Embed provenance (HMAC sign)")
+        if not p:
+            return
+        key = self._selected_key()
+        self._run(lambda: self.controller.embed_file(p, key),
+                  ok_status="File signed")
+
+    def detect_file_prov(self) -> None:
+        p = self._pick_file("Detect provenance")
+        if not p:
+            return
+        self._run(lambda: self.controller.detect_file_provenance(p),
+                  ok_status="Provenance checked")
+
+    def image_score(self) -> None:
+        p = self._pick_file("Image score (SynthID)",
+                            "Images (*.png *.jpg *.jpeg *.webp);;All files (*)")
+        if not p:
+            return
+        self._run(lambda: self.controller.image_score(p),
+                  ok_status="Image scored")
+
+    def watch_once(self) -> None:
+        p = self._pick_dir("Watch directory (one pass)")
+        if not p:
+            return
+        self._run(lambda: self.controller.watch_once(p),
+                  ok_status="Directory scanned")
+
+    def attack_matrix(self) -> None:
+        self._run(lambda: self.controller.attack_matrix(),
+                  ok_status="Attack matrix complete")
+
+    def synthid_sweep(self) -> None:
+        self._run(lambda: self.controller.synthid_sweep(),
+                  ok_status="SynthID sweep complete")
+
+    def run_optimizer(self) -> None:
+        self._run(lambda: self.controller.run_optimizer(),
+                  ok_status="Optimizer complete")
+
+    def similarity(self) -> None:
+        target = self._pick_file("Similarity target text",
+                                 "Text files (*.txt *.md);;All files (*)")
+        if not target:
+            return
+        corpus = self._pick_dir("Corpus directory")
+        if not corpus:
+            return
+        self._run(lambda: self.controller.similarity(target, corpus),
+                  ok_status="Similarity checked")
+
+    def system_state(self) -> None:
+        self._run(lambda: self.controller.system_state(),
+                  ok_status="System state")
+
+    def check_update(self) -> None:
+        self._run(lambda: self.controller.check_update(),
+                  ok_status="Update check complete")
+
+    def install_llm_model(self) -> None:
+        from PySide6.QtWidgets import QInputDialog
+        model, ok = QInputDialog.getText(
+            self, "Install local model",
+            "Model name (Ollama pull, e.g. llama3.2:3b):")
+        if not ok or not model.strip():
+            return
+        self._run(lambda: self.controller.install_llm_model(model.strip()),
+                  ok_status="Model installed")
+
+    def delta_z(self) -> None:
+        before = self._pick_file("ΔZ check — before file",
+                                 "Text files (*.txt *.md);;All files (*)")
+        if not before:
+            return
+        after = self._pick_file("ΔZ check — after file",
+                                "Text files (*.txt *.md);;All files (*)")
+        if not after:
+            return
+        key = self._selected_key()
+        self._run(lambda: self.controller.delta_z(before, after, key),
+                  ok_status="ΔZ check complete")
+
+    def finding_report(self) -> None:
+        p = self._pick_file("Findings report (A–D)",
+                            "Text files (*.txt *.md);;All files (*)")
+        if not p:
+            return
+        key = self._selected_key()
+        self._run(lambda: self.controller.finding_report(p, key_id=key),
+                  ok_status="Findings report built")
+
+    def sign_report_file(self) -> None:
+        p = self._pick_file("Sign findings JSON",
+                            "JSON (*.json);;All files (*)")
+        if not p:
+            return
+        key = self._selected_key()
+        self._run(lambda: self.controller.sign_report_file(p, key_id=key),
+                  ok_status="Finding signed")
+
+    def verify_report_file(self) -> None:
+        p = self._pick_file("Verify signed JSON",
+                            "JSON (*.json);;All files (*)")
+        if not p:
+            return
+        key = self._selected_key()
+        self._run(lambda: self.controller.verify_report_file(p, key_id=key),
+                  ok_status="Signature verified")
+
+    def generate_keypair(self) -> None:
+        target = self._pick_dir("ML-DSA keypair target directory")
+        if not target:
+            return
+        self._run(lambda: self.controller.generate_keypair(target),
+                  ok_status="Keypair generated")
 
     def about(self) -> None:
         self.results.setPlainText(_ABOUT)

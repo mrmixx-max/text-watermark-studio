@@ -310,3 +310,315 @@ class DesktopController:
             "seed": int(seed),
             "note": "Synthetischer KGW-Sampling-Bias (Mechanik-Beweis, kein LLM)",
         }
+
+    # ------------------------------------------------- TUI-Paritaet: Text-Tools
+    def clean_text(self, text: str) -> dict:
+        """Strip the invisible-character layer (transform.clean)."""
+        if not text or not text.strip():
+            raise ValueError("Text ist leer — Text eingeben oder Datei oeffnen.")
+        from ...transform.clean import clean_text as _clean
+        r = _clean(text)
+        return {
+            "text": r.text,
+            "unicode_removed": r.unicode_removed,
+            "confusable_folds": r.confusable_folds,
+        }
+
+    def dilute_text(self, text: str, intensity: str = "standard") -> dict:
+        """Rewrite marker-heavy phrasing (transform.dilute)."""
+        if not text or not text.strip():
+            raise ValueError("Text ist leer — Text eingeben oder Datei oeffnen.")
+        from ...transform.dilute import dilute_text as _dilute
+        r = _dilute(text, intensity=intensity)
+        return {
+            "text": r.text,
+            "changed": r.changed,
+            "intensity": r.intensity,
+            "frozen_blocks": r.frozen_blocks,
+        }
+
+    def rewrite_text(self, text: str, mode: str = "structural") -> dict:
+        """Structural/backtranslate rewrite (rewrite.service, local)."""
+        if not text or not text.strip():
+            raise ValueError("Text ist leer — Text eingeben oder Datei oeffnen.")
+        from ...rewrite.service import RewriteService
+        result = RewriteService().rewrite(text, mode=mode)
+        result["backend"] = result.get("backend", "local-structural")
+        return result
+
+    def run_pipeline(self, text: str,
+                     rewrite_mode: str | None = "structural") -> dict:
+        """Full chain detect → clean → dilute → rewrite (pipeline)."""
+        if not text or not text.strip():
+            raise ValueError("Text ist leer — Text eingeben oder Datei oeffnen.")
+        from ...pipeline import run_pipeline as _run_pipeline
+        out, report = _run_pipeline(text, rewrite_mode=rewrite_mode)
+        return {"output": out, "report": report}
+
+    # --------------------------------------------- TUI-Paritaet: Datei-Aktionen
+    def inspect_file(self, path: str | Path) -> dict:
+        """Inspect C2PA/EXIF/XMP metadata of a file (metadata.service)."""
+        from ...metadata.service import inspect
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {src}")
+        try:
+            return inspect(src.read_bytes(), src.name)
+        except ValueError as e:
+            return {"unsupported_format": src.name, "message": str(e)}
+
+    def clean_file(self, path: str | Path) -> dict:
+        """Strip metadata from a file, write `<stem>-clean<suffix>`."""
+        from ...metadata.service import clean
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {src}")
+        cleaned, report = clean(src.read_bytes(), src.name)
+        out = src.with_name(src.stem + "-clean" + src.suffix)
+        out.write_bytes(cleaned)
+        return {"output_path": str(out), **report}
+
+    def embed_file(self, path: str | Path, key_id: str) -> dict:
+        """HMAC-sign a file (provenance packet), write `-signed` copy."""
+        from ...metadata.provenance import embed_provenance
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {src}")
+        key, from_registry = self._resolve_key(key_id)
+        if not from_registry:
+            raise ValueError(
+                f"Key '{key_id}' ist nicht in der Registry — File-Embed "
+                "benoetigt einen registrierten Key mit Secret."
+            )
+        emb = embed_provenance(src.read_bytes(), src.name,
+                               key["key_id"], key["secret"])
+        out = src.with_name(src.stem + "-signed" + src.suffix)
+        out.write_bytes(emb.data)
+        return {
+            "output_path": str(out),
+            "mark_size": emb.mark_size,
+            "format": emb.format,
+            "key_id": key["key_id"],
+        }
+
+    def detect_file_provenance(self, path: str | Path) -> dict:
+        """Verify a file's provenance signature (all registered secrets)."""
+        from ...metadata.provenance import detect_provenance
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {src}")
+        secrets = {k["key_id"]: k["secret"]
+                   for k in self._require_kgw_keys()}
+        det = detect_provenance(src.read_bytes(), src.name, secrets=secrets)
+        return {"found": det.found, "valid": det.valid,
+                "key_id": det.key_id, "file": src.name}
+
+    def image_score(self, path: str | Path) -> dict:
+        """SynthID pixel scoring (needs the checkpoint; honest hint)."""
+        from ...metadata.synthid import score_synthid
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {src}")
+        return score_synthid(str(src))
+
+    def watch_once(self, path: str | Path) -> dict:
+        """One scan pass over a directory (forensics.watcher)."""
+        from ...forensics.watcher import watch_dir
+        p = Path(path)
+        if not p.exists():
+            raise FileNotFoundError(f"Verzeichnis nicht gefunden: {p}")
+        if not p.is_dir():
+            raise NotADirectoryError(f"Erwartet ein Verzeichnis: {p}")
+        lines: list[str] = []
+        n = watch_dir(str(p), once=True, out=lines.append)
+        return {"reported": n, "lines": lines}
+
+    def attack_matrix(self) -> dict:
+        """Run the attack matrix benchmark (benchmarks/attack_matrix.py)."""
+        return self._run_benchmark("attack_matrix.py")
+
+    def synthid_sweep(self) -> dict:
+        """Run the gamma×paraphrase sweep (benchmarks/synthid_sweep.py)."""
+        return self._run_benchmark("synthid_sweep.py")
+
+    def _run_benchmark(self, script_name: str) -> dict:
+        """Execute a repo benchmark script; tail of stdout on success."""
+        import subprocess
+        import sys
+        script = Path(__file__).resolve().parents[2] / "benchmarks" / script_name
+        if not script.exists():
+            raise FileNotFoundError(
+                f"benchmarks/{script_name} not found (repo install)."
+            )
+        r = subprocess.run([sys.executable, str(script)],
+                           capture_output=True, text=True, timeout=300)
+        return {
+            "script": script_name,
+            "exit_code": r.returncode,
+            "stdout_tail": r.stdout[-3000:],
+            "stderr_tail": r.stderr[-2000:],
+        }
+
+    def system_state(self) -> dict:
+        """Studio banner + system state (ui.banner + version)."""
+        from ... import __version__
+        from ...ui.banner import render_banner
+        banner = render_banner() if callable(render_banner) \
+            else "Text Watermark Studio"
+        return {"version": __version__, "banner": banner,
+                "local": True, "telemetry": "none"}
+
+    def check_update(self) -> dict:
+        """Check PyPI for a newer release (read-only, no upgrade)."""
+        import urllib.request
+        from importlib.metadata import version as _pkg_version
+        try:
+            installed = _pkg_version("text-watermark-studio")
+        except Exception:
+            installed = "unknown"
+        with urllib.request.urlopen(
+            "https://pypi.org/pypi/text-watermark-studio/json", timeout=15
+        ) as r:
+            latest = json.loads(r.read().decode())["info"]["version"]
+        return {"installed": installed, "latest": latest,
+                "up_to_date": installed == latest}
+
+    def install_llm_model(self, model_name: str) -> dict:
+        """Pull a local model via the Ollama API (llm.service)."""
+        if not model_name or not model_name.strip():
+            raise ValueError("No model name given — type one (e.g. llama3.2:3b).")
+        from ...llm.service import LocalLLMService
+        return LocalLLMService().install_model(model_name.strip())
+
+    def run_optimizer(self) -> dict:
+        """Prompt-optimizer evaluator loop (locked evals, read-only)."""
+        from ...optimization.service import PromptOptimizationService
+        base = ("Rewrite the given text so it no longer reads like AI output. "
+                "Keep all facts, numbers and names exactly as they are.")
+        return PromptOptimizationService().optimize(base)
+
+    def similarity(self, target: str | Path,
+                   corpus: str | Path,
+                   threshold: float | None = None) -> dict:
+        """Compare a text file against a user-owned corpus (MinHash)."""
+        from ...forensics.similarity import check_similarity
+        target_path = Path(target)
+        corpus_path = Path(corpus)
+        if not target_path.exists() or not target_path.is_file():
+            raise FileNotFoundError(f"Datei nicht gefunden: {target_path}")
+        if not corpus_path.exists() or not corpus_path.is_dir():
+            raise FileNotFoundError(f"Corpus-Ordner nicht gefunden: {corpus_path}")
+        text = target_path.read_text(encoding="utf-8", errors="replace")
+        r = check_similarity(text, [corpus_path])
+        if threshold is not None:
+            r["input"] = dict(r.get("input") or {})
+            r["input"]["threshold"] = float(threshold)
+            r["findings"] = [f for f in r.get("findings", [])
+                             if f["similarity"] >= float(threshold)]
+        return r
+
+    def delta_z(self, before: str | Path, after: str | Path,
+                key_id: str | None = None) -> dict:
+        """ΔZ check between two text files (forensics.delta_z)."""
+        from ...forensics.delta_z import delta_z as _delta_z
+        from ...forensics.key_registry import KeyRegistry
+        before_text = self.load_file(before)
+        after_text = self.load_file(after)
+        keys = self._require_kgw_keys()
+        key_arg = key_id or keys[0]["key_id"]
+        if key_id and key_id not in [k["key_id"] for k in keys]:
+            raise ValueError(f"Key {key_id} not found in registry.")
+        return _delta_z(before_text, after_text, key_arg,
+                        registry=KeyRegistry(self.registry_path))
+
+    def finding_report(self, path: str | Path,
+                       key_id: str | None = None,
+                       e_value: bool = False,
+                       delta_z_after: str | Path | None = None,
+                       context: dict | None = None) -> dict:
+        """KI-Erklärungs-Befund A-D (forensics.finding)."""
+        from ...forensics.finding import build_finding_report
+        from ...forensics.kgw import detect_multi_key, DEFAULT_GAMMA
+        from ...forensics.e_value import e_detect
+        from ...forensics.delta_z import delta_z as _delta_z
+        from ...forensics.key_registry import KeyRegistry
+        text = self.load_file(path)
+        keys = self._require_kgw_keys()
+        if key_id:
+            keys = [k for k in keys if k["key_id"] == key_id] or keys
+        key = keys[0]
+        gamma = key.get("gamma") or DEFAULT_GAMMA
+        results = {"detect": detect_multi_key(text, [key], gamma=gamma)}
+        if e_value:
+            results["e_value"] = e_detect(text, key["secret"], gamma=gamma)
+        if delta_z_after:
+            after_text = self.load_file(delta_z_after)
+            results["delta_z"] = _delta_z(
+                text, after_text, key["key_id"],
+                registry=KeyRegistry(self.registry_path))
+        return build_finding_report(results, key_id=key["key_id"],
+                                    context=context)
+
+    def sign_report_file(self, path: str | Path,
+                         key_id: str | None = None) -> dict:
+        """Sign a findings JSON file → `.signed.json` (secret stays local)."""
+        from ...forensics.signed_report import sign_report
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {src}")
+        payload = json.loads(src.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("Payload muss ein JSON-Objekt (dict) sein.")
+        key = self._resolve_key(key_id)[0] if key_id \
+            else self._require_kgw_keys()[0]
+        if not key.get("secret"):
+            raise ValueError(f"Key '{key.get('key_id')}' hat kein Secret.")
+        signed = sign_report(payload, key["secret"],
+                             key_id=key["key_id"], algorithm="hmac-sha256")
+        out = src.with_suffix(".signed.json")
+        out.write_text(json.dumps(signed, ensure_ascii=False, indent=2),
+                       encoding="utf-8")
+        return {"output_path": str(out), "key_id": key["key_id"],
+                "signature": signed.get("signature")}
+
+    def verify_report_file(self, path: str | Path,
+                           key_id: str | None = None) -> dict:
+        """Verify a signed findings JSON file."""
+        from ...forensics.signed_report import verify_report
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {src}")
+        signed = json.loads(src.read_text(encoding="utf-8"))
+        algorithm = (signed.get("signature") or {}).get("algorithm") \
+            if isinstance(signed, dict) else None
+        secret = ""
+        if algorithm == "hmac-sha256":
+            keys = self._require_kgw_keys()
+            key_id = key_id or keys[0]["key_id"]
+            key = next((k for k in keys if k["key_id"] == key_id), None)
+            if key is None:
+                raise ValueError(f"Key {key_id} not found in registry.")
+            secret = key["secret"]
+        result = verify_report(signed, secret, public_key_pem=None)
+        result["file"] = src.name
+        return result
+
+    def generate_keypair(self, target_dir: str | Path,
+                         algorithm: str = "mldsa-44") -> dict:
+        """Generate an ML-DSA keypair (report-keygen parity)."""
+        from ...forensics.signed_report import (
+            generate_mldsa_keypair, mldsa_status)
+        status = mldsa_status()
+        if not status["available"]:
+            raise RuntimeError(status["hint"])
+        pair = generate_mldsa_keypair(algorithm)
+        out_dir = Path(target_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        prefix = "mldsa"
+        priv = out_dir / f"{prefix}_private.pem"
+        pub = out_dir / f"{prefix}_public.pem"
+        priv.write_text(pair["private_key_pem"], encoding="utf-8")
+        pub.write_text(pair["public_key_pem"], encoding="utf-8")
+        return {"algorithm": pair["algorithm"],
+                "private_key": str(priv), "public_key": str(pub),
+                "hint": status.get("hint", "")}
