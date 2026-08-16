@@ -264,4 +264,28 @@ The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectabil
 - **Menu-driven TUI**: `ai-wm tui` — 25 actions, keyboard shortcuts, in-menu Ollama pull (`[tui]` extra)
 - **OpenAPI 3.1 spec**: [docs/openapi.json](docs/openapi.json) — generated from the live FastAPI route table
 
+## v2.3.0: trajectory, multi-bit payload, adversarial evaluation
+
+- **Z-score trajectory**: `ai-wm trace file.txt --key <key> [--window 500 --step 250 --threshold 4]`
+  — sliding-window KGW detection over a long document. The whole-doc Z-test
+  averages away local signals; the trajectory shows WHERE the watermark is
+  (marked chapter inside a clean manuscript), merging adjacent finding
+  windows into spans with word offsets and peak Z. Human report by default,
+  JSON via `--json`/`-o`.
+- **Multi-bit payload (invariant features)**: `ai-wm payload embed file.txt
+  --payload "user-42" -o wm.txt` and `ai-wm payload extract wm.txt
+  --reference file.txt` — embed a text payload (user id, timestamp, run id)
+  via the Yoo et al. (ACL 2023) invariant-feature codebook. Self-delimiting
+  UTF-8 encoding; extraction needs the ORIGINAL text as reference state
+  (both parties share the invariant anchors). Capacity = 1 bit per mask
+  position — short payloads, honest warning + exit 1 when the text is too
+  small.
+- **Adversarial evaluation**: `ai-wm evade file.txt --key <key>
+  [--target-z 3.9 --max-changes N --ollama-model <m>]` — white-box stress
+  test of the studio's OWN KGW scheme: greedily replaces greenlisted tokens
+  with non-green alternatives until Z drops below the target, measuring the
+  cost (changes, change ratio, word overlap, per-change Z trajectory).
+  Optional Ollama infill for natural candidates. Honest scope: known key,
+  own scheme — measures the robustness floor, not field resistance.
+
 > **Full inventory:** every additional module (RAG chunking, prompt registry + optimizer, graph memory, community detection, rewrite engine, exports, cloud upload, local-LLM routing, HTMX hardening) is documented in [docs/FEATURES.md](docs/FEATURES.md) with its honest status. Multi-agent loop is a **minimal demo scaffold** — do not rely on it in production.

@@ -122,7 +122,7 @@ Score.
 
 ## 5. CLI-Referenz
 
-17 Subcommands. Exit-Codes: `0` sauber, `1` Funde/Fehler/nicht verfügbar,
+20 Subcommands. Exit-Codes: `0` sauber, `1` Funde/Fehler/nicht verfügbar,
 `2` Eingabefehler. `ai-wm tui` startet die menügesteuerte
 Terminal-Oberfläche (siehe §6).
 
@@ -214,14 +214,52 @@ Startet den FastAPI-Server (siehe §14).
 
 ### file-inspect / file-clean / file-embed / file-detect
 ```bash
-ai-wm file-inspect dokument.pdf [--json]
-ai-wm file-clean  dokument.pdf -o sauber.pdf [--json]
-ai-wm file-embed  dokument.pdf --key KEY -o signiert.pdf
-ai-wm file-detect signiert.pdf [--json]
+ai-wm file-inspect DATEI
+ai-wm file-clean DATEI -o AUSGABE
+ai-wm file-embed DATEI --key SCHLUESSEL -o AUSGABE
+ai-wm file-detect DATEI --key SCHLUESSEL
 ```
-Metadaten prüfen/bereinigen (C2PA/EXIF/XMP), Dateien mit HMAC-Provenance
-signieren, Signaturen verifizieren. Unterstützte Formate: PNG, JPEG, SVG,
-PDF, DOCX, ODT, HTML, Markdown.
+Metadaten-Inspektion/-Bereinigung (C2PA/EXIF/XMP) und signierte
+Provenienz-Marken in Dateien (Details in §9/§10).
+
+### trace
+```bash
+ai-wm trace [input] [--stdin] --key KEY [--window 500] [--step N]
+            [--threshold 4.0] [--json] [-o OUTPUT]
+```
+Z-Score-Trajektorie über lange Dokumente: Ein einzelner Z-Test über den
+ganzen Text mittelt lokale Signale weg — ein Manuskript mit 80% Mensch
+und einem eingefügten KI-Kapitel bleibt im globalen Wert unauffällig.
+`trace` schiebt ein Fenster (Standard 500 Wörter) über das Dokument und
+meldet den Z-Score pro Fenster mit Wort-Offsets; Fenster über der
+Schwelle (Standard z>=4) werden zu Spans mit Peak-Z und Textauszug
+zusammengefasst. Zu kurze Fenster (n<10) bleiben mit `reliable: false`
+in der Trajektorie. Demo: 600-Wörter-markierter Block in 3000-Wörter-Dokument
+wird bei Peak-Z=21.0 gefunden, während der Gesamt-Z bei 2.26 bleibt.
+
+### payload
+```bash
+ai-wm payload embed [input] [--stdin] --payload "text" -o WASSERZEICHEN.txt
+ai-wm payload extract WASSERZEICHEN.txt --reference ORIGINAL.txt [--json]
+```
+Multi-Bit-Wasserzeichen mit echter Payload (User-ID, Timestamp,
+Run-ID) über das Invariant-Feature-Codebook (Yoo et al., ACL 2023,
+light). 1 Bit pro Mask-Position; `extract` braucht den ORIGINAL-Text
+als Referenz (beide Seiten teilen die invarianten Anker). Warnung +
+Exit 1, wenn der Text zu klein für die Payload ist.
+
+### evade
+```bash
+ai-wm evade [input] [--stdin] --key KEY [--target-z 3.9] [--max-changes N]
+            [--ollama-model MODELL] [--json] [-o OUTPUT]
+```
+Adversariale Evaluation (White-Box, eigenes Schema): Stresstest der
+eigenen KGW-Implementierung. Ersetzt gierig grüne Tokens durch
+nicht-grüne Alternativen, bis der Z-Score unter das Ziel fällt, und
+misst den Preis: Änderungen, Änderungsquote, Wort-Überlappung,
+Z-Trajektorie pro Änderung. Optional Ollama-Infill für natürliche
+Kandidaten. Ehrlicher Scope: bekannter Key, eigenes Schema — misst die
+Robustheits-Untergrenze, nicht die Feld-Resistenz.
 
 ### splash
 ```bash

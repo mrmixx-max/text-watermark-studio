@@ -2,6 +2,49 @@
 
 Full feature inventory beyond the README quickstart. Automatically maintained alongside the code; the README links here for depth.
 
+## v2.3.0: Z-score trajectory, multi-bit payload, adversarial evaluation
+
+- **Z-score trajectory** (`forensics/trace.py`, `ai-wm trace`): sliding-window
+  KGW detection over long documents. The single whole-document Z-test
+  averages away local signals — a manuscript that is 80% human with one
+  embedded AI chapter yields a modest global Z. `trace_kgw` slides a
+  word-counted window (default 500 words, configurable step) and reports the
+  Z-score per window with word offsets. Windows too short for statistics
+  (`n < 10` scored tokens) stay in the trajectory with `reliable: False`.
+  Adjacent finding windows (Z >= threshold, default 4.0) merge into spans
+  with peak Z; the human report includes a text excerpt of each span.
+  Measured demo: a 600-word marked block inside a 3000-word clean document
+  was detected at peak Z=21.0 while the whole-doc Z stayed 2.26
+  (`weak_signal`) — the trajectory finds what the global test misses.
+  `format_trace` renders the CLI report; `--json` emits the full trajectory.
+- **Multi-bit payload** (`forensics/invariant.py`, `ai-wm payload`): the
+  invariant-feature codebook (Yoo et al., ACL 2023, light) embeds one bit
+  per mask position adjacent to invariant anchors. `encode_payload` /
+  `decode_payload` map arbitrary UTF-8 payloads to a self-delimiting bit
+  string (16-bit big-endian length prefix + payload bits), so user ids,
+  timestamps and run ids can be embedded and recovered. `extract_payload`
+  distinguishes `?` inside the payload region (invalid) from `?` in unused
+  codebook capacity (by design — the original token is excluded from
+  candidate lists, so unmarked positions decode as `?`). Capacity is 1 bit
+  per usable mask position; the CLI warns and exits 1 when the text is too
+  small for the payload. Extraction requires the ORIGINAL text as reference
+  state — both parties share the invariant anchors (paper setup), documented
+  in the CLI help and module docstring. Optional Ollama infill
+  (`ollama_infill=True`, `ollama_model=...`) improves candidate quality.
+- **Adversarial evaluation** (`forensics/evader.py`, `ai-wm evade`):
+  white-box stress test of the studio's OWN KGW scheme. `evade()` scores
+  every token against the exact `(token, context)` PRF pairs `detect_kgw`
+  uses, then greedily replaces greenlisted tokens with non-green
+  alternatives — class-aware (same frequency-vocabulary pool first) with an
+  optional Ollama infill backend — until the Z-score drops below the target
+  (default 3.9). The report is a MEASUREMENT: z_before/z_after, changes and
+  change ratio, difflib similarity and word overlap, per-change Z
+  trajectory, final verdict. Demo: Z 14.49 → 3.70 with 74/432 word changes
+  (17.1%) and 66.4% word overlap. Honest scope: known key, own scheme —
+  this measures the scheme's robustness floor, not field resistance. The
+  module is positioned as evaluation tooling; the evader's docstring and
+  CLI help both state it is a stress test, not a laundering tool.
+
 ## v2.0.0: model-grade detection + measurement suite
 
 - **BPE token level**: `detect_kgw(text, key, level="bpe")` runs the greenlist over cl100k subword tokens at word boundaries — the surface a real tokenizer feeds sampling watermarks. Mark + detect round-trip on the same level. Needs `tiktoken` (`pip install text-watermark-studio[bpe]`).

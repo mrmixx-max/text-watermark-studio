@@ -116,7 +116,7 @@ removed: `detect_kgw` reports whether a mark is present, with a score.
 
 ## 5. CLI reference
 
-17 subcommands. Exit codes: `0` clean, `1` findings/error/unavailable,
+20 subcommands. Exit codes: `0` clean, `1` findings/error/unavailable,
 `2` input error. `ai-wm tui` launches the menu-driven terminal UI (see §6).
 
 ### detect
@@ -215,6 +215,45 @@ Inspect/clean metadata (C2PA/EXIF/XMP), sign files with HMAC provenance,
 verify signatures. Supported formats: PNG, JPEG, SVG, PDF, DOCX, ODT, HTML,
 Markdown.
 
+### trace
+```bash
+ai-wm trace [input] [--stdin] --key KEY [--window 500] [--step N]
+            [--threshold 4.0] [--json] [-o OUTPUT]
+```
+Z-score trajectory over long documents. A single Z-test over the whole
+text averages away local signals — a manuscript that is 80% human with
+one embedded AI chapter stays inconspicuous in the global value. `trace`
+slides a window (default 500 words) across the document and reports the
+Z-score per window with word offsets; windows above the threshold
+(default z>=4) merge into spans with peak Z and a text excerpt. Windows
+too short for statistics (n<10) stay in the trajectory with
+`reliable: false`. Demo: a 600-word marked block in a 3000-word document
+is found at peak Z=21.0 while the whole-doc Z stays 2.26.
+
+### payload
+```bash
+ai-wm payload embed [input] [--stdin] --payload "text" -o WATERMARKED.txt
+ai-wm payload extract WATERMARKED.txt --reference ORIGINAL.txt [--json]
+```
+Multi-bit watermarking with a real payload (user id, timestamp, run id)
+via the invariant-feature codebook (Yoo et al., ACL 2023, light). 1 bit
+per mask position; `extract` needs the ORIGINAL text as reference state
+(both parties share the invariant anchors). Warning + exit 1 when the
+text is too small for the payload.
+
+### evade
+```bash
+ai-wm evade [input] [--stdin] --key KEY [--target-z 3.9] [--max-changes N]
+            [--ollama-model MODEL] [--json] [-o OUTPUT]
+```
+Adversarial evaluation (white-box, own scheme): stress test of the
+studio's own KGW implementation. Greedily replaces greenlisted tokens
+with non-green alternatives until the Z-score drops below the target,
+measuring the cost: changes, change ratio, word overlap, per-change Z
+trajectory. Optional Ollama infill for natural candidates. Honest
+scope: known key, own scheme — measures the robustness floor, not field
+resistance.
+
 ### splash
 ```bash
 ai-wm splash
@@ -231,7 +270,7 @@ ai-wm tui
 
 A menu-driven Textual interface (install with
 `pip install text-watermark-studio[tui]`). Dark studio theme matching the
-repo's hero infographic. 17 menu entries — detect, clean, dilute, embed,
+repo's hero infographic. 25 menu entries — detect, clean, dilute, embed,
 pipeline, report, rewrite, the four file tools, SynthID scoring, directory
 watch, both benchmarks, system state, and update.
 

@@ -1,4 +1,4 @@
 __all__ = [
     "pipeline",
 ]
-__version__ = "0.9.2"
+__version__ = "2.3.0"

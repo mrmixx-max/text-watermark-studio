@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.3.0 — Z-score trajectory, multi-bit payload, adversarial evaluation
+
+- **Z-score trajectory** (`forensics/trace.py`, `ai-wm trace`): sliding-window
+  KGW detection over long documents. The whole-document Z-test averages away
+  local signals; the trajectory reports per-window Z with word offsets, marks
+  finding windows (Z >= threshold, default 4.0), merges adjacent findings
+  into spans with peak Z and text excerpts, and keeps too-short windows with
+  `reliable: False`. CLI: `ai-wm trace file.txt --key <key> [--window --step
+  --threshold --json]`. Demo: 600-word marked block in a 3000-word document
+  found at peak Z=21.0 while whole-doc Z stayed 2.26.
+- **Multi-bit payload** (`forensics/invariant.py`, `ai-wm payload`): embed
+  and recover text payloads (user ids, timestamps, run ids) via the
+  invariant-feature codebook (Yoo et al., ACL 2023, light).
+  `encode_payload`/`decode_payload` use a self-delimiting 16-bit length
+  prefix; `embed_payload`/`extract_payload` wrap the codebook. `?` in unused
+  codebook capacity no longer invalidates the payload (only `?` inside the
+  prefix/body does). CLI: `ai-wm payload embed <file> --payload <str> -o
+  wm.txt`, `ai-wm payload extract <wm.txt> --reference <original>`; capacity
+  warning + exit 1 when the text is too small.
+- **Adversarial evaluation** (`forensics/evader.py`, `ai-wm evade`): white-box
+  stress test of the studio's own KGW scheme. Greedy loop replaces
+  greenlisted tokens with non-green alternatives until Z drops below the
+  target; the report measures changes, change ratio, similarity, word
+  overlap and the per-change Z trajectory. Optional Ollama infill. Demo: Z
+  14.49 → 3.70 with 74/432 changes (17.1%), 66.4% word overlap. Honest
+  scope: known key, own scheme — robustness floor, not field resistance.
+- **Tests**: 23 new tests (v150 trace, v151 payload, v152 evader) — full
+  suite 612 passed, 10 skipped.
+
 ## 2.2.1 — Editor marking invalidation + report language selection
 
 - **Stale highlight fix** (`ui/desktop/editor.py`): greenlist substitution
