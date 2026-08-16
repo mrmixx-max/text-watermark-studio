@@ -179,7 +179,7 @@ def test_main_window_embed_paints_markings(monkeypatch):
     text = win.editor.toPlainText()
     for m in win.editor._markings:
         assert text[m["start"]:m["end"]] == m["replacement"]
-    assert "gruen markiert" in win.statusBar().currentMessage()
+    assert "green-marked" in win.statusBar().currentMessage()
 
 
 def test_editor_markings_invalidate_on_text_change(monkeypatch):
@@ -232,11 +232,53 @@ def test_paste_shortcut_not_hijacked(monkeypatch):
                 hijacked.append((act.text(), seq.toString()))
     assert hijacked == [], f"Paste-Shortcut (Ctrl+V) durch Aktionen belegt: {hijacked}"
 
-    # Verifizieren bleibt erreichbar (jetzt Ctrl+Shift+V)
+    # Verify bleibt erreichbar (jetzt Ctrl+Shift+V)
     verify = [a for a in win.findChildren(QAction)
-              if a.text() == "&Verifizieren"]
+              if a.text() == "&Verify"]
     assert verify and any(
         s.matches(QKeySequence("Ctrl+Shift+V")) != 0
         for s in verify[0].shortcuts()
     )
+
+
+def test_llm_widget_lists_models_and_activates(monkeypatch):
+    """LLM combo lists local Ollama models; selection activates one."""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from ai_watermark_toolkit.ui.desktop import app as appmod
+
+    activated = []
+    monkeypatch.setattr(appmod.LocalLLMService, "list_models", lambda self: [
+        {"name": "gemma-4-E4B"}, {"name": "qwen3-30b-a3b"}])
+    monkeypatch.setattr(appmod.LocalLLMService, "use_model",
+                        lambda self, name: activated.append(name) or {})
+    monkeypatch.setattr(appmod.LocalLLMService, "status",
+                        lambda self: {"model_variant": ""})
+
+    from PySide6.QtWidgets import QApplication
+    app = QApplication.instance() or QApplication([])
+    win = appmod.MainWindow()
+
+    assert win.llm_combo.isEnabled()
+    assert win.llm_combo.count() == 2
+    win.llm_combo.setCurrentIndex(1)
+    assert activated == ["qwen3-30b-a3b"]
+
+
+def test_llm_widget_graceful_without_ollama(monkeypatch):
+    """Ollama down -> combo disabled with an honest placeholder, no crash."""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from ai_watermark_toolkit.ui.desktop import app as appmod
+
+    def _boom(self):
+        raise RuntimeError("ollama_unreachable: connection refused")
+    monkeypatch.setattr(appmod.LocalLLMService, "list_models", _boom)
+
+    from PySide6.QtWidgets import QApplication
+    app = QApplication.instance() or QApplication([])
+    win = appmod.MainWindow()
+
+    assert not win.llm_combo.isEnabled()
+    assert win.llm_combo.currentText() == "(Ollama unreachable)"
 

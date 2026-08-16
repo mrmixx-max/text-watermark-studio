@@ -21,6 +21,7 @@ import sys
 
 from .controller import DesktopController
 from .editor import EditorPane
+from ...llm.service import LocalLLMService
 
 try:  # optional GUI layer — import fails gracefully, main() explains
     from PySide6.QtCore import Qt
@@ -44,12 +45,12 @@ except ImportError:  # pragma: no cover - handled in main()
 APP_TITLE = "Text Watermark Studio"
 _ABOUT = (
     "Text Watermark Studio 2.0.0\n\n"
-    "Desktop-Wrapper um die Core-Forensik (KGW-Detektion, Greenlist-"
-    "Markierung, HTML-Bericht, signierte Befunde). Kein Server, kein "
-    "Netzwerk — alle Aktionen rufen die Core-Funktionen direkt auf.\n\n"
-    "Keys: data/key_registry.json (nur lesend). Key anlegen ueber "
+    "Desktop wrapper around the core forensics (KGW detection, greenlist "
+    "marking, HTML report, signed findings). No server, no network — every "
+    "action calls the core functions directly.\n\n"
+    "Keys: data/key_registry.json (read-only). Create keys via "
     "POST /api/forensics/keys (`ai-wm serve`).\n\n"
-    "Unsigniert — SmartScreen-Warnung beim Installieren ist erwartet."
+    "Unsigned — expect a SmartScreen warning when installing."
 )
 
 
@@ -59,52 +60,54 @@ class MainWindow(QMainWindow):
     def __init__(self, controller: DesktopController | None = None):
         super().__init__()
         self.controller = controller or DesktopController()
+        self.llm = LocalLLMService()
         self.setWindowTitle(APP_TITLE)
         self.resize(1180, 760)
         self._build_menu()
         self._build_ui()
         self._refresh_keys()
+        self._refresh_llm_models()
 
     # ------------------------------------------------------------- widgets
     def _build_menu(self) -> None:
         mbar = self.menuBar()
 
-        m_file = mbar.addMenu("&Datei")
-        act_open = QAction("&Oeffnen…", self)
+        m_file = mbar.addMenu("&File")
+        act_open = QAction("&Open…", self)
         act_open.setShortcut(QKeySequence.Open)
         act_open.triggered.connect(self.open_file)
         m_file.addAction(act_open)
-        act_save = QAction("Ergebnis &speichern…", self)
+        act_save = QAction("&Save Result…", self)
         act_save.setShortcut(QKeySequence.Save)
         act_save.triggered.connect(self.save_result)
         m_file.addAction(act_save)
         m_file.addSeparator()
-        act_quit = QAction("&Beenden", self)
+        act_quit = QAction("&Quit", self)
         act_quit.setShortcut(QKeySequence.Quit)
         act_quit.triggered.connect(self.close)
         m_file.addAction(act_quit)
 
-        m_edit = mbar.addMenu("&Bearbeiten")
-        act_find = QAction("&Suchen…", self)
+        m_edit = mbar.addMenu("&Edit")
+        act_find = QAction("&Find…", self)
         act_find.setShortcut(QKeySequence.Find)
         act_find.triggered.connect(self._show_find)
         m_edit.addAction(act_find)
-        act_wrap = QAction("Zeilen&umbruch", self)
+        act_wrap = QAction("&Wrap Lines", self)
         act_wrap.setShortcut("Ctrl+Shift+W")
         act_wrap.setCheckable(True)
         act_wrap.setChecked(True)
         act_wrap.toggled.connect(self._toggle_wrap)
         m_edit.addAction(act_wrap)
 
-        m_actions = mbar.addMenu("&Aktionen")
+        m_actions = mbar.addMenu("&Actions")
         self._menu_actions = {}
         for label, shortcut, slot in (
-            ("&Detektieren", "Ctrl+D", self.detect),
-            ("&Einbetten", "Ctrl+E", self.embed),
-            ("&Bericht erstellen", "Ctrl+R", self.build_report),
-            ("&Signieren", "Ctrl+S", self.sign),
-            ("&Verifizieren", "Ctrl+Shift+V", self.verify),
-            ("KGW-&Beispiel", "Ctrl+G", self.kgw_sample),
+            ("&Detect", "Ctrl+D", self.detect),
+            ("&Embed", "Ctrl+E", self.embed),
+            ("&Build Report", "Ctrl+R", self.build_report),
+            ("&Sign", "Ctrl+S", self.sign),
+            ("&Verify", "Ctrl+Shift+V", self.verify),
+            ("KGW &Sample", "Ctrl+G", self.kgw_sample),
         ):
             act = QAction(label, self)
             act.setShortcut(shortcut)
@@ -112,8 +115,8 @@ class MainWindow(QMainWindow):
             m_actions.addAction(act)
             self._menu_actions[shortcut] = act
 
-        m_help = mbar.addMenu("&Hilfe")
-        act_about = QAction("&Ueber", self)
+        m_help = mbar.addMenu("&Help")
+        act_about = QAction("&About", self)
         act_about.triggered.connect(self.about)
         m_help.addAction(act_about)
 
@@ -126,29 +129,42 @@ class MainWindow(QMainWindow):
         left_layout.setContentsMargins(6, 6, 6, 6)
 
         toolbar = QHBoxLayout()
-        toolbar.addWidget(QLabel("Schluessel:"))
+        toolbar.addWidget(QLabel("Key:"))
         self.key_combo = QComboBox()
         self.key_combo.setMinimumWidth(220)
         self.key_combo.setToolTip(
-            "Registrierte KGW-Keys mit Secret (data/key_registry.json)"
+            "Registered KGW keys with secret (data/key_registry.json)"
         )
         toolbar.addWidget(self.key_combo)
         toolbar.addStretch(1)
-        toolbar.addWidget(QLabel("Sprache:"))
+        toolbar.addWidget(QLabel("Language:"))
         self.lang_combo = QComboBox()
         self.lang_combo.addItem("Deutsch", "de")
         self.lang_combo.addItem("English", "en")
         self.lang_combo.setToolTip(
-            "Sprache des Berichts (findings/report) — de oder en"
+            "Report language (findings/report) — de or en"
         )
         toolbar.addWidget(self.lang_combo)
+        toolbar.addWidget(QLabel("LLM:"))
+        self.llm_combo = QComboBox()
+        self.llm_combo.setMinimumWidth(180)
+        self.llm_combo.setToolTip(
+            "Local Ollama models (server: http://127.0.0.1:11434). "
+            "Selecting activates the model for rewrite/explain."
+        )
+        toolbar.addWidget(self.llm_combo)
+        btn_llm = QPushButton("Refresh")
+        btn_llm.setToolTip("Reload the Ollama model list")
+        btn_llm.clicked.connect(self._refresh_llm_models)
+        toolbar.addWidget(btn_llm)
+        self.llm_combo.currentIndexChanged.connect(self._llm_selected)
         for label, slot in (
-            ("Detektieren", self.detect),
-            ("Einbetten", self.embed),
-            ("Bericht", self.build_report),
-            ("Signieren", self.sign),
-            ("Verifizieren", self.verify),
-            ("KGW-Beispiel", self.kgw_sample),
+            ("Detect", self.detect),
+            ("Embed", self.embed),
+            ("Report", self.build_report),
+            ("Sign", self.sign),
+            ("Verify", self.verify),
+            ("KGW Sample", self.kgw_sample),
         ):
             btn = QPushButton(label)
             btn.clicked.connect(slot)
@@ -157,15 +173,14 @@ class MainWindow(QMainWindow):
 
         self.editor = EditorPane()
         self.editor.setPlaceholderText(
-            "Text hier einfuegen, Datei > Oeffnen… waehlen oder Datei "\
-            "hineinziehen.\n\n"
-            "Detektieren: KGW-Z-Score + e-process gegen den gewaehlten Key "
-            "(oder alle Keys).\n"
-            "Einbetten: Text greenlist-markieren — die ersetzten Woerter "
-            "werden gruen hervorgehoben (rueckgaengig mit Ctrl+Z).\n"
-            "Bericht: HTML-Befund nach Downloads (oder tmp).\n"
-            "Signieren/Verifizieren: JSON aus dem Ergebnis-Panel.\n"
-            "Suchen: Ctrl+F · Zeilenumbruch: Ctrl+Shift+W."
+            "Paste text here, choose File > Open… or drop a file in.\n\n"
+            "Detect: KGW z-score + e-process against the selected key "
+            "(or all keys).\n"
+            "Embed: greenlist-mark the text — replaced words are "
+            "highlighted green (undo with Ctrl+Z).\n"
+            "Report: HTML finding to Downloads (or tmp).\n"
+            "Sign/Verify: JSON from the results panel.\n"
+            "Find: Ctrl+F · Wrap: Ctrl+Shift+W."
         )
         self.editor.fileDropped.connect(self._on_file_dropped)
         left_layout.addWidget(self.editor)
@@ -174,17 +189,17 @@ class MainWindow(QMainWindow):
         # --- right: JSON results panel
         self.results = QPlainTextEdit()
         self.results.setReadOnly(True)
-        self.results.setPlaceholderText("Ergebnisse (JSON)")
+        self.results.setPlaceholderText("Results (JSON)")
         splitter.addWidget(self.results)
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
 
         self.setCentralWidget(splitter)
-        self._pos_label = QLabel("Ln 1, Col 1 · 0 Zeichen")
+        self._pos_label = QLabel("Ln 1, Col 1 · 0 chars")
         self.statusBar().addPermanentWidget(self._pos_label)
         self.editor.cursorPositionChanged.connect(self._update_status_pos)
         self.editor.textChanged.connect(self._update_status_pos)
-        self.statusBar().showMessage("Bereit")
+        self.statusBar().showMessage("Ready")
 
     def _refresh_keys(self) -> None:
         """Repopulate the key combo from the registry (keeps selection)."""
@@ -193,14 +208,14 @@ class MainWindow(QMainWindow):
         try:
             keys = self.controller.list_keys()
         except Exception as e:  # registry unreadable -> honest hint
-            self.key_combo.addItem("(Registry nicht lesbar)")
-            self.statusBar().showMessage(f"Key-Registry: {e}", 8000)
+            self.key_combo.addItem("(registry unreadable)")
+            self.statusBar().showMessage(f"Key registry: {e}", 8000)
             return
         for k in keys:
             if k.get("family") == "kgw" and k.get("secret"):
                 self.key_combo.addItem(str(k.get("key_id")))
         if self.key_combo.count() == 0:
-            self.key_combo.addItem("(keine KGW-Keys)")
+            self.key_combo.addItem("(no KGW keys)")
             self.key_combo.setEnabled(False)
         else:
             self.key_combo.setEnabled(True)
@@ -209,6 +224,49 @@ class MainWindow(QMainWindow):
                 self.key_combo.setCurrentIndex(idx)
 
     # ------------------------------------------------------------- helpers
+    def _refresh_llm_models(self) -> None:
+        """Repopulate the LLM combo from the local Ollama server."""
+        self.llm_combo.blockSignals(True)
+        self.llm_combo.clear()
+        try:
+            models = self.llm.list_models()
+        except Exception as e:  # Ollama offline/unreachable -> honest hint
+            self.llm_combo.addItem("(Ollama unreachable)")
+            self.llm_combo.setEnabled(False)
+            self.statusBar().showMessage(f"LLM/Ollama: {e}", 8000)
+            self.llm_combo.blockSignals(False)
+            return
+        for model in models:
+            name = model.get("name", "")
+            if name:
+                self.llm_combo.addItem(name)
+        if self.llm_combo.count() == 0:
+            self.llm_combo.addItem("(no models)")
+            self.llm_combo.setEnabled(False)
+        else:
+            self.llm_combo.setEnabled(True)
+            current = self.llm.status().get("model_variant", "")
+            idx = self.llm_combo.findText(current) if current else -1
+            if idx >= 0:
+                self.llm_combo.setCurrentIndex(idx)
+            self.statusBar().showMessage(
+                f"Ollama: {self.llm_combo.count()} model(s) loaded", 5000
+            )
+        self.llm_combo.blockSignals(False)
+
+    def _llm_selected(self, index: int) -> None:
+        """Persist the chosen model so rewrite/explain use it."""
+        if index < 0:
+            return
+        name = self.llm_combo.currentText()
+        if name.startswith("("):
+            return
+        try:
+            self.llm.use_model(name)
+            self.statusBar().showMessage(f"LLM model activated: {name}", 5000)
+        except Exception as e:
+            self.statusBar().showMessage(f"LLM: {e}", 8000)
+
     def _selected_key(self) -> str | None:
         key = self.key_combo.currentText()
         if not key or key.startswith("("):
@@ -220,9 +278,9 @@ class MainWindow(QMainWindow):
         key = self._selected_key()
         if key is None:
             raise ValueError(
-                "Kein registrierter KGW-Key gewaehlt — Key anlegen "
-                "(POST /api/forensics/keys via `ai-wm serve`) oder "
-                "data/key_registry.json ergaenzen."
+                "No registered KGW key selected — create one "
+                "(POST /api/forensics/keys via `ai-wm serve`) or add it to "
+                "data/key_registry.json."
             )
         return key
 
@@ -240,7 +298,7 @@ class MainWindow(QMainWindow):
                     ensure_ascii=False, indent=2,
                 )
             )
-            self.statusBar().showMessage(f"Fehler: {e}", 8000)
+            self.statusBar().showMessage(f"Error: {e}", 8000)
             return
         if isinstance(result, dict):
             self.results.setPlainText(
@@ -258,7 +316,7 @@ class MainWindow(QMainWindow):
         chars = len(self.editor.toPlainText())
         words = len(self.editor.toPlainText().split())
         self._pos_label.setText(
-            f"Ln {line}, Col {col} · {chars} Zeichen · {words} Woerter"
+            f"Ln {line}, Col {col} · {chars} chars · {words} words"
         )
 
     def _show_find(self) -> None:
@@ -277,7 +335,7 @@ class MainWindow(QMainWindow):
                     ensure_ascii=False, indent=2,
                 )
             )
-            self.statusBar().showMessage(f"Fehler: {e}", 8000)
+            self.statusBar().showMessage(f"Error: {e}", 8000)
             return
         self.editor.setPlainText(text)
         self.editor.clear_markings()
@@ -285,12 +343,12 @@ class MainWindow(QMainWindow):
             json.dumps({"loaded": path, "chars": len(text)},
                        ensure_ascii=False, indent=2)
         )
-        self.statusBar().showMessage(f"Geladen: {path}", 5000)
+        self.statusBar().showMessage(f"Loaded: {path}", 5000)
 
     # ------------------------------------------------------------- actions
     def open_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, "Textdatei oeffnen", "", "Textdateien (*.txt *.md *.json);;Alle Dateien (*)"
+            self, "Open text file", "", "Text files (*.txt *.md *.json);;All files (*)"
         )
         if not path:
             return
@@ -303,18 +361,18 @@ class MainWindow(QMainWindow):
                     ensure_ascii=False, indent=2,
                 )
             )
-            self.statusBar().showMessage(f"Fehler: {e}", 8000)
+            self.statusBar().showMessage(f"Error: {e}", 8000)
             return
         self.editor.setPlainText(text)
         self.results.setPlainText(
             json.dumps({"loaded": path, "chars": len(text)},
                        ensure_ascii=False, indent=2)
         )
-        self.statusBar().showMessage(f"Geladen: {path}", 5000)
+        self.statusBar().showMessage(f"Loaded: {path}", 5000)
 
     def save_result(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
-            self, "Ergebnis speichern", "tws-result.json", "JSON (*.json);;Alle Dateien (*)"
+            self, "Save result", "tws-result.json", "JSON (*.json);;All files (*)"
         )
         if not path:
             return
@@ -322,23 +380,23 @@ class MainWindow(QMainWindow):
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(self.results.toPlainText())
         except OSError as e:
-            self.statusBar().showMessage(f"Fehler: {e}", 8000)
+            self.statusBar().showMessage(f"Error: {e}", 8000)
             return
-        self.statusBar().showMessage(f"Gespeichert: {path}", 5000)
+        self.statusBar().showMessage(f"Saved: {path}", 5000)
 
     def detect(self) -> None:
         self._run(
             lambda: self.controller.detect_text(self._editor_text(),
                                                 self._selected_key(),
                                                 lang=self._report_lang()),
-            ok_status="Detektion abgeschlossen",
+            ok_status="Detection complete",
         )
 
     def embed(self) -> None:
         self._run(
             lambda: self.controller.embed_text(self._editor_text(),
                                                self._require_key()),
-            ok_status="Text greenlist-markiert",
+            ok_status="Text greenlist-marked",
         )
         # Non-destructive takeover of the marked text (undoable via Ctrl+Z),
         # then paint the greenlist substitutions so the user SEES the marks.
@@ -357,7 +415,7 @@ class MainWindow(QMainWindow):
             )
             self.statusBar().showMessage(
                 f"Greenlist: {len((data or {}).get('substitutions') or [])} "
-                "Woerter ersetzt (gruen markiert)", 8000,
+                "words replaced (green-marked)", 8000,
             )
 
     def build_report(self) -> None:
@@ -366,7 +424,7 @@ class MainWindow(QMainWindow):
                 self._editor_text(),
                 self._require_key(),
                 lang=self._report_lang()),
-            ok_status="HTML-Bericht geschrieben",
+            ok_status="HTML report written",
         )
 
     def _report_lang(self) -> str:
@@ -381,7 +439,7 @@ class MainWindow(QMainWindow):
             lambda: self.controller.sign_report_json(
                 self.controller.parse_json(self.results.toPlainText()),
                 self._require_key()),
-            ok_status="Befund signiert",
+            ok_status="Finding signed",
         )
 
     def verify(self) -> None:
@@ -389,27 +447,27 @@ class MainWindow(QMainWindow):
             lambda: self.controller.verify_report_json(
                 self.controller.parse_json(self.results.toPlainText()),
                 self._require_key()),
-            ok_status="Signatur geprueft",
+            ok_status="Signature verified",
         )
 
     def kgw_sample(self) -> None:
         self._run(
             lambda: self.controller.kgw_sample(self._editor_text()),
-            ok_status="KGW-Beispiel generiert",
+            ok_status="KGW sample generated",
         )
 
     def about(self) -> None:
         self.results.setPlainText(_ABOUT)
-        self.statusBar().showMessage("Ueber Text Watermark Studio", 5000)
+        self.statusBar().showMessage("About Text Watermark Studio", 5000)
 
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point: ``python -m ai_watermark_toolkit.ui.desktop.app``."""
     if QApplication is None:  # pragma: no cover - missing optional dep
         print(
-            "PySide6 fehlt — die Desktop-App ist ein optionaler GUI-Wrapper.\n"
-            "Installieren: pip install PySide6\n"
-            "Der Core (CLI/API/TUI) funktioniert ohne Qt.",
+            "PySide6 is missing — the desktop app is an optional GUI wrapper.\n"
+            "Install: pip install PySide6\n"
+            "The core (CLI/API/TUI) works without Qt.",
             file=sys.stderr,
         )
         return 2
