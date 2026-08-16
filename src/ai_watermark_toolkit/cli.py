@@ -296,6 +296,20 @@ def main() -> int:
     mb_ext.add_argument("--json", action="store_true", help="emit the full JSON extraction result")
     mb_ext.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
 
+    ev = sub.add_parser("evade", help="adversarial evaluation (white-box, own scheme): push the KGW Z-score below a threshold with minimal edits — stress test, not a laundering tool")
+    ev.add_argument("input", nargs="?")
+    ev.add_argument("--stdin", action="store_true")
+    ev.add_argument("--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret")
+    ev.add_argument("--key-file", default=None, help="read the raw secret from a file (keeps it out of shell history); overrides --key")
+    ev.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)")
+    ev.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
+    ev.add_argument("--target-z", type=float, default=3.9, help="Z threshold to get below (default 3.9)")
+    ev.add_argument("--max-changes", type=int, default=None, help="cap the edit budget (default: unlimited until target)")
+    ev.add_argument("--ollama-model", default=None, help="optional local Ollama model for natural candidates per position")
+    ev.add_argument("--seed", type=int, default=0, help="RNG seed for green-position order (default 0)")
+    ev.add_argument("--json", action="store_true", help="emit the full JSON measurement instead of the human report")
+    ev.add_argument("-o", "--output", default=None, help="write the evaded text (or JSON with --json) to a file")
+
     args = p.parse_args()
 
     if args.cmd == "splash":
@@ -995,6 +1009,52 @@ def main() -> int:
                 print(f"confidence: {result.get('confidence')}  masks: {result.get('masks_used')}")
             return 0
         return 2
+
+    if args.cmd == "evade":
+        # Adversarial evaluation (white-box, own scheme): stress test, not a
+        # laundering tool. Exit 0 on any successful measurement.
+        from .forensics.evader import evade, format_evade_report
+        from .forensics.key_registry import KeyRegistry
+        from .forensics.kgw import DEFAULT_GAMMA
+        if args.stdin:
+            text = read_text(stdin_text=sys.stdin.read()).text
+        elif args.input:
+            text = read_text(path=args.input).text
+        else:
+            print("ai-wm: error: evade requires an input file (or --stdin)", file=sys.stderr)
+            return 2
+        key_arg = _resolve_key_arg(args)
+        if not key_arg:
+            print("ai-wm: error: evade requires --key (key_id or raw secret)", file=sys.stderr)
+            return 2
+        registry = KeyRegistry('data/key_registry.json')
+        key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
+        if key is None:
+            key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+        if not key.get('secret'):
+            print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
+            return 2
+        gamma = key.get('gamma') or DEFAULT_GAMMA
+        result = evade(
+            text, key['secret'], gamma=gamma,
+            level=args.level, context=args.context,
+            target_z=args.target_z, max_changes=args.max_changes,
+            ollama_model=args.ollama_model, seed=args.seed,
+        )
+        if args.json:
+            rendered = json.dumps(
+                {k: v for k, v in result.items() if k != "text"},
+                ensure_ascii=False, indent=2, default=str,
+            )
+            if args.output:
+                Path(args.output).write_text(rendered, encoding="utf-8")
+            else:
+                print(rendered)
+        else:
+            print(format_evade_report(result))
+            if args.output:
+                Path(args.output).write_text(result["text"], encoding="utf-8")
+        return 0
 
     if args.cmd == "serve":
         from uvicorn import run
