@@ -73,11 +73,18 @@ def _cli_registry(tmp_path: Path, entries: list[dict]) -> Path:
 
 @pytest.fixture
 def api_key_enabled(monkeypatch):
-    # settings is a frozen dataclass; bypass via object.__setattr__
-    old = settings.api_key
-    object.__setattr__(settings, "api_key", "test-api-key-123")
+    # The auth middleware reads `auth_mod.settings` (module alias of the
+    # frozen Settings). The conftest autouse fixture replaces that alias
+    # with a SimpleNamespace(api_key="", app_env="development"); to enforce
+    # fail-closed here, patch the SAME object the middleware reads.
+    from types import SimpleNamespace
+    from ai_watermark_toolkit.api.middleware import auth as auth_mod
+
+    monkeypatch.setattr(
+        auth_mod, "settings",
+        SimpleNamespace(api_key="test-api-key-123", app_env="development"),
+    )
     yield
-    object.__setattr__(settings, "api_key", old)
 
 
 class TestApiAuthEnforced:

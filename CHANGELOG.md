@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.4.0 — AVIF/HEIC + WebP metadata stripping
+
+- **ISOBMFF (AVIF/HEIC) stripping** (`metadata/service.py`): drops top-level
+  and `meta`-subbox `jumb`/`c2pa` boxes (C2PA/JUMBF content credentials) and
+  XMP-carrying `uuid` boxes (standard XMP UUID), plus AI-hint `uuid`/`xml `/
+  `bxml` sub-boxes. 64-bit largesize boxes handled; innocent sub-boxes
+  (hdlr, mdat, ...) preserved. Verified with re-parse + marker-gone asserts.
+- **WebP (RIFF) stripping**: drops EXIF / "XMP " / C2PA chunks and AI-hint
+  ICCP profiles while preserving VP8/VP8L image chunks.
+- `file-inspect` / `file-clean` support the new formats automatically
+  (dispatch by extension; SUPPORTED extended).
+- **Test env independence**: new `tests/conftest.py` autouse fixture patches
+  the auth middleware settings to the empty-key dev default — the local
+  `.env` (AI_WM_API_KEY set, fail-closed) used to break every API test
+  suite written for the documented dev convention. Suites that exercise
+  auth (v130/v137/v145) patch the middleware's settings object themselves.
+- **Tests**: `tests/test_v153_metadata_avif_webp.py` (10 tests); full suite
+  630 passed, 10 skipped.
+
 ## 2.3.1 — Rewrite/Paraphrase in the ΔZ core
 
 - **`rewrite` transform in `ai-wm delta-z`** (`forensics/delta_z.py`): the

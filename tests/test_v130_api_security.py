@@ -24,7 +24,12 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 def _client_with_registry(tmp_path, monkeypatch):
-    """TestClient whose forensics routes use a tmp registry."""
+    """TestClient whose forensics routes use a tmp registry.
+
+    Auth defaults to fail-open via the shared conftest autouse fixture
+    (empty-key dev convention). Tests that exercise auth patch
+    auth_mod.settings themselves AFTER this helper and win.
+    """
     reg = KeyRegistry(str(tmp_path / "keys.json"))
     monkeypatch.setattr(forensics_route, "keys", reg)
     return TestClient(fastapi_app.app)

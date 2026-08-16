@@ -19,11 +19,12 @@ from __future__ import annotations
 
 import io
 import re
+import struct
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-SUPPORTED = ["png", "jpg", "jpeg", "svg", "pdf", "docx", "odt", "html", "md", "markdown", "txt"]
+SUPPORTED = ["png", "jpg", "jpeg", "webp", "avif", "heic", "svg", "pdf", "docx", "odt", "html", "md", "markdown", "txt"]
 
 # metadata keys that smell like AI provenance / generator attribution
 _AI_KEY_HINTS = re.compile(
@@ -77,6 +78,10 @@ def _dispatch(data: bytes, ext: str, clean: bool) -> MetaReport:
         return _png(data, clean)
     if ext in ("jpg", "jpeg"):
         return _jpeg(data, clean)
+    if ext == "webp":
+        return _webp(data, clean)
+    if ext in ("avif", "heic"):
+        return _isobmff(data, clean, ext)
     if ext == "svg":
         return _svg(data, clean)
     if ext == "pdf":
@@ -294,6 +299,157 @@ def _scrub_xml(content: bytes) -> bytes:
     for tag in ("cp:lastModifiedBy", "dc:creator", "cp:revision", "meta:generator", "meta:user-defined"):
         text = re.sub(rf"<{tag}[^>]*>[^<]*</{tag}>", f"<{tag}></{tag}>", text, flags=re.IGNORECASE)
     return text.encode("utf-8")
+
+
+# ---------------------------------------------------------------- AVIF / HEIC (ISOBMFF)
+# C2PA content credentials and XMP live in ISOBMFF (ISO 14496-12) boxes:
+#   - `jumb` / `c2pa` boxes (top-level or inside `meta`) carry JUMBF/C2PA
+#   - `uuid` boxes whose payload starts with the XMP UUID carry XMP packets
+#   - `meta` is a FullBox (version+flags header) containing sub-boxes
+# Box layout: 32-bit big-endian size (0 = to EOF, 1 = 64-bit largesize),
+# then 4-byte type, then payload.
+
+XMP_UUID = b"\xbe\x7a\xcf\xcb\x97\xa9\x42\xe8\x9c\x71\x99\x94\x91\xe3\xaf\xac"
+
+_C2PA_BOXES = (b"jumb", b"c2pa")
+
+
+def _iter_isobmff_boxes(data: bytes, start: int = 0):
+    """Yield (fourcc, payload, header_size) for top-level ISOBMFF boxes.
+
+    Handles 32-bit size, the 0-to-EOF and 1=largesize (64-bit) escapes, and
+    stops cleanly on truncated/oversized boxes. Payload is the raw bytes
+    AFTER the box header.
+    """
+    i = start
+    n = len(data)
+    while i + 8 <= n:
+        size = int.from_bytes(data[i:i + 4], "big")
+        fourcc = data[i + 4:i + 8]
+        header = 8
+        if size == 1:
+            if i + 16 > n:
+                break
+            size = int.from_bytes(data[i + 8:i + 16], "big")
+            header = 16
+        elif size == 0:
+            size = n - i
+        if size < header or i + size > n:
+            break
+        yield fourcc, data[i + header:i + size], header
+        i += size
+
+
+def _isobmff(data: bytes, clean: bool, fmt: str) -> MetaReport:
+    rep = MetaReport(format=fmt)
+    boxes = list(_iter_isobmff_boxes(data))
+    if not boxes or boxes[0][0] != b"ftyp":
+        rep.actions.append(f"not_an_{fmt}")
+        return rep
+    out = bytearray()
+    removed = 0
+
+    def _box_bytes(fourcc: bytes, payload: bytes) -> bytes:
+        return struct.pack(">I", len(payload) + 8) + fourcc + payload
+
+    for fourcc, payload, header in boxes:
+        name = fourcc.decode("latin1", "replace")
+        if fourcc in _C2PA_BOXES or name.lower().startswith("c2"):
+            rep.actions.append(f"removed_top_level_{name}_c2pa_box")
+            removed += header + len(payload)
+            continue
+        if fourcc == b"uuid":
+            if payload.startswith(XMP_UUID):
+                rep.actions.append(f"removed_top_level_{name}_xmp_uuid_box")
+                removed += header + len(payload)
+                continue
+            if _AI_KEY_HINTS.search(payload[:512]):
+                rep.actions.append(f"removed_top_level_{name}_ai_uuid_box")
+                removed += header + len(payload)
+                continue
+        if fourcc == b"meta":
+            # FullBox: 4 bytes version/flags, then sub-boxes
+            verflags = payload[:4] if len(payload) >= 4 else b"\x00\x00\x00\x00"
+            sub_clean = bytearray()
+            sub_removed = 0
+            for s_fourcc, s_payload, s_header in _iter_isobmff_boxes(payload, start=4):
+                s_name = s_fourcc.decode("latin1", "replace")
+                if s_fourcc in _C2PA_BOXES or s_name.lower().startswith("c2"):
+                    rep.actions.append(f"removed_meta_subbox_{s_name}_c2pa")
+                    sub_removed += s_header + len(s_payload)
+                    continue
+                if s_fourcc == b"uuid":
+                    if s_payload.startswith(XMP_UUID):
+                        rep.actions.append(f"removed_meta_subbox_{s_name}_xmp")
+                        sub_removed += s_header + len(s_payload)
+                        continue
+                    if _AI_KEY_HINTS.search(s_payload[:512]):
+                        rep.actions.append(f"removed_meta_subbox_{s_name}_ai_uuid")
+                        sub_removed += s_header + len(s_payload)
+                        continue
+                if s_fourcc in (b"xml ", b"bxml"):
+                    if _AI_KEY_HINTS.search(s_payload[:512]):
+                        rep.actions.append(f"removed_meta_subbox_{s_name}_xml_metadata")
+                        sub_removed += s_header + len(s_payload)
+                        continue
+                sub_clean.extend(_box_bytes(s_fourcc, s_payload))
+            new_meta = verflags + bytes(sub_clean)
+            out.extend(_box_bytes(b"meta", new_meta))
+            removed += sub_removed
+            continue
+        out.extend(_box_bytes(fourcc, payload))
+    if removed:
+        rep.removed_bytes = removed
+        if clean:
+            rep.cleaned = bytes(out)
+    else:
+        if clean:
+            rep.cleaned = data
+        rep.actions.append(f"no_{fmt}_metadata_boxes_removed")
+    return rep
+
+
+# ---------------------------------------------------------------- WebP (RIFF)
+# WebP is RIFF: "RIFF" <size> "WEBP" then chunks of FourCC + 32-bit size.
+# EXIF chunk FourCC is "EXIF", XMP is "XMP " (with trailing space); ICC
+# profiles can carry provenance too. C2PA appears as a "C2PA" chunk.
+
+def _webp(data: bytes, clean: bool) -> MetaReport:
+    rep = MetaReport(format="webp")
+    if data[:4] != b"RIFF" or data[8:12] != b"WEBP":
+        rep.actions.append("not_a_webp")
+        return rep
+    out = bytearray(data[:12])
+    i = 12
+    removed = 0
+    while i + 8 <= len(data):
+        fourcc = data[i:i + 4]
+        size = int.from_bytes(data[i + 4:i + 8], "little")
+        if i + 8 + size > len(data):
+            break
+        chunk = data[i:i + 8 + size]
+        name = fourcc.decode("latin1", "replace")
+        drop = False
+        if fourcc in (b"EXIF", b"XMP ", b"C2PA"):
+            drop = True
+            rep.actions.append(f"removed_{name}_chunk")
+        elif fourcc == b"ICCP" and _AI_KEY_HINTS.search(chunk[:512]):
+            drop = True
+            rep.actions.append("removed_ICCP_ai_profile")
+        if drop:
+            removed += 8 + size
+        else:
+            out.extend(chunk)
+        i += 8 + size
+    if removed:
+        rep.removed_bytes = removed
+        if clean:
+            rep.cleaned = bytes(out)
+    else:
+        if clean:
+            rep.cleaned = data
+        rep.actions.append("no_webp_metadata_chunks_removed")
+    return rep
 
 
 # ---------------------------------------------------------------- HTML
