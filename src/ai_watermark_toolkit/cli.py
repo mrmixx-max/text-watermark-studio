@@ -116,8 +116,10 @@ def main() -> int:
     fi.add_argument("--json", action="store_true")
 
     fc = sub.add_parser("file-clean")
-    fc.add_argument("input", help="file to clean")
-    fc.add_argument("-o", "--output", required=True, help="output path for cleaned file")
+    fc.add_argument("input")
+    fc.add_argument("-o", "--output", required=True)
+    fc.add_argument("--verify", action="store_true",
+                    help="re-inspect the cleaned file and report C2PA before/after (verified_clear | residual_hard_bound | no_c2pa_present)")
     fc.add_argument("--json", action="store_true")
 
     fe = sub.add_parser("file-embed")
@@ -467,10 +469,13 @@ def main() -> int:
         return 0
 
     if args.cmd == "file-clean":
-        from .metadata.service import clean
+        from .metadata.service import clean, verify_clean
         data = Path(args.input).read_bytes()
         cleaned, report = clean(data, args.input)
         Path(args.output).write_bytes(cleaned)
+        if args.verify:
+            verification = verify_clean(data, args.input)
+            report["verification"] = verification
         if args.json:
             print(json.dumps(report, ensure_ascii=False, indent=2))
         else:

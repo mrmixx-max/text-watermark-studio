@@ -23,6 +23,7 @@ from ai_watermark_toolkit.metadata.service import (
     XMP_UUID,
     clean,
     inspect,
+    verify_clean,
     SUPPORTED,
 )
 
@@ -168,6 +169,33 @@ class TestWebp:
     def test_not_a_webp(self):
         cleaned, rep = clean(b"NOTRIFF....", "fake.webp")
         assert "not_a_webp" in rep["actions"]
+
+
+class TestVerifyClean:
+    def test_avif_verified_clear(self):
+        data = _minimal_avif_with_c2pa_and_xmp()
+        v = verify_clean(data, "shot.avif")
+        assert v["c2pa_before"] is True
+        assert v["c2pa_after"] is False
+        assert v["c2pa_cleared"] is True
+        assert v["c2pa_residual"] is False
+        assert v["verification"] == "verified_clear"
+
+    def test_webp_verified_clear(self):
+        data = _minimal_webp_with_meta()
+        v = verify_clean(data, "img.webp")
+        assert v["verification"] == "verified_clear"
+        assert v["c2pa_cleared"] is True
+
+    def test_plain_avif_no_c2pa(self):
+        data = _minimal_heic_plain()
+        v = verify_clean(data, "plain.avif")
+        assert v["verification"] == "no_c2pa_present"
+        assert v["c2pa_cleared"] is False
+
+    def test_unsupported_format(self):
+        v = verify_clean(b"data", "file.xyz")
+        assert v["verification"] == "unsupported_format"
 
 
 class TestDispatch:

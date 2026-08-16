@@ -73,6 +73,55 @@ def clean(data: bytes, filename: str) -> tuple[bytes, dict]:
     return report.cleaned if report.cleaned is not None else data, report.to_dict()
 
 
+def verify_clean(data: bytes, filename: str) -> dict:
+    """Clean a file, then VERIFY the result by re-inspecting it.
+
+    Measurement-first: instead of claiming "C2PA removed", re-inspect the
+    cleaned bytes and report what actually remains. Returns:
+
+        {
+          "format": str,
+          "clean_actions": [...],      # what the clean pass did
+          "c2pa_before": bool,         # hard-bound C2PA/JUMBF markers before
+          "c2pa_after": bool,          # markers still present after clean
+          "c2pa_cleared": bool,        # before True, after False
+          "c2pa_residual": bool,       # before True, after still True
+          "verification": "verified_clear" | "residual_hard_bound" |
+                          "no_c2pa_present" | "unsupported_format",
+        }
+
+    Honest boundary: byte-level C2PA markers (jumbf/c2pa signatures) that we
+    can strip are verified. C2PA *soft binding* (in-content links to remote
+    manifests) and pixel-domain marks are OUT OF SCOPE — the report says so
+    via ``c2pa_residual`` when markers survive the container strip.
+    """
+    ext = Path(filename).suffix.lower().lstrip(".")
+    before = _dispatch(data, ext, clean=False)
+    cleaned, clean_actions = clean(data, filename)
+    after = _dispatch(cleaned, ext, clean=False)
+
+    c2pa_before = bool(before.hard_bound_c2pa_present)
+    c2pa_after = bool(after.hard_bound_c2pa_present)
+    if c2pa_before and not c2pa_after:
+        verification = "verified_clear"
+    elif c2pa_before and c2pa_after:
+        verification = "residual_hard_bound"
+    elif "unsupported_format" in clean_actions.get("actions", []):
+        verification = "unsupported_format"
+    else:
+        verification = "no_c2pa_present"
+
+    return {
+        "format": ext or "unknown",
+        "clean_actions": clean_actions.get("actions", []),
+        "c2pa_before": c2pa_before,
+        "c2pa_after": c2pa_after,
+        "c2pa_cleared": c2pa_before and not c2pa_after,
+        "c2pa_residual": c2pa_before and c2pa_after,
+        "verification": verification,
+    }
+
+
 def _dispatch(data: bytes, ext: str, clean: bool) -> MetaReport:
     if ext in ("png",):
         return _png(data, clean)
@@ -406,6 +455,8 @@ def _isobmff(data: bytes, clean: bool, fmt: str) -> MetaReport:
         if clean:
             rep.cleaned = data
         rep.actions.append(f"no_{fmt}_metadata_boxes_removed")
+    if b"jumb" in data or b"c2pa" in data.lower():
+        rep.hard_bound_c2pa_present = True
     return rep
 
 
@@ -449,6 +500,8 @@ def _webp(data: bytes, clean: bool) -> MetaReport:
         if clean:
             rep.cleaned = data
         rep.actions.append("no_webp_metadata_chunks_removed")
+    if b"c2pa" in data.lower() or b"jumbf" in data.lower():
+        rep.hard_bound_c2pa_present = True
     return rep
 
 

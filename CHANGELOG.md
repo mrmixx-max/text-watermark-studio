@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.4.1 — file-clean --verify (C2PA-Hard-Bound-Harness)
+
+- **`ai-wm file-clean --verify`**: cleans the file, then RE-INSPECTS the
+  cleaned bytes and reports an honest C2PA before/after verdict —
+  `verified_clear` (markers gone), `residual_hard_bound` (markers survive
+  the container strip — soft binding/pixel marks out of scope),
+  `no_c2pa_present`, or `unsupported_format`. Measurement-first: the report
+  never claims removal it cannot verify.
+- `_isobmff`/`_webp` now set `hard_bound_c2pa_present` on inspect (was only
+  PNG/JPEG/PDF) so `verify_clean` works for AVIF/HEIC/WebP.
+- **Tests**: 4 new `verify_clean` tests (avif cleared, webp cleared, plain
+  no-c2pa, unsupported format).
+
 ## 2.4.0 — AVIF/HEIC + WebP metadata stripping
 
 - **ISOBMFF (AVIF/HEIC) stripping** (`metadata/service.py`): drops top-level
