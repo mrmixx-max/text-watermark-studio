@@ -426,3 +426,127 @@ def corrupt(text: str, ratio: float = 0.05, seed: int = 0, mode: str = "substitu
         else:  # substitute
             out[i] = rng.choice(filler)
     return " ".join(out)
+
+
+# ---------------------------------------------------------------------------
+# Payload workflow: arbitrary ASCII/UTF-8 payload <-> bit string
+# ---------------------------------------------------------------------------
+#
+# The codebook scheme above embeds ONE bit per usable mask position, so the
+# raw ``embed``/``extract`` API only speaks 0/1 strings. For a real forensic
+# payload (user id, timestamp, run id) we need a self-delimiting mapping:
+#
+#   bits  = 16-bit big-endian payload bit-length + payload bits
+#
+# The length prefix makes decoding unambiguous at any bit offset and keeps
+# capacity math trivial (capacity = number of mask positions; a 16-bit prefix
+# caps payloads at 65535 bits ≈ 8 KB of text, far beyond any mask capacity
+# a paragraph-length text can offer).
+
+_PAYLOAD_PREFIX_BITS = 16
+
+
+def encode_payload(payload: str) -> str:
+    """Encode a text payload into a self-delimiting bit string.
+
+    ``payload`` is UTF-8 encoded, then each byte becomes 8 bits, prefixed by
+    a 16-bit big-endian length (in bits). Empty payloads are allowed (length
+    prefix 0). Raises ValueError if the payload exceeds 65535 bits.
+    """
+    raw = payload.encode("utf-8")
+    n_bits = len(raw) * 8
+    if n_bits > (1 << _PAYLOAD_PREFIX_BITS) - 1:
+        raise ValueError(f"payload too large: {n_bits} bits > {(1 << _PAYLOAD_PREFIX_BITS) - 1}")
+    prefix = format(n_bits, f"0{_PAYLOAD_PREFIX_BITS}b")
+    body = "".join(f"{b:08b}" for b in raw)
+    return prefix + body
+
+
+def decode_payload(bits: str, strict: bool = False) -> Tuple[str, int]:
+    """Decode a payload bit string produced by :func:`encode_payload`.
+
+    Returns ``(payload, bits_consumed)``. Unknown bits beyond the payload are
+    ignored. With ``strict=True``, a malformed prefix (too short, truncated
+    body, invalid UTF-8) raises ValueError instead of degrading.
+    """
+    if len(bits) < _PAYLOAD_PREFIX_BITS:
+        if strict:
+            raise ValueError("bit string too short for payload prefix")
+        return "", 0
+    n_bits = int(bits[:_PAYLOAD_PREFIX_BITS], 2)
+    total = _PAYLOAD_PREFIX_BITS + n_bits
+    if n_bits == 0:
+        return "", total
+    if len(bits) < total:
+        if strict:
+            raise ValueError("truncated payload body")
+        return "", total
+    body = bits[_PAYLOAD_PREFIX_BITS:total]
+    raw = bytes(int(body[i:i + 8], 2) for i in range(0, len(body), 8))
+    try:
+        return raw.decode("utf-8"), total
+    except UnicodeDecodeError:
+        if strict:
+            raise
+        return "", total
+
+
+def embed_payload(
+    text: str,
+    payload: str,
+    options: dict | None = None,
+) -> dict:
+    """Embed a text payload (user id, timestamp, ...) into the text.
+
+    Thin wrapper over :func:`embed`: the payload is encoded via
+    :func:`encode_payload` and the resulting bit string is embedded through
+    the codebook. Returns the watermarked text plus a ``payload_bits`` field
+    so callers can see how many bits were requested vs. embedded.
+    """
+    bits = encode_payload(payload)
+    res = embed(text, bits, options)
+    res["payload_bits"] = bits
+    res["payload"] = payload
+    return res
+
+
+def extract_payload(
+    watermarked: str,
+    original: str,
+    options: dict | None = None,
+) -> dict:
+    """Recover the text payload from a watermarked text.
+
+    Thin wrapper over :func:`extract`: recovers the raw bit string, then
+    decodes the payload. Positions whose token was edited away are reported
+    as '?' — if any '?' falls inside the payload region the payload cannot be
+    trusted, so ``payload_valid`` is False while ``payload`` still carries the
+    best-effort decode.
+    """
+    res = extract(watermarked, original, options)
+    bits = res["bits"]
+    # A '?' inside the 16-bit prefix means we cannot even locate the payload
+    # start. A '?' INSIDE the payload body means the payload is damaged.
+    # '?' AFTER the payload (unused codebook capacity) is irrelevant: the
+    # original token is deliberately excluded from the candidate list, so
+    # unmarked positions decode as '?' by design.
+    prefix = bits[:_PAYLOAD_PREFIX_BITS]
+    if len(bits) < _PAYLOAD_PREFIX_BITS or "?" in prefix:
+        payload, _ = decode_payload(bits.replace("?", "0"))
+        res["payload"] = payload
+        res["payload_valid"] = False
+        res["payload_reason"] = "mask_position_unknown"
+        return res
+    n_bits = int(prefix, 2)
+    body = bits[_PAYLOAD_PREFIX_BITS:_PAYLOAD_PREFIX_BITS + n_bits]
+    if "?" in body:
+        payload, _ = decode_payload(bits.replace("?", "0"))
+        res["payload"] = payload
+        res["payload_valid"] = False
+        res["payload_reason"] = "mask_position_unknown"
+        return res
+    payload, consumed = decode_payload(bits)
+    res["payload"] = payload
+    res["payload_valid"] = True
+    res["payload_reason"] = "ok"
+    return res

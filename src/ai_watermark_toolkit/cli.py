@@ -280,6 +280,22 @@ def main() -> int:
     tr.add_argument("--json", action="store_true", help="emit the full JSON trajectory instead of the human report")
     tr.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
 
+    mb = sub.add_parser("payload", help="multi-bit invariant-feature watermarking: embed/extract a text payload (user id, timestamp, run id) into a text")
+    mb_sub = mb.add_subparsers(dest="payload_action", required=True)
+    mb_emb = mb_sub.add_parser("embed", help="embed a payload into a text file (codebook: 1 bit per mask position)")
+    mb_emb.add_argument("input", nargs="?", help="original text file")
+    mb_emb.add_argument("--stdin", action="store_true")
+    mb_emb.add_argument("--payload", required=True, help="the text payload to embed (e.g. user-42, run-2026-08-16)")
+    mb_emb.add_argument("--max-masks", type=int, default=None, help="cap mask positions (payload capacity); default = all usable positions")
+    mb_emb.add_argument("-o", "--output", required=True, help="write the watermarked text here")
+    mb_ext = mb_sub.add_parser("extract", help="recover the payload from a watermarked text (needs the ORIGINAL text as reference state)")
+    mb_ext.add_argument("input", nargs="?", help="watermarked text file")
+    mb_ext.add_argument("--stdin", action="store_true")
+    mb_ext.add_argument("--reference", required=True, help="the ORIGINAL text file (both parties share the invariant anchor state)")
+    mb_ext.add_argument("--reference-stdin", action="store_true", help="read the original text from stdin instead of a file")
+    mb_ext.add_argument("--json", action="store_true", help="emit the full JSON extraction result")
+    mb_ext.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
+
     args = p.parse_args()
 
     if args.cmd == "splash":
@@ -925,6 +941,60 @@ def main() -> int:
         else:
             print(format_trace(result, text=text))
         return 0
+
+    if args.cmd == "payload":
+        # Multi-bit invariant-feature watermarking: embed/extract a payload.
+        from .forensics.invariant import embed_payload, extract_payload
+        if args.payload_action == "embed":
+            if args.stdin:
+                text = read_text(stdin_text=sys.stdin.read()).text
+            elif args.input:
+                text = read_text(path=args.input).text
+            else:
+                print("ai-wm: error: payload embed requires an input file (or --stdin)", file=sys.stderr)
+                return 2
+            opts = {}
+            if args.max_masks is not None:
+                opts["max_masks"] = args.max_masks
+            result = embed_payload(text, args.payload, opts)
+            Path(args.output).write_text(result["text"], encoding="utf-8")
+            print(f"embedded {result['bits_embedded']} bits"
+                  f" (payload '{args.payload}': {len(result['payload_bits'])} bits requested)"
+                  f" -> {args.output}")
+            if result["bits_embedded"] < len(result["payload_bits"]):
+                print(f"warning: text capacity is too small for the full payload"
+                      f" — {len(result['payload_bits']) - result['bits_embedded']} bits dropped",
+                      file=sys.stderr)
+                return 1
+            return 0
+        elif args.payload_action == "extract":
+            if args.stdin:
+                text = read_text(stdin_text=sys.stdin.read()).text
+            elif args.input:
+                text = read_text(path=args.input).text
+            else:
+                print("ai-wm: error: payload extract requires an input file (or --stdin)", file=sys.stderr)
+                return 2
+            if args.reference_stdin:
+                reference = sys.stdin.read()
+            else:
+                reference = read_text(path=args.reference).text
+            result = extract_payload(text, reference)
+            if args.json or args.output:
+                rendered = json.dumps(result, ensure_ascii=False, indent=2, default=str)
+                if args.output:
+                    Path(args.output).write_text(rendered, encoding="utf-8")
+                else:
+                    print(rendered)
+            else:
+                payload = result.get("payload", "")
+                if result.get("payload_valid"):
+                    print(f"payload: {payload!r}")
+                else:
+                    print(f"payload: {payload!r} (NOT trusted — {result.get('payload_reason')})")
+                print(f"confidence: {result.get('confidence')}  masks: {result.get('masks_used')}")
+            return 0
+        return 2
 
     if args.cmd == "serve":
         from uvicorn import run
