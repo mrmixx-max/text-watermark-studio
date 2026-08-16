@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
             ("&Einbetten", "Ctrl+E", self.embed),
             ("&Bericht erstellen", "Ctrl+R", self.build_report),
             ("&Signieren", "Ctrl+S", self.sign),
-            ("&Verifizieren", "Ctrl+V", self.verify),
+            ("&Verifizieren", "Ctrl+Shift+V", self.verify),
             ("KGW-&Beispiel", "Ctrl+G", self.kgw_sample),
         ):
             act = QAction(label, self)

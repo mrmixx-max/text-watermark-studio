@@ -213,3 +213,30 @@ def test_editor_markings_invalidate_on_text_change(monkeypatch):
     assert len(ed._markings) == len(subs)
     assert ed.toPlainText() == result["text"]
 
+
+def test_paste_shortcut_not_hijacked(monkeypatch):
+    """Ctrl+V must stay free for paste — no menu action may claim it."""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtGui import QAction, QKeySequence
+    from PySide6.QtWidgets import QApplication
+    from ai_watermark_toolkit.ui.desktop.app import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    win = MainWindow()
+
+    hijacked = []
+    for act in win.findChildren(QAction):
+        for seq in act.shortcuts():
+            if seq.toString().lower().replace(" ", "") == "ctrl+v":
+                hijacked.append((act.text(), seq.toString()))
+    assert hijacked == [], f"Paste-Shortcut (Ctrl+V) durch Aktionen belegt: {hijacked}"
+
+    # Verifizieren bleibt erreichbar (jetzt Ctrl+Shift+V)
+    verify = [a for a in win.findChildren(QAction)
+              if a.text() == "&Verifizieren"]
+    assert verify and any(
+        s.matches(QKeySequence("Ctrl+Shift+V")) != 0
+        for s in verify[0].shortcuts()
+    )
+
