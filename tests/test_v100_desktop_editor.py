@@ -179,7 +179,8 @@ def test_main_window_embed_paints_markings(monkeypatch):
     text = win.editor.toPlainText()
     for m in win.editor._markings:
         assert text[m["start"]:m["end"]] == m["replacement"]
-    assert "green-marked" in win.statusBar().currentMessage()
+    # Statusbar zeigt die Greenlist-Meldung in der aktuellen UI-Sprache (de)
+    assert "grün markiert" in win.statusBar().currentMessage()
 
 
 def test_editor_markings_invalidate_on_text_change(monkeypatch):
@@ -234,7 +235,7 @@ def test_paste_shortcut_not_hijacked(monkeypatch):
 
     # Verify bleibt erreichbar (jetzt Ctrl+Shift+V)
     verify = [a for a in win.findChildren(QAction)
-              if a.text() == "&Verify"]
+              if a.text() == "&Verifizieren"]  # deutscher UI-Default
     assert verify and any(
         s.matches(QKeySequence("Ctrl+Shift+V")) != 0
         for s in verify[0].shortcuts()

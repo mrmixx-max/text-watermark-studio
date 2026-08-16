@@ -53,6 +53,275 @@ _ABOUT = (
     "Unsigned — expect a SmartScreen warning when installing."
 )
 
+# --------------------------------------------------------------------------
+# i18n: the Language combo in the toolbar switches BOTH the report language
+# (controller lang=) and the UI language (menus, toolbar, dialogs, status).
+# Keys are stable identifiers; "de" is the startup default (combo index 0).
+# --------------------------------------------------------------------------
+_I18N: dict[str, dict[str, str]] = {
+    "de": {
+        "menu.file": "&Datei",
+        "act.open": "&Öffnen…",
+        "act.save": "Ergebnis &speichern…",
+        "act.quit": "&Beenden",
+        "menu.edit": "&Bearbeiten",
+        "act.find": "&Suchen…",
+        "act.wrap": "Zeilen&umbruch",
+        "menu.actions": "&Aktionen",
+        "act.detect": "&Erkennen",
+        "act.embed": "&Einbetten",
+        "act.build_report": "&Bericht erstellen",
+        "act.sign": "&Signieren",
+        "act.verify": "&Verifizieren",
+        "act.kgw_sample": "KGW-&Beispiel",
+        "menu.help": "&Hilfe",
+        "act.about": "&Über",
+        "sub.text_tools": "&Text-Werkzeuge",
+        "act.clean_text": "&Unicode-Ebene bereinigen",
+        "act.dilute_text": "KI-Formulierung &verwässern",
+        "act.rewrite_text": "&Umschreiben (strukturell)",
+        "act.pipeline": "&Pipeline (erkennen→bereinigen→verwässern→umschreiben)",
+        "sub.file_tools": "&Datei-Werkzeuge",
+        "act.inspect_file": "Metadaten &prüfen…",
+        "act.clean_file": "Metadaten &bereinigen…",
+        "act.embed_file": "Provenienz &einbetten…",
+        "act.detect_prov": "Provenienz &erkennen…",
+        "act.image_score": "&Bild-Score (SynthID)…",
+        "act.watch_dir": "Ordner &überwachen…",
+        "sub.findings": "&Befunde",
+        "act.delta_z": "&ΔZ-Prüfung…",
+        "act.finding_report": "&Befundbericht (A–D)…",
+        "act.sign_report": "Befund-JSON &signieren…",
+        "act.verify_report": "Signiertes JSON &verifizieren…",
+        "act.gen_keypair": "ML-DSA-&Schlüsselpaar erzeugen…",
+        "sub.benchmarks": "&Benchmarks",
+        "act.attack_matrix": "&Angriffsmatrix…",
+        "act.synthid_sweep": "&SynthID-Durchlauf…",
+        "act.optimizer": "&Prompt-Optimierer…",
+        "act.similarity": "&Korpus-Ähnlichkeit…",
+        "sub.system": "&System",
+        "act.system_state": "System&status",
+        "act.check_update": "Nach &Updates suchen…",
+        "act.install_model": "Lokales Modell &installieren…",
+        "ui.key": "Schlüssel:",
+        "ui.language": "Sprache:",
+        "ui.llm": "LLM:",
+        "ui.refresh": "Aktualisieren",
+        "ui.detect": "Erkennen",
+        "ui.embed": "Einbetten",
+        "ui.report": "Bericht",
+        "ui.sign": "Signieren",
+        "ui.verify": "Verifizieren",
+        "ui.kgw_sample": "KGW-Beispiel",
+        "ui.ready": "Bereit",
+        "ui.editor_placeholder": (
+            "Text hier einfügen, Datei > Öffnen… wählen oder Datei ablegen.\n\n"
+            "Erkennen: KGW-Z-Score + E-Prozess gegen den gewählten Schlüssel "
+            "(oder alle Schlüssel).\n"
+            "Einbetten: Text mit Greenlist markieren — ersetzte Wörter werden "
+            "grün hervorgehoben (Rückgängig mit Strg+Z).\n"
+            "Bericht: HTML-Befund nach Downloads (oder tmp).\n"
+            "Signieren/Verifizieren: JSON aus dem Ergebnis-Panel.\n"
+            "Suchen: Strg+F · Umbruch: Strg+Umschalt+W."
+        ),
+        "ui.results_placeholder": "Ergebnisse (JSON)",
+        "tt.key": "Registrierte KGW-Schlüssel mit Geheimnis (data/key_registry.json)",
+        "tt.lang": "UI- und Berichtssprache — Menüs und Berichte (de/en)",
+        "tt.llm": ("Lokale Ollama-Modelle (Server: http://127.0.0.1:11434). "
+                   "Auswahl aktiviert das Modell für Umschreiben/Erklären."),
+        "tt.refresh": "Ollama-Modellliste neu laden",
+        "dlg.open": "Textdatei öffnen",
+        "dlg.save": "Ergebnis speichern",
+        "dlg.install": "Lokales Modell installieren",
+        "dlg.install_prompt": "Modellname (Ollama pull, z. B. llama3.2:3b):",
+        "cap.inspect": "Metadaten prüfen",
+        "cap.clean": "Metadaten bereinigen",
+        "cap.embed": "Provenienz einbetten (HMAC-Signatur)",
+        "cap.detect_prov": "Provenienz erkennen",
+        "cap.image": "Bild-Score (SynthID)",
+        "cap.watch": "Ordner überwachen (ein Durchlauf)",
+        "cap.similarity_target": "Ähnlichkeits-Zieltext",
+        "cap.corpus": "Korpus-Ordner",
+        "cap.deltaz_before": "ΔZ-Prüfung — Datei vorher",
+        "cap.deltaz_after": "ΔZ-Prüfung — Datei nachher",
+        "cap.finding": "Befundbericht (A–D)",
+        "cap.sign_json": "Befund-JSON signieren",
+        "cap.verify_json": "Signiertes JSON verifizieren",
+        "cap.keypair_dir": "Zielordner für ML-DSA-Schlüsselpaar",
+        "status.detect_ok": "Erkennung abgeschlossen",
+        "status.embed_ok": "Text mit Greenlist markiert",
+        "status.report_ok": "HTML-Bericht geschrieben",
+        "status.sign_ok": "Befund signiert",
+        "status.verify_ok": "Signatur verifiziert",
+        "status.kgw_ok": "KGW-Beispiel erzeugt",
+        "status.clean_ok": "Unicode-Ebene bereinigt",
+        "status.dilute_ok": "KI-Formulierung verwässert",
+        "status.rewrite_ok": "Text umgeschrieben",
+        "status.pipeline_ok": "Pipeline abgeschlossen",
+        "status.inspect_ok": "Metadaten geprüft",
+        "status.cleanfile_ok": "Metadaten bereinigt",
+        "status.embfile_ok": "Datei signiert",
+        "status.detectprov_ok": "Provenienz geprüft",
+        "status.image_ok": "Bild bewertet",
+        "status.watch_ok": "Ordner gescannt",
+        "status.attack_ok": "Angriffsmatrix abgeschlossen",
+        "status.sweep_ok": "SynthID-Durchlauf abgeschlossen",
+        "status.optimizer_ok": "Optimierer abgeschlossen",
+        "status.similarity_ok": "Ähnlichkeit geprüft",
+        "status.sysstate_ok": "Systemstatus",
+        "status.update_ok": "Update-Prüfung abgeschlossen",
+        "status.install_ok": "Modell installiert",
+        "status.deltaz_ok": "ΔZ-Prüfung abgeschlossen",
+        "status.finding_ok": "Befundbericht erstellt",
+        "status.keypair_ok": "Schlüsselpaar erzeugt",
+        "msg.error": "Fehler: {e}",
+        "msg.loaded": "Geladen: {path}",
+        "msg.saved": "Gespeichert: {path}",
+        "msg.greenlist": "Greenlist: {n} Wörter ersetzt (grün markiert)",
+        "msg.key_error": "Schlüssel-Registry: {e}",
+        "msg.ollama_error": "LLM/Ollama: {e}",
+        "msg.llm_error": "LLM: {e}",
+        "msg.llm_loaded": "Ollama: {n} Modelle geladen",
+        "msg.llm_activated": "LLM-Modell aktiviert: {name}",
+        "msg.about": "Über Text Watermark Studio",
+    },
+    "en": {
+        "menu.file": "&File",
+        "act.open": "&Open…",
+        "act.save": "&Save Result…",
+        "act.quit": "&Quit",
+        "menu.edit": "&Edit",
+        "act.find": "&Find…",
+        "act.wrap": "&Wrap Lines",
+        "menu.actions": "&Actions",
+        "act.detect": "&Detect",
+        "act.embed": "&Embed",
+        "act.build_report": "&Build Report",
+        "act.sign": "&Sign",
+        "act.verify": "&Verify",
+        "act.kgw_sample": "KGW &Sample",
+        "menu.help": "&Help",
+        "act.about": "&About",
+        "sub.text_tools": "&Text Tools",
+        "act.clean_text": "&Clean Unicode Layer",
+        "act.dilute_text": "&Dilute AI Phrasing",
+        "act.rewrite_text": "&Rewrite (Structural)",
+        "act.pipeline": "&Pipeline (detect→clean→dilute→rewrite)",
+        "sub.file_tools": "&File Tools",
+        "act.inspect_file": "&Inspect Metadata…",
+        "act.clean_file": "&Clean Metadata…",
+        "act.embed_file": "&Embed Provenance…",
+        "act.detect_prov": "&Detect Provenance…",
+        "act.image_score": "&Image Score (SynthID)…",
+        "act.watch_dir": "&Watch Directory…",
+        "sub.findings": "&Findings",
+        "act.delta_z": "&ΔZ Check…",
+        "act.finding_report": "&Findings Report (A–D)…",
+        "act.sign_report": "&Sign Findings JSON…",
+        "act.verify_report": "&Verify Signed JSON…",
+        "act.gen_keypair": "&Generate ML-DSA Keypair…",
+        "sub.benchmarks": "&Benchmarks",
+        "act.attack_matrix": "&Attack Matrix…",
+        "act.synthid_sweep": "&SynthID Sweep…",
+        "act.optimizer": "&Prompt Optimizer…",
+        "act.similarity": "&Corpus Similarity…",
+        "sub.system": "&System",
+        "act.system_state": "&System State",
+        "act.check_update": "&Check for Updates…",
+        "act.install_model": "&Install Local Model…",
+        "ui.key": "Key:",
+        "ui.language": "Language:",
+        "ui.llm": "LLM:",
+        "ui.refresh": "Refresh",
+        "ui.detect": "Detect",
+        "ui.embed": "Embed",
+        "ui.report": "Report",
+        "ui.sign": "Sign",
+        "ui.verify": "Verify",
+        "ui.kgw_sample": "KGW Sample",
+        "ui.ready": "Ready",
+        "ui.editor_placeholder": (
+            "Paste text here, choose File > Open… or drop a file in.\n\n"
+            "Detect: KGW z-score + e-process against the selected key "
+            "(or all keys).\n"
+            "Embed: greenlist-mark the text — replaced words are "
+            "highlighted green (undo with Ctrl+Z).\n"
+            "Report: HTML finding to Downloads (or tmp).\n"
+            "Sign/Verify: JSON from the results panel.\n"
+            "Find: Ctrl+F · Wrap: Ctrl+Shift+W."
+        ),
+        "ui.results_placeholder": "Results (JSON)",
+        "tt.key": "Registered KGW keys with secret (data/key_registry.json)",
+        "tt.lang": "UI + report language — menus and reports (de/en)",
+        "tt.llm": ("Local Ollama models (server: http://127.0.0.1:11434). "
+                   "Selecting activates the model for rewrite/explain."),
+        "tt.refresh": "Reload the Ollama model list",
+        "dlg.open": "Open text file",
+        "dlg.save": "Save result",
+        "dlg.install": "Install local model",
+        "dlg.install_prompt": "Model name (Ollama pull, e.g. llama3.2:3b):",
+        "cap.inspect": "Inspect metadata",
+        "cap.clean": "Clean metadata",
+        "cap.embed": "Embed provenance (HMAC sign)",
+        "cap.detect_prov": "Detect provenance",
+        "cap.image": "Image score (SynthID)",
+        "cap.watch": "Watch directory (one pass)",
+        "cap.similarity_target": "Similarity target text",
+        "cap.corpus": "Corpus directory",
+        "cap.deltaz_before": "ΔZ check — before file",
+        "cap.deltaz_after": "ΔZ check — after file",
+        "cap.finding": "Findings report (A–D)",
+        "cap.sign_json": "Sign findings JSON",
+        "cap.verify_json": "Verify signed JSON",
+        "cap.keypair_dir": "ML-DSA keypair target directory",
+        "status.detect_ok": "Detection complete",
+        "status.embed_ok": "Text greenlist-marked",
+        "status.report_ok": "HTML report written",
+        "status.sign_ok": "Finding signed",
+        "status.verify_ok": "Signature verified",
+        "status.kgw_ok": "KGW sample generated",
+        "status.clean_ok": "Unicode layer cleaned",
+        "status.dilute_ok": "AI phrasing diluted",
+        "status.rewrite_ok": "Text rewritten",
+        "status.pipeline_ok": "Pipeline complete",
+        "status.inspect_ok": "Metadata inspected",
+        "status.cleanfile_ok": "Metadata cleaned",
+        "status.embfile_ok": "File signed",
+        "status.detectprov_ok": "Provenance checked",
+        "status.image_ok": "Image scored",
+        "status.watch_ok": "Directory scanned",
+        "status.attack_ok": "Attack matrix complete",
+        "status.sweep_ok": "SynthID sweep complete",
+        "status.optimizer_ok": "Optimizer complete",
+        "status.similarity_ok": "Similarity checked",
+        "status.sysstate_ok": "System state",
+        "status.update_ok": "Update check complete",
+        "status.install_ok": "Model installed",
+        "status.deltaz_ok": "ΔZ check complete",
+        "status.finding_ok": "Findings report built",
+        "status.keypair_ok": "Keypair generated",
+        "msg.error": "Error: {e}",
+        "msg.loaded": "Loaded: {path}",
+        "msg.saved": "Saved: {path}",
+        "msg.greenlist": "Greenlist: {n} words replaced (green-marked)",
+        "msg.key_error": "Key registry: {e}",
+        "msg.ollama_error": "LLM/Ollama: {e}",
+        "msg.llm_error": "LLM: {e}",
+        "msg.llm_loaded": "Ollama: {n} model(s) loaded",
+        "msg.llm_activated": "LLM model activated: {name}",
+        "msg.about": "About Text Watermark Studio",
+    },
+}
+
+_TOP_I18N = {"File": "menu.file", "Edit": "menu.edit",
+             "Actions": "menu.actions", "Help": "menu.help"}
+_SUBMENU_I18N = {"Text Tools": "sub.text_tools",
+                 "File Tools": "sub.file_tools",
+                 "Findings": "sub.findings",
+                 "Benchmarks": "sub.benchmarks",
+                 "System": "sub.system"}
+
+
 
 class MainWindow(QMainWindow):
     """QMainWindow shell: menu bar, text editor, JSON results, status bar."""
@@ -61,6 +330,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.controller = controller or DesktopController()
         self.llm = LocalLLMService()
+        self._lang = "de"  # toolbar combo index 0; drives UI + report language
+        self._actions: dict[str, QAction] = {}
+        self._ui_labels: dict[str, QWidget] = {}
         self.setWindowTitle(APP_TITLE)
         self.resize(1180, 760)
         self._build_menu()
@@ -68,54 +340,85 @@ class MainWindow(QMainWindow):
         self._refresh_keys()
         self._refresh_llm_models()
 
+    # ------------------------------------------------------------ i18n
+    def _tr(self, key: str) -> str:
+        """Resolve an i18n key for the current UI language (fallback en)."""
+        return _I18N.get(self._lang, _I18N["en"]).get(key, _I18N["en"].get(key, key))
+
+    def _apply_language(self, _index: int | None = None) -> None:
+        """Retranslate the whole UI from the toolbar language combo."""
+        combo = getattr(self, "lang_combo", None)
+        if combo is not None:
+            self._lang = str(combo.currentData() or "de")
+        for key, act in self._actions.items():
+            act.setText(self._tr(key))
+        for reg_name, menu in self._top_menus.items():
+            menu.setTitle(self._tr(_TOP_I18N.get(reg_name, "menu." + reg_name.lower())))
+        for reg_name, menu in self._submenu_menus.items():
+            menu.setTitle(self._tr(_SUBMENU_I18N.get(reg_name, "sub." + reg_name.lower())))
+        for key, widget in self._ui_labels.items():
+            widget.setText(self._tr(key))
+        self.key_combo.setToolTip(self._tr("tt.key"))
+        self.lang_combo.setToolTip(self._tr("tt.lang"))
+        self.llm_combo.setToolTip(self._tr("tt.llm"))
+        self.editor.setPlaceholderText(self._tr("ui.editor_placeholder"))
+        self.results.setPlaceholderText(self._tr("ui.results_placeholder"))
+        self.statusBar().showMessage(self._tr("ui.ready"))
+
     # ------------------------------------------------------------- widgets
     def _build_menu(self) -> None:
         mbar = self.menuBar()
 
-        m_file = mbar.addMenu("&File")
-        act_open = QAction("&Open…", self)
+        m_file = mbar.addMenu(self._tr("menu.file"))
+        act_open = QAction(self._tr("act.open"), self)
         act_open.setShortcut(QKeySequence.Open)
         act_open.triggered.connect(self.open_file)
         m_file.addAction(act_open)
-        act_save = QAction("&Save Result…", self)
+        self._actions["act.open"] = act_open
+        act_save = QAction(self._tr("act.save"), self)
         act_save.setShortcut(QKeySequence.Save)
         act_save.triggered.connect(self.save_result)
         m_file.addAction(act_save)
+        self._actions["act.save"] = act_save
         m_file.addSeparator()
-        act_quit = QAction("&Quit", self)
+        act_quit = QAction(self._tr("act.quit"), self)
         act_quit.setShortcut(QKeySequence.Quit)
         act_quit.triggered.connect(self.close)
         m_file.addAction(act_quit)
+        self._actions["act.quit"] = act_quit
 
-        m_edit = mbar.addMenu("&Edit")
-        act_find = QAction("&Find…", self)
+        m_edit = mbar.addMenu(self._tr("menu.edit"))
+        act_find = QAction(self._tr("act.find"), self)
         act_find.setShortcut(QKeySequence.Find)
         act_find.triggered.connect(self._show_find)
         m_edit.addAction(act_find)
-        act_wrap = QAction("&Wrap Lines", self)
+        self._actions["act.find"] = act_find
+        act_wrap = QAction(self._tr("act.wrap"), self)
         act_wrap.setShortcut("Ctrl+Shift+W")
         act_wrap.setCheckable(True)
         act_wrap.setChecked(True)
         act_wrap.toggled.connect(self._toggle_wrap)
         m_edit.addAction(act_wrap)
+        self._actions["act.wrap"] = act_wrap
 
-        m_actions = mbar.addMenu("&Actions")
+        m_actions = mbar.addMenu(self._tr("menu.actions"))
         self._top_menus = {"File": m_file, "Edit": m_edit,
                            "Actions": m_actions}
         self._menu_actions = {}
-        for label, shortcut, slot in (
-            ("&Detect", "Ctrl+D", self.detect),
-            ("&Embed", "Ctrl+E", self.embed),
-            ("&Build Report", "Ctrl+R", self.build_report),
-            ("&Sign", "Ctrl+S", self.sign),
-            ("&Verify", "Ctrl+Shift+V", self.verify),
-            ("KGW &Sample", "Ctrl+G", self.kgw_sample),
+        for key, shortcut, slot in (
+            ("act.detect", "Ctrl+D", self.detect),
+            ("act.embed", "Ctrl+E", self.embed),
+            ("act.build_report", "Ctrl+R", self.build_report),
+            ("act.sign", "Ctrl+S", self.sign),
+            ("act.verify", "Ctrl+Shift+V", self.verify),
+            ("act.kgw_sample", "Ctrl+G", self.kgw_sample),
         ):
-            act = QAction(label, self)
+            act = QAction(self._tr(key), self)
             act.setShortcut(shortcut)
             act.triggered.connect(slot)
             m_actions.addAction(act)
             self._menu_actions[shortcut] = act
+            self._actions[key] = act
 
         m_actions.addSeparator()
 
@@ -125,86 +428,93 @@ class MainWindow(QMainWindow):
         self._submenu_menus: dict[str, object] = {}
 
         # --- Text Tools (TUI-Parität 2/3/5/7) ---------------------------
-        m_text = m_actions.addMenu("&Text Tools")
+        m_text = m_actions.addMenu(self._tr("sub.text_tools"))
         self._submenu_menus["Text Tools"] = m_text
         self._submenus["Text Tools"] = []
-        for label, slot in (
-            ("&Clean Unicode Layer", self.clean_text),
-            ("&Dilute AI Phrasing", self.dilute_text),
-            ("&Rewrite (Structural)", self.rewrite_text),
-            ("&Pipeline (detect→clean→dilute→rewrite)", self.run_pipeline),
+        for key, slot in (
+            ("act.clean_text", self.clean_text),
+            ("act.dilute_text", self.dilute_text),
+            ("act.rewrite_text", self.rewrite_text),
+            ("act.pipeline", self.run_pipeline),
         ):
-            act = QAction(label, self)
+            act = QAction(self._tr(key), self)
             act.triggered.connect(slot)
             m_text.addAction(act)
             self._submenus["Text Tools"].append(act)
+            self._actions[key] = act
 
         # --- File Tools (TUI-Parität 8-13) ------------------------------
-        m_files = m_actions.addMenu("&File Tools")
+        m_files = m_actions.addMenu(self._tr("sub.file_tools"))
         self._submenu_menus["File Tools"] = m_files
         self._submenus["File Tools"] = []
-        for label, slot in (
-            ("&Inspect Metadata…", self.inspect_file),
-            ("&Clean Metadata…", self.clean_file),
-            ("&Embed Provenance…", self.embed_file),
-            ("&Detect Provenance…", self.detect_file_prov),
-            ("&Image Score (SynthID)…", self.image_score),
-            ("&Watch Directory…", self.watch_once),
+        for key, slot in (
+            ("act.inspect_file", self.inspect_file),
+            ("act.clean_file", self.clean_file),
+            ("act.embed_file", self.embed_file),
+            ("act.detect_prov", self.detect_file_prov),
+            ("act.image_score", self.image_score),
+            ("act.watch_dir", self.watch_once),
         ):
-            act = QAction(label, self)
+            act = QAction(self._tr(key), self)
             act.triggered.connect(slot)
             m_files.addAction(act)
             self._submenus["File Tools"].append(act)
+            self._actions[key] = act
 
         # --- Findings (TUI-Parität 21-25) -------------------------------
-        m_findings = m_actions.addMenu("&Findings")
+        m_findings = m_actions.addMenu(self._tr("sub.findings"))
         self._submenu_menus["Findings"] = m_findings
         self._submenus["Findings"] = []
-        for label, slot in (
-            ("&ΔZ Check…", self.delta_z),
-            ("&Findings Report (A–D)…", self.finding_report),
-            ("&Sign Findings JSON…", self.sign_report_file),
-            ("&Verify Signed JSON…", self.verify_report_file),
-            ("&Generate ML-DSA Keypair…", self.generate_keypair),
+        for key, slot in (
+            ("act.delta_z", self.delta_z),
+            ("act.finding_report", self.finding_report),
+            ("act.sign_report", self.sign_report_file),
+            ("act.verify_report", self.verify_report_file),
+            ("act.gen_keypair", self.generate_keypair),
         ):
-            act = QAction(label, self)
+            act = QAction(self._tr(key), self)
             act.triggered.connect(slot)
             m_findings.addAction(act)
             self._submenus["Findings"].append(act)
+            self._actions[key] = act
 
         # --- Benchmarks (TUI-Parität 14-15, 19) -------------------------
-        m_bench = m_actions.addMenu("&Benchmarks")
+        m_bench = m_actions.addMenu(self._tr("sub.benchmarks"))
         self._submenu_menus["Benchmarks"] = m_bench
         self._submenus["Benchmarks"] = []
-        for label, slot in (
-            ("&Attack Matrix…", self.attack_matrix),
-            ("&SynthID Sweep…", self.synthid_sweep),
-            ("&Prompt Optimizer…", self.run_optimizer),
-            ("&Corpus Similarity…", self.similarity),
+        for key, slot in (
+            ("act.attack_matrix", self.attack_matrix),
+            ("act.synthid_sweep", self.synthid_sweep),
+            ("act.optimizer", self.run_optimizer),
+            ("act.similarity", self.similarity),
         ):
-            act = QAction(label, self)
+            act = QAction(self._tr(key), self)
             act.triggered.connect(slot)
             m_bench.addAction(act)
             self._submenus["Benchmarks"].append(act)
+            self._actions[key] = act
 
         # --- System (TUI-Parität 16-18, 20) -----------------------------
-        m_sys = m_actions.addMenu("&System")
+        m_sys = m_actions.addMenu(self._tr("sub.system"))
         self._submenu_menus["System"] = m_sys
         self._submenus["System"] = []
-        for label, slot in (
-            ("&System State", self.system_state),
-            ("&Check for Updates…", self.check_update),
-            ("&Install Local Model…", self.install_llm_model),
+        for key, slot in (
+            ("act.system_state", self.system_state),
+            ("act.check_update", self.check_update),
+            ("act.install_model", self.install_llm_model),
         ):
-            act = QAction(label, self)
+            act = QAction(self._tr(key), self)
             act.triggered.connect(slot)
             m_sys.addAction(act)
             self._submenus["System"].append(act)
+            self._actions[key] = act
 
-        m_help = mbar.addMenu("&Help")
-        act_about = QAction("&About", self)
+        m_help = mbar.addMenu(self._tr("menu.help"))
+        self._top_menus["Help"] = m_help
+        act_about = QAction(self._tr("act.about"), self)
         act_about.triggered.connect(self.about)
         m_help.addAction(act_about)
+        self._actions["act.about"] = act_about
 
     def _build_ui(self) -> None:
         splitter = QSplitter(Qt.Horizontal)
@@ -215,59 +525,52 @@ class MainWindow(QMainWindow):
         left_layout.setContentsMargins(6, 6, 6, 6)
 
         toolbar = QHBoxLayout()
-        toolbar.addWidget(QLabel("Key:"))
+        lbl_key = QLabel(self._tr("ui.key"))
+        self._ui_labels["ui.key"] = lbl_key
+        toolbar.addWidget(lbl_key)
         self.key_combo = QComboBox()
         self.key_combo.setMinimumWidth(220)
-        self.key_combo.setToolTip(
-            "Registered KGW keys with secret (data/key_registry.json)"
-        )
+        self.key_combo.setToolTip(self._tr("tt.key"))
         toolbar.addWidget(self.key_combo)
         toolbar.addStretch(1)
-        toolbar.addWidget(QLabel("Language:"))
+        lbl_lang = QLabel(self._tr("ui.language"))
+        self._ui_labels["ui.language"] = lbl_lang
+        toolbar.addWidget(lbl_lang)
         self.lang_combo = QComboBox()
         self.lang_combo.addItem("Deutsch", "de")
         self.lang_combo.addItem("English", "en")
-        self.lang_combo.setToolTip(
-            "Report language (findings/report) — de or en"
-        )
+        self.lang_combo.setToolTip(self._tr("tt.lang"))
+        self.lang_combo.currentIndexChanged.connect(self._apply_language)
         toolbar.addWidget(self.lang_combo)
-        toolbar.addWidget(QLabel("LLM:"))
+        lbl_llm = QLabel(self._tr("ui.llm"))
+        self._ui_labels["ui.llm"] = lbl_llm
+        toolbar.addWidget(lbl_llm)
         self.llm_combo = QComboBox()
         self.llm_combo.setMinimumWidth(180)
-        self.llm_combo.setToolTip(
-            "Local Ollama models (server: http://127.0.0.1:11434). "
-            "Selecting activates the model for rewrite/explain."
-        )
+        self.llm_combo.setToolTip(self._tr("tt.llm"))
         toolbar.addWidget(self.llm_combo)
-        btn_llm = QPushButton("Refresh")
-        btn_llm.setToolTip("Reload the Ollama model list")
+        btn_llm = QPushButton(self._tr("ui.refresh"))
+        btn_llm.setToolTip(self._tr("tt.refresh"))
         btn_llm.clicked.connect(self._refresh_llm_models)
+        self._ui_labels["ui.refresh"] = btn_llm
         toolbar.addWidget(btn_llm)
         self.llm_combo.currentIndexChanged.connect(self._llm_selected)
-        for label, slot in (
-            ("Detect", self.detect),
-            ("Embed", self.embed),
-            ("Report", self.build_report),
-            ("Sign", self.sign),
-            ("Verify", self.verify),
-            ("KGW Sample", self.kgw_sample),
+        for key, slot in (
+            ("ui.detect", self.detect),
+            ("ui.embed", self.embed),
+            ("ui.report", self.build_report),
+            ("ui.sign", self.sign),
+            ("ui.verify", self.verify),
+            ("ui.kgw_sample", self.kgw_sample),
         ):
-            btn = QPushButton(label)
+            btn = QPushButton(self._tr(key))
             btn.clicked.connect(slot)
+            self._ui_labels[key] = btn
             toolbar.addWidget(btn)
         left_layout.addLayout(toolbar)
 
         self.editor = EditorPane()
-        self.editor.setPlaceholderText(
-            "Paste text here, choose File > Open… or drop a file in.\n\n"
-            "Detect: KGW z-score + e-process against the selected key "
-            "(or all keys).\n"
-            "Embed: greenlist-mark the text — replaced words are "
-            "highlighted green (undo with Ctrl+Z).\n"
-            "Report: HTML finding to Downloads (or tmp).\n"
-            "Sign/Verify: JSON from the results panel.\n"
-            "Find: Ctrl+F · Wrap: Ctrl+Shift+W."
-        )
+        self.editor.setPlaceholderText(self._tr("ui.editor_placeholder"))
         self.editor.fileDropped.connect(self._on_file_dropped)
         left_layout.addWidget(self.editor)
         splitter.addWidget(left)
@@ -275,7 +578,7 @@ class MainWindow(QMainWindow):
         # --- right: JSON results panel
         self.results = QPlainTextEdit()
         self.results.setReadOnly(True)
-        self.results.setPlaceholderText("Results (JSON)")
+        self.results.setPlaceholderText(self._tr("ui.results_placeholder"))
         splitter.addWidget(self.results)
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
@@ -285,7 +588,7 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self._pos_label)
         self.editor.cursorPositionChanged.connect(self._update_status_pos)
         self.editor.textChanged.connect(self._update_status_pos)
-        self.statusBar().showMessage("Ready")
+        self.statusBar().showMessage(self._tr("ui.ready"))
 
     def _refresh_keys(self) -> None:
         """Repopulate the key combo from the registry (keeps selection)."""
@@ -295,7 +598,7 @@ class MainWindow(QMainWindow):
             keys = self.controller.list_keys()
         except Exception as e:  # registry unreadable -> honest hint
             self.key_combo.addItem("(registry unreadable)")
-            self.statusBar().showMessage(f"Key registry: {e}", 8000)
+            self.statusBar().showMessage(self._tr("msg.key_error").format(e=e), 8000)
             return
         for k in keys:
             if k.get("family") == "kgw" and k.get("secret"):
@@ -319,7 +622,7 @@ class MainWindow(QMainWindow):
         except Exception as e:  # Ollama offline/unreachable -> honest hint
             self.llm_combo.addItem("(Ollama unreachable)")
             self.llm_combo.setEnabled(False)
-            self.statusBar().showMessage(f"LLM/Ollama: {e}", 8000)
+            self.statusBar().showMessage(self._tr("msg.ollama_error").format(e=e), 8000)
             self.llm_combo.blockSignals(False)
             return
         for model in models:
@@ -349,9 +652,9 @@ class MainWindow(QMainWindow):
             return
         try:
             self.llm.use_model(name)
-            self.statusBar().showMessage(f"LLM model activated: {name}", 5000)
+            self.statusBar().showMessage(self._tr("msg.llm_activated").format(name=name), 5000)
         except Exception as e:
-            self.statusBar().showMessage(f"LLM: {e}", 8000)
+            self.statusBar().showMessage(self._tr("msg.llm_error").format(e=e), 8000)
 
     def _selected_key(self) -> str | None:
         key = self.key_combo.currentText()
@@ -384,7 +687,7 @@ class MainWindow(QMainWindow):
                     ensure_ascii=False, indent=2,
                 )
             )
-            self.statusBar().showMessage(f"Error: {e}", 8000)
+            self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
         if isinstance(result, dict):
             self.results.setPlainText(
@@ -421,7 +724,7 @@ class MainWindow(QMainWindow):
                     ensure_ascii=False, indent=2,
                 )
             )
-            self.statusBar().showMessage(f"Error: {e}", 8000)
+            self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
         self.editor.setPlainText(text)
         self.editor.clear_markings()
@@ -429,12 +732,12 @@ class MainWindow(QMainWindow):
             json.dumps({"loaded": path, "chars": len(text)},
                        ensure_ascii=False, indent=2)
         )
-        self.statusBar().showMessage(f"Loaded: {path}", 5000)
+        self.statusBar().showMessage(self._tr("msg.loaded").format(path=path), 5000)
 
     # ------------------------------------------------------------- actions
     def open_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, "Open text file", "", "Text files (*.txt *.md *.json);;All files (*)"
+            self, self._tr("dlg.open"), "", "Text files (*.txt *.md *.json);;All files (*)"
         )
         if not path:
             return
@@ -447,18 +750,18 @@ class MainWindow(QMainWindow):
                     ensure_ascii=False, indent=2,
                 )
             )
-            self.statusBar().showMessage(f"Error: {e}", 8000)
+            self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
         self.editor.setPlainText(text)
         self.results.setPlainText(
             json.dumps({"loaded": path, "chars": len(text)},
                        ensure_ascii=False, indent=2)
         )
-        self.statusBar().showMessage(f"Loaded: {path}", 5000)
+        self.statusBar().showMessage(self._tr("msg.loaded").format(path=path), 5000)
 
     def save_result(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save result", "tws-result.json", "JSON (*.json);;All files (*)"
+            self, self._tr("dlg.save"), "tws-result.json", "JSON (*.json);;All files (*)"
         )
         if not path:
             return
@@ -466,23 +769,23 @@ class MainWindow(QMainWindow):
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(self.results.toPlainText())
         except OSError as e:
-            self.statusBar().showMessage(f"Error: {e}", 8000)
+            self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
-        self.statusBar().showMessage(f"Saved: {path}", 5000)
+        self.statusBar().showMessage(self._tr("msg.saved").format(path=path), 5000)
 
     def detect(self) -> None:
         self._run(
             lambda: self.controller.detect_text(self._editor_text(),
                                                 self._selected_key(),
                                                 lang=self._report_lang()),
-            ok_status="Detection complete",
+            ok_status=self._tr("status.detect_ok"),
         )
 
     def embed(self) -> None:
         self._run(
             lambda: self.controller.embed_text(self._editor_text(),
                                                self._require_key()),
-            ok_status="Text greenlist-marked",
+            ok_status=self._tr("status.embed_ok"),
         )
         # Non-destructive takeover of the marked text (undoable via Ctrl+Z),
         # then paint the greenlist substitutions so the user SEES the marks.
@@ -500,8 +803,9 @@ class MainWindow(QMainWindow):
                 (data or {}).get("substitutions") or []
             )
             self.statusBar().showMessage(
-                f"Greenlist: {len((data or {}).get('substitutions') or [])} "
-                "words replaced (green-marked)", 8000,
+                self._tr("msg.greenlist").format(
+                    n=len((data or {}).get("substitutions") or [])),
+                8000,
             )
 
     def build_report(self) -> None:
@@ -510,7 +814,7 @@ class MainWindow(QMainWindow):
                 self._editor_text(),
                 self._require_key(),
                 lang=self._report_lang()),
-            ok_status="HTML report written",
+            ok_status=self._tr("status.report_ok"),
         )
 
     def _report_lang(self) -> str:
@@ -525,7 +829,7 @@ class MainWindow(QMainWindow):
             lambda: self.controller.sign_report_json(
                 self.controller.parse_json(self.results.toPlainText()),
                 self._require_key()),
-            ok_status="Finding signed",
+            ok_status=self._tr("status.sign_ok"),
         )
 
     def verify(self) -> None:
@@ -533,32 +837,32 @@ class MainWindow(QMainWindow):
             lambda: self.controller.verify_report_json(
                 self.controller.parse_json(self.results.toPlainText()),
                 self._require_key()),
-            ok_status="Signature verified",
+            ok_status=self._tr("status.verify_ok"),
         )
 
     def kgw_sample(self) -> None:
         self._run(
             lambda: self.controller.kgw_sample(self._editor_text()),
-            ok_status="KGW sample generated",
+            ok_status=self._tr("status.kgw_ok"),
         )
 
     # --------------------------------------------- TUI-Paritaet: neue Slots
     # Text-Tools: wirken auf den Editor-Inhalt (wie Detect/Embed).
     def clean_text(self) -> None:
         self._run(lambda: self.controller.clean_text(self._editor_text()),
-                  ok_status="Unicode layer cleaned")
+                  ok_status=self._tr("status.clean_ok"))
 
     def dilute_text(self) -> None:
         self._run(lambda: self.controller.dilute_text(self._editor_text()),
-                  ok_status="AI phrasing diluted")
+                  ok_status=self._tr("status.dilute_ok"))
 
     def rewrite_text(self) -> None:
         self._run(lambda: self.controller.rewrite_text(self._editor_text()),
-                  ok_status="Text rewritten")
+                  ok_status=self._tr("status.rewrite_ok"))
 
     def run_pipeline(self) -> None:
         self._run(lambda: self.controller.run_pipeline(self._editor_text()),
-                  ok_status="Pipeline complete")
+                  ok_status=self._tr("status.pipeline_ok"))
 
     # Datei-basierte Aktionen: Pfad kommt aus einem native Dialog.
     def _pick_file(self, caption: str,
@@ -571,136 +875,136 @@ class MainWindow(QMainWindow):
         return path or None
 
     def inspect_file(self) -> None:
-        p = self._pick_file("Inspect metadata")
+        p = self._pick_file(self._tr("cap.inspect"))
         if not p:
             return
         self._run(lambda: self.controller.inspect_file(p),
-                  ok_status="Metadata inspected")
+                  ok_status=self._tr("status.inspect_ok"))
 
     def clean_file(self) -> None:
-        p = self._pick_file("Clean metadata")
+        p = self._pick_file(self._tr("cap.clean"))
         if not p:
             return
         self._run(lambda: self.controller.clean_file(p),
-                  ok_status="Metadata cleaned")
+                  ok_status=self._tr("status.cleanfile_ok"))
 
     def embed_file(self) -> None:
-        p = self._pick_file("Embed provenance (HMAC sign)")
+        p = self._pick_file(self._tr("cap.embed"))
         if not p:
             return
         key = self._selected_key()
         self._run(lambda: self.controller.embed_file(p, key),
-                  ok_status="File signed")
+                  ok_status=self._tr("status.embfile_ok"))
 
     def detect_file_prov(self) -> None:
-        p = self._pick_file("Detect provenance")
+        p = self._pick_file(self._tr("cap.detect_prov"))
         if not p:
             return
         self._run(lambda: self.controller.detect_file_provenance(p),
-                  ok_status="Provenance checked")
+                  ok_status=self._tr("status.detectprov_ok"))
 
     def image_score(self) -> None:
-        p = self._pick_file("Image score (SynthID)",
+        p = self._pick_file(self._tr("cap.image"),
                             "Images (*.png *.jpg *.jpeg *.webp);;All files (*)")
         if not p:
             return
         self._run(lambda: self.controller.image_score(p),
-                  ok_status="Image scored")
+                  ok_status=self._tr("status.image_ok"))
 
     def watch_once(self) -> None:
-        p = self._pick_dir("Watch directory (one pass)")
+        p = self._pick_dir(self._tr("cap.watch"))
         if not p:
             return
         self._run(lambda: self.controller.watch_once(p),
-                  ok_status="Directory scanned")
+                  ok_status=self._tr("status.watch_ok"))
 
     def attack_matrix(self) -> None:
         self._run(lambda: self.controller.attack_matrix(),
-                  ok_status="Attack matrix complete")
+                  ok_status=self._tr("status.attack_ok"))
 
     def synthid_sweep(self) -> None:
         self._run(lambda: self.controller.synthid_sweep(),
-                  ok_status="SynthID sweep complete")
+                  ok_status=self._tr("status.sweep_ok"))
 
     def run_optimizer(self) -> None:
         self._run(lambda: self.controller.run_optimizer(),
-                  ok_status="Optimizer complete")
+                  ok_status=self._tr("status.optimizer_ok"))
 
     def similarity(self) -> None:
-        target = self._pick_file("Similarity target text",
+        target = self._pick_file(self._tr("cap.similarity_target"),
                                  "Text files (*.txt *.md);;All files (*)")
         if not target:
             return
-        corpus = self._pick_dir("Corpus directory")
+        corpus = self._pick_dir(self._tr("cap.corpus"))
         if not corpus:
             return
         self._run(lambda: self.controller.similarity(target, corpus),
-                  ok_status="Similarity checked")
+                  ok_status=self._tr("status.similarity_ok"))
 
     def system_state(self) -> None:
         self._run(lambda: self.controller.system_state(),
-                  ok_status="System state")
+                  ok_status=self._tr("status.sysstate_ok"))
 
     def check_update(self) -> None:
         self._run(lambda: self.controller.check_update(),
-                  ok_status="Update check complete")
+                  ok_status=self._tr("status.update_ok"))
 
     def install_llm_model(self) -> None:
         from PySide6.QtWidgets import QInputDialog
         model, ok = QInputDialog.getText(
-            self, "Install local model",
-            "Model name (Ollama pull, e.g. llama3.2:3b):")
+            self, self._tr("dlg.install"),
+            self._tr("dlg.install_prompt"))
         if not ok or not model.strip():
             return
         self._run(lambda: self.controller.install_llm_model(model.strip()),
-                  ok_status="Model installed")
+                  ok_status=self._tr("status.install_ok"))
 
     def delta_z(self) -> None:
-        before = self._pick_file("ΔZ check — before file",
+        before = self._pick_file(self._tr("cap.deltaz_before"),
                                  "Text files (*.txt *.md);;All files (*)")
         if not before:
             return
-        after = self._pick_file("ΔZ check — after file",
+        after = self._pick_file(self._tr("cap.deltaz_after"),
                                 "Text files (*.txt *.md);;All files (*)")
         if not after:
             return
         key = self._selected_key()
         self._run(lambda: self.controller.delta_z(before, after, key),
-                  ok_status="ΔZ check complete")
+                  ok_status=self._tr("status.deltaz_ok"))
 
     def finding_report(self) -> None:
-        p = self._pick_file("Findings report (A–D)",
+        p = self._pick_file(self._tr("cap.finding"),
                             "Text files (*.txt *.md);;All files (*)")
         if not p:
             return
         key = self._selected_key()
         self._run(lambda: self.controller.finding_report(p, key_id=key),
-                  ok_status="Findings report built")
+                  ok_status=self._tr("status.finding_ok"))
 
     def sign_report_file(self) -> None:
-        p = self._pick_file("Sign findings JSON",
+        p = self._pick_file(self._tr("cap.sign_json"),
                             "JSON (*.json);;All files (*)")
         if not p:
             return
         key = self._selected_key()
         self._run(lambda: self.controller.sign_report_file(p, key_id=key),
-                  ok_status="Finding signed")
+                  ok_status=self._tr("status.sign_ok"))
 
     def verify_report_file(self) -> None:
-        p = self._pick_file("Verify signed JSON",
+        p = self._pick_file(self._tr("cap.verify_json"),
                             "JSON (*.json);;All files (*)")
         if not p:
             return
         key = self._selected_key()
         self._run(lambda: self.controller.verify_report_file(p, key_id=key),
-                  ok_status="Signature verified")
+                  ok_status=self._tr("status.verify_ok"))
 
     def generate_keypair(self) -> None:
-        target = self._pick_dir("ML-DSA keypair target directory")
+        target = self._pick_dir(self._tr("cap.keypair_dir"))
         if not target:
             return
         self._run(lambda: self.controller.generate_keypair(target),
-                  ok_status="Keypair generated")
+                  ok_status=self._tr("status.keypair_ok"))
 
     def about(self) -> None:
         self.results.setPlainText(_ABOUT)

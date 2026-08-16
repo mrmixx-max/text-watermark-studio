@@ -446,11 +446,9 @@ def test_ui_smoke_offscreen(monkeypatch):
         assert window.editor is not None
         assert window.results.isReadOnly() is True
         assert window.key_combo is not None
-        # Menu structure present (English UI, submenus)
+        # Menu structure present (German UI default, submenus)
         menus = [a.text() for a in window.menuBar().actions()]
-        assert any("File" in m for m in menus)
-        assert any("Actions" in m for m in menus)
-        assert any("Help" in m for m in menus)
+        assert menus == ["&Datei", "&Bearbeiten", "&Aktionen", "&Hilfe"], menus
         # Action wiring: menu actions exist for detect/embed
         assert callable(window.detect)
         assert callable(window.embed)
@@ -469,38 +467,49 @@ def test_ui_smoke_offscreen(monkeypatch):
                      "verify_report_file", "generate_keypair"):
             assert callable(getattr(window, slot)), slot
         # Untermenü-Struktur im Actions-Menü (TUI-Parität, deterministisch)
-        actions_menu = next(m for m in window.menuBar().actions()
-                            if m.text() == "&Actions")
+        actions_menu = window._top_menus["Actions"]
         # Submenu QActions are alive and attached to the Actions menu
         # (C++-owned; the underlying QMenu is retained by the window).
-        sub_actions = [a for a in actions_menu.menu().actions()
+        sub_actions = [a for a in actions_menu.actions()
                        if a.menu() is not None]
         sub_titles = [a.text() for a in sub_actions]
-        assert sub_titles == ["&Text Tools", "&File Tools", "&Findings",
-                              "&Benchmarks", "&System"], sub_titles
+        assert sub_titles == ["&Text-Werkzeuge", "&Datei-Werkzeuge",
+                              "&Befunde", "&Benchmarks", "&System"], sub_titles
         expected_items = {
-            "&Text Tools": ["&Clean Unicode Layer", "&Dilute AI Phrasing",
-                            "&Rewrite (Structural)",
-                            "&Pipeline (detect→clean→dilute→rewrite)"],
-            "&File Tools": ["&Inspect Metadata…", "&Clean Metadata…",
-                            "&Embed Provenance…", "&Detect Provenance…",
-                            "&Image Score (SynthID)…", "&Watch Directory…"],
-            "&Findings": ["&ΔZ Check…", "&Findings Report (A–D)…",
-                          "&Sign Findings JSON…", "&Verify Signed JSON…",
-                          "&Generate ML-DSA Keypair…"],
-            "&Benchmarks": ["&Attack Matrix…", "&SynthID Sweep…",
-                            "&Prompt Optimizer…", "&Corpus Similarity…"],
-            "&System": ["&System State", "&Check for Updates…",
-                        "&Install Local Model…"],
+            "Text Tools": ["act.clean_text", "act.dilute_text",
+                           "act.rewrite_text", "act.pipeline"],
+            "File Tools": ["act.inspect_file", "act.clean_file",
+                           "act.embed_file", "act.detect_prov",
+                           "act.image_score", "act.watch_dir"],
+            "Findings": ["act.delta_z", "act.finding_report",
+                         "act.sign_report", "act.verify_report",
+                         "act.gen_keypair"],
+            "Benchmarks": ["act.attack_matrix", "act.synthid_sweep",
+                           "act.optimizer", "act.similarity"],
+            "System": ["act.system_state", "act.check_update",
+                       "act.install_model"],
         }
-        for title, items in expected_items.items():
+        for key, act_keys in expected_items.items():
             # Read through the window's retained Python references (they keep
             # the C++ QMenu alive); the QAction→menu mapping was verified above.
-            key = title.lstrip("&").replace(" (A–D)", "")
             sub = window._submenu_menus[key]
             got = [a.text() for a in sub.actions()
                    if not a.isSeparator()]
-            assert got == items, f"{title}: {got}"
+            want = [window._tr(k) for k in act_keys]
+            assert got == want, f"{key}: {got}"
+        # i18n: switching the language combo retranslates menus + toolbar
+        window.lang_combo.setCurrentIndex(1)  # English
+        qt_app.processEvents()
+        en_menus = [a.text() for a in window.menuBar().actions()]
+        assert en_menus == ["&File", "&Edit", "&Actions", "&Help"], en_menus
+        assert window._actions["act.detect"].text() == "&Detect"
+        assert window._ui_labels["ui.detect"].text() == "Detect"
+        assert window._submenu_menus["Text Tools"].title() == "&Text Tools"
+        assert window._report_lang() == "en"
+        window.lang_combo.setCurrentIndex(0)  # back to German
+        qt_app.processEvents()
+        assert window._actions["act.detect"].text() == "&Erkennen"
+        assert window._report_lang() == "de"
         assert callable(app_mod.main)
     finally:
         window.close()
