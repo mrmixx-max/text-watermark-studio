@@ -199,6 +199,8 @@ The metadata layer strips AI provenance marks from files — stdlib-only, no ext
 | --- | --- |
 | PNG | `eXIf` EXIF chunk, XMP hint chunks (`iTXt`/`zTXt`/`tEXt`), C2PA/JUMBF detection |
 | JPEG | `APP1` EXIF + XMP segments, `APP11` XMP/AI metadata, C2PA/JUMBF detection |
+| WebP | EXIF / XMP metadata chunks from the RIFF container, C2PA/JUMBF detection |
+| AVIF / HEIC | ISOBMFF metadata boxes (`meta/`), EXIF / XMP, C2PA/JUMBF detection |
 | SVG | `<metadata>`/RDF blocks, `data-ai-*` provenance attributes |
 | PDF | XMP metadata streams (byte-level), Producer/Creator Info entries (best-effort; exiftool remains stronger) |
 | DOCX | `customXml/` parts, docProps scrub (creator, lastModifiedBy, revision) |
@@ -289,3 +291,11 @@ The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectabil
   own scheme — measures the robustness floor, not field resistance.
 
 > **Full inventory:** every additional module (RAG chunking, prompt registry + optimizer, graph memory, community detection, rewrite engine, exports, cloud upload, local-LLM routing, HTMX hardening) is documented in [docs/FEATURES.md](docs/FEATURES.md) with its honest status. Multi-agent loop is a **minimal demo scaffold** — do not rely on it in production.
+
+## v2.4.0 / v2.4.1: ΔZ measurement, --verify, extended format support
+
+- **ΔZ (delta-z) transform**: `ai-wm delta-z file.txt --key <key> --transform clean|truncate|shuffle|reformat|rewrite`
+  — measure watermark strength before vs after a single-file transform. Same ΔZ receipt contract, now with a one-argument convenience path
+- **`--verify` flag**: `ai-wm file-clean file.png -o clean.png --verify` — re-inspects the cleaned file and reports `verified_clear | residual_hard_bound | no_c2pa_present`, proving the metadata strip actually worked rather than assuming
+- **Extended format support**: AVIF, HEIC, WebP metadata inspection and cleaning (C2PA / EXIF / XMP) alongside the existing PNG/JPEG pipeline — see the metadata table above
+- **Robustness and hardening**: deeper typing, expanded test coverage for edge cases in the metadata and ΔZ paths

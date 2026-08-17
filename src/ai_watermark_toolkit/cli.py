@@ -15,11 +15,18 @@ from .batch import process_batch
 from .forensics.key_registry import mask_secret_key_id
 
 
-def _resolve_key_arg(args) -> str | None:
-    """Effective key argument: --key-file content wins over --key.
+def _resolve_key_arg(args: argparse.Namespace) -> str | None:
+    """Resolve the effective signing key from CLI arguments.
 
-    --key-file lets a caller pass a raw secret without it landing in shell
-    history. The file content is stripped of surrounding whitespace/newlines.
+    ``--key-file`` content wins over ``--key``, letting callers pass a raw
+    secret without it appearing in shell history.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        The resolved secret string, or ``None`` if neither source was
+        provided.
     """
     key_file = getattr(args, "key_file", None)
     if key_file:
@@ -27,12 +34,17 @@ def _resolve_key_arg(args) -> str | None:
     return getattr(args, "key", None)
 
 
-def _resolve_secret_arg(args) -> str | None:
-    """Effective signing secret: --secret-file content wins over --secret.
+def _resolve_secret_arg(args: argparse.Namespace) -> str | None:
+    """Resolve the effective HMAC / signing secret from CLI arguments.
 
-    Same pattern as --key-file: lets a caller pass the HMAC secret without it
-    landing in shell history. The file content is stripped of surrounding
-    whitespace/newlines.
+    ``--secret-file`` content wins over ``--secret``, keeping the secret out
+    of shell history.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        The resolved secret string, or ``None``.
     """
     secret_file = getattr(args, "secret_file", None)
     if secret_file:
@@ -40,14 +52,25 @@ def _resolve_secret_arg(args) -> str | None:
     return getattr(args, "secret", None)
 
 
-def _resolve_key(registry, key_arg: str) -> tuple[dict, bool]:
-    """Resolve a --key argument (key_id OR raw secret) to (key_dict, from_registry).
+def _resolve_key(
+    registry: object,
+    key_arg: str,
+) -> tuple[dict, bool]:
+    """Resolve a ``--key`` argument (key_id OR raw secret) to a key dict.
 
-    key_id -> matching registry entry (with its secret); anything else is
-    treated as a raw secret (detect-style), so --key accepts both forms. A
-    raw secret's reported key_id is MASKED (``secret:<sha256-prefix>``) so
-    the secret never appears in detect/finding/report output — the detection
-    itself still uses the real secret (parity).
+    A matching ``key_id`` in the registry returns that entry (including its
+    secret).  Anything else is treated as a raw secret; its reported key_id
+    is masked (``secret:<sha256-prefix>``) so the secret never appears in
+    detect / finding / report output.
+
+    Args:
+        registry: A ``KeyRegistry`` instance with ``list_keys()``.
+        key_arg: The string from ``--key`` or ``--key-file``.
+
+    Returns:
+        A ``(key_dict, from_registry)`` pair.  ``from_registry`` is
+        ``True`` when the key was found in the registry; ``False`` when
+        it was treated as a raw secret.
     """
     key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
     if key is not None:
@@ -56,13 +79,37 @@ def _resolve_key(registry, key_arg: str) -> tuple[dict, bool]:
             "secret": key_arg, "gamma": None, "key_source": "raw_secret"}, False
 
 
-def _read(args) -> str:
+def _read(args: argparse.Namespace) -> str:
+    """Read input text from a file or stdin.
+
+    Args:
+        args: Parsed CLI arguments; expects ``.stdin`` (bool) and
+            ``.input`` (optional str) attributes.
+
+    Returns:
+        The full text read from the file or stdin.
+    """
     if args.stdin:
         return read_text(stdin_text=sys.stdin.read()).text
     return read_text(path=args.input).text
 
 
 def main() -> int:
+    """CLI entry point: parse arguments and dispatch to the matching command.
+
+    Builds an ``argparse`` subcommand tree for all ``ai-wm`` operations —
+    ``detect``, ``clean``, ``dilute``, ``embed``, ``pipeline``, ``batch``,
+    ``report`` / ``report-sign`` / ``report-verify`` / ``report-keygen``,
+    ``delta-z``, ``trace``, ``finding``, ``payload``, ``evade``,
+    ``file-{inspect,clean,embed,detect}``, ``image-score``, ``watch``,
+    ``rewrite``, ``similarity``, ``llm``, ``kgw-sample``, ``tui``,
+    ``serve``, ``splash`` — and runs the handler.
+
+    Returns:
+        | ``0`` — success / no findings.
+        | ``1`` — findings detected (markers, unicode, watermark).
+        | ``2`` — usage or input error.
+    """
     p = argparse.ArgumentParser(prog="ai-wm")
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -518,10 +565,9 @@ def main() -> int:
         return 0 if (result.found and result.valid) else 1
 
     if args.cmd == "rewrite":
-        import os as _os
         from .rewrite.service import RewriteService
         text = _read(args)
-        svc = RewriteService(llm_backend=bool(_os.getenv('LOCAL_LLM_ENABLED', '0') == '1'))
+        svc = RewriteService(llm_backend=bool(os.getenv('LOCAL_LLM_ENABLED', '0') == '1'))
         use_llm = True if getattr(args, 'use_llm', False) else None
         result = svc.rewrite(text, mode=args.mode, preserve=not getattr(args, 'no_preserve', False), use_llm=use_llm)
         if args.json:
@@ -945,7 +991,8 @@ def main() -> int:
         registry = KeyRegistry('data/key_registry.json')
         key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
         if key is None:
-            key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+            key = {"key_id": mask_secret_key_id(key_arg), "family": "kgw",
+                   "secret": key_arg, "gamma": None}
         if not key.get('secret'):
             print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
             return 2
@@ -1040,7 +1087,8 @@ def main() -> int:
         registry = KeyRegistry('data/key_registry.json')
         key = next((k for k in registry.list_keys() if k.get('key_id') == key_arg), None)
         if key is None:
-            key = {"key_id": key_arg, "family": "kgw", "secret": key_arg, "gamma": None}
+            key = {"key_id": mask_secret_key_id(key_arg), "family": "kgw",
+                   "secret": key_arg, "gamma": None}
         if not key.get('secret'):
             print(f"ai-wm: error: key {key_arg} has no secret", file=sys.stderr)
             return 2
@@ -1075,11 +1123,16 @@ def main() -> int:
 
 
 def main_entry() -> int:
-    """Wrapper that turns unexpected errors into clean stderr messages.
+    """CLI wrapper that catches unexpected errors for clean stderr output.
 
-    Raw Python tracebacks on the CLI are unprofessional and confuse
-    scripts that parse stderr. Exit codes stay meaningful: 0 = ok,
-    1 = findings/processing result, 2 = usage/input error.
+    Raw Python tracebacks on the CLI are unprofessional and confuse scripts
+    that parse stderr.  This wrapper catches known error families and prints
+    a clean ``ai-wm: error: ...`` message instead.
+
+    Returns:
+        | ``0`` — success / no findings.
+        | ``1`` — findings / processing result.
+        | ``2`` — usage or input error.
     """
     try:
         return main()

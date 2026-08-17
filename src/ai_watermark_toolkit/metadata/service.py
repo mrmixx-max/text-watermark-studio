@@ -246,9 +246,6 @@ def _jpeg(data: bytes, clean: bool) -> MetaReport:
 def _svg(data: bytes, clean: bool) -> MetaReport:
     rep = MetaReport(format="svg")
     text = data.decode("utf-8", "replace")
-    removed = 0
-    if "<metadata" in text.lower():
-        removed += len(text)
     new_text = re.sub(r"<metadata[\s\S]*?</metadata>", "", text, flags=re.IGNORECASE)
     new_text = re.sub(r"<rdf:RDF[\s\S]*?</rdf:RDF>", "", new_text, flags=re.IGNORECASE)
     # attributes carrying provenance
@@ -395,7 +392,7 @@ def _isobmff(data: bytes, clean: bool, fmt: str) -> MetaReport:
     if not boxes or boxes[0][0] != b"ftyp":
         rep.actions.append(f"not_an_{fmt}")
         return rep
-    out = bytearray()
+    out = bytearray() if clean else None
     removed = 0
 
     def _box_bytes(fourcc: bytes, payload: bytes) -> bytes:
@@ -443,10 +440,12 @@ def _isobmff(data: bytes, clean: bool, fmt: str) -> MetaReport:
                         continue
                 sub_clean.extend(_box_bytes(s_fourcc, s_payload))
             new_meta = verflags + bytes(sub_clean)
-            out.extend(_box_bytes(b"meta", new_meta))
+            if out is not None:
+                out.extend(_box_bytes(b"meta", new_meta))
             removed += sub_removed
             continue
-        out.extend(_box_bytes(fourcc, payload))
+        if out is not None:
+            out.extend(_box_bytes(fourcc, payload))
     if removed:
         rep.removed_bytes = removed
         if clean:
@@ -469,6 +468,10 @@ def _webp(data: bytes, clean: bool) -> MetaReport:
     rep = MetaReport(format="webp")
     if data[:4] != b"RIFF" or data[8:12] != b"WEBP":
         rep.actions.append("not_a_webp")
+        return rep
+    riff_size = int.from_bytes(data[4:8], "little")
+    if riff_size + 8 > len(data):
+        rep.actions.append("truncated_webp")
         return rep
     out = bytearray(data[:12])
     i = 12

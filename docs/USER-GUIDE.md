@@ -1,6 +1,6 @@
 # Text Watermark Studio — User Guide
 
-Version 2.0.0 · MIT · 100% local, zero telemetry
+Version 2.4.1 · MIT · 100% local, zero telemetry
 
 This guide covers everything the toolkit can do, how to verify that it works,
 and — with equal care — what it honestly cannot do.
@@ -212,8 +212,10 @@ ai-wm file-embed  doc.pdf --key KEY -o signed.pdf
 ai-wm file-detect signed.pdf [--json]
 ```
 Inspect/clean metadata (C2PA/EXIF/XMP), sign files with HMAC provenance,
-verify signatures. Supported formats: PNG, JPEG, SVG, PDF, DOCX, ODT, HTML,
-Markdown.
+verify signatures. The ``--verify`` flag (on ``file-clean``) re-inspects
+the cleaned file and reports ``verified_clear | residual_hard_bound |
+no_c2pa_present``. Supported formats: PNG, JPEG, **WebP, AVIF, HEIC**,
+SVG, PDF, DOCX, ODT, HTML, Markdown.
 
 ### trace
 ```bash
@@ -392,6 +394,8 @@ ai-wm file-detect signed.pdf --key my-key --json
 
 - PNG: eXIf, XMP chunks
 - JPEG: APP1/APP11 segments
+- **WebP: EXIF / XMP metadata chunks from the RIFF container**
+- **AVIF / HEIC: ISOBMFF metadata boxes, EXIF / XMP**
 - SVG: `<metadata>` elements
 - PDF: XMP metadata streams
 - DOCX/ODT: custom parts

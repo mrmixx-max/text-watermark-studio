@@ -51,7 +51,12 @@ def _bpe_encoding():
             raise ImportError(
                 "BPE-level detection needs tiktoken: pip install text-watermark-studio[bpe]"
             ) from e
-        _BPE_ENC = tiktoken.get_encoding("cl100k_base")
+        try:
+            _BPE_ENC = tiktoken.get_encoding("cl100k_base")
+        except (KeyError, ValueError) as e:  # pragma: no cover - encoding error
+            raise RuntimeError(
+                "BPE encoding 'cl100k_base' unavailable — tiktoken may need an update"
+            ) from e
     return _BPE_ENC
 
 
@@ -524,6 +529,18 @@ def _restore_case(word: str, template: str) -> str:
     return word
 
 
+def _derive_seed(key: str, seed: int | None) -> int:
+    """Deterministic seed from key when no explicit seed is given.
+
+    Same input + key always produce the same seed, making greenlist
+    marking reproducible across runs. An explicit seed overrides.
+    Extracted so mark_greenlist and embed_kgw share the same logic.
+    """
+    if seed is None:
+        return int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:8], "big")
+    return seed
+
+
 def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
                    vocab: dict[str, list[str]] | None = None,
                    seed: int | None = None, level: str = "word",
@@ -551,15 +568,12 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     """
     from .frequent_vocab import FREQUENT_VOCAB
     pool = vocab if vocab is not None else FREQUENT_VOCAB
-    # Deterministic default: seed=None -> derive from key so identical input
-    # + key always produce the SAME marking (reproducible embeddings). A
-    # random per-run seed makes the z-score of a fixed doc+key vary run to
-    # run (context=1 chains depend on the concrete substitute words), which
-    # breaks round-trip reproducibility and made CI flaky (z=3.9 vs 4.1 on
-    # identical input).
-    if seed is None:
-        seed = int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:8], "big")
-    rng = random.Random(seed)
+    # deterministic seed ensures identical input + key always produce the
+    # SAME marking (reproducible embeddings). A random per-run seed makes
+    # the z-score of a fixed doc+key vary run to run (context=1 chains
+    # depend on the concrete substitute words), which breaks round-trip
+    # reproducibility and made CI flaky (z=3.9 vs 4.1 on identical input).
+    rng = random.Random(_derive_seed(key, seed))
     # flat list of green candidates across the pool for fallback substitution
     fallback = [w for ws in pool.values() for w in ws]
 
@@ -676,9 +690,7 @@ def embed_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     use mark_greenlist.
     """
     lex = lexicon if lexicon is not None else EMBED_LEXICON
-    if seed is None:
-        seed = int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:8], "big")
-    rng = random.Random(seed)
+    rng = random.Random(_derive_seed(key, seed))
     parts = _SPLIT_RE.split(text)
     replaced = 0
     replaceable = 0

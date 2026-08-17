@@ -36,7 +36,7 @@ Standard kalibriert — nicht gegen eigene Fakes.
 
 | | Viral Stripper | TWS |
 |---|---|---|
-| Messung | `cleared: bool` (oft fake-verifiziert) | `delta_z`, `z_before`, `z_after`, `verdict_*` |
+| Messung | `cleared: bool` (oft fake-verifiziert) | `delta_z`, `z_before`, `z_after`, `verdict_*` **oder** `--verify`‑Befund (`verified_clear` / `residual_hard_bound` / `no_c2pa_present`) |
 | Beweis | Behauptung | **Signierter Befund** (HMAC/ML-DSA, `report-verify`) |
 | Ehrlichkeit | "cannot certify" als Kleingedrucktes | Grenzen im Kern-Code dokumentiert + im Report benannt |
 | Was zählt als entfernt | Signal nicht messbar (oft gar nicht gemessen) | Vorher provable (z≥4), nachher nicht — sonst `removed: false` |
@@ -71,7 +71,7 @@ ist getestet, nicht behauptet:
   (Agent-Operator, Publisher, Compliance) braucht einen **Befund**, keinen
   Tweet
 
-## Offene ehrliche Lücken (Stand 2.4.0)
+## Offene ehrliche Lücken (Stand 2.4.1)
 
 - Pixel-Domain (SynthID-media, StegaStamp, Tree-Ring): out of scope — braucht
   schwere Regenerations-Backends, driftet das Bild, kein Vendor-Oracle

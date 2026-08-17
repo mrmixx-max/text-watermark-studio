@@ -1,6 +1,6 @@
 # Text Watermark Studio — Benutzerhandbuch
 
-Version 2.0.0 · MIT · 100% lokal, Zero Telemetry
+Version 2.4.1 · MIT · 100% lokal, Zero Telemetry
 
 Dieses Handbuch deckt ab, was das Toolkit kann, wie man verifiziert, dass es
 funktioniert — und mit gleicher Sorgfalt, was es ehrlich nicht kann.
@@ -221,6 +221,10 @@ ai-wm file-detect DATEI --key SCHLUESSEL
 ```
 Metadaten-Inspektion/-Bereinigung (C2PA/EXIF/XMP) und signierte
 Provenienz-Marken in Dateien (Details in §9/§10).
+Die ``--verify``-Flagge (bei ``file-clean``) prüft die bereinigte Datei
+und meldet ``verified_clear | residual_hard_bound | no_c2pa_present``.
+Unterstützte Formate: PNG, JPEG, **WebP, AVIF, HEIC**, SVG, PDF, DOCX,
+ODT, HTML, Markdown.
 
 ### trace
 ```bash
@@ -404,6 +408,8 @@ ai-wm file-detect signiert.pdf --key mein-key --json
 
 - PNG: eXIf-, XMP-Chunks
 - JPEG: APP1/APP11-Segmente
+- **WebP: EXIF-/XMP-Metadaten-Chunks aus dem RIFF-Container**
+- **AVIF / HEIC: ISOBMFF-Metadaten-Boxen, EXIF / XMP**
 - SVG: `<metadata>`-Elemente
 - PDF: XMP-Metadaten-Streams
 - DOCX/ODT: eigene Teile
