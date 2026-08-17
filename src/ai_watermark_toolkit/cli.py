@@ -758,7 +758,7 @@ def main() -> int:
         if args.llm_action == "use":
             try:
                 cfg = svc.use_model(args.model)
-            except ValueError as e:
+            except (ValueError, RuntimeError) as e:
                 print(f"error: {e}", file=sys.stderr)
                 return 1
             print(f"active model: {cfg['model_variant']}")
