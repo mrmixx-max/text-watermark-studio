@@ -551,6 +551,14 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     """
     from .frequent_vocab import FREQUENT_VOCAB
     pool = vocab if vocab is not None else FREQUENT_VOCAB
+    # Deterministic default: seed=None -> derive from key so identical input
+    # + key always produce the SAME marking (reproducible embeddings). A
+    # random per-run seed makes the z-score of a fixed doc+key vary run to
+    # run (context=1 chains depend on the concrete substitute words), which
+    # breaks round-trip reproducibility and made CI flaky (z=3.9 vs 4.1 on
+    # identical input).
+    if seed is None:
+        seed = int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:8], "big")
     rng = random.Random(seed)
     # flat list of green candidates across the pool for fallback substitution
     fallback = [w for ws in pool.values() for w in ws]
@@ -668,6 +676,8 @@ def embed_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     use mark_greenlist.
     """
     lex = lexicon if lexicon is not None else EMBED_LEXICON
+    if seed is None:
+        seed = int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:8], "big")
     rng = random.Random(seed)
     parts = _SPLIT_RE.split(text)
     replaced = 0
