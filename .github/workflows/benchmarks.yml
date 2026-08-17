@@ -19,19 +19,20 @@ jobs:
           pip install pytest markllm
       - name: Run watermark benchmarks
         run: |
-          python -m pytest tests/perf/test_watermark_perf.py -v
+          python -m pytest tests/perf/test_watermark_perf.py -v 2>&1 | tee tests/perf/benchmark.log
       - name: Run MarkLLM interop check
         run: |
           python -c "
           import sys
           try:
               import markllm
-              from text_watermark import embed, detect
-              txt = 'Benchmark sample text for watermark interop.'
+              from ai_watermark_toolkit.forensics.kgw import mark_greenlist, detect_kgw
+              txt = ('Benchmark sample text for watermark interop verification. ' * 20).strip()
               key = 'benchmark-key-12345'
-              wm = embed(txt, key)
-              assert detect(wm, key) == True, 'Interop failed'
-              print('MarkLLM interop: OK')
+              wm = mark_greenlist(txt, key)['text']
+              res = detect_kgw(wm, key)
+              assert res['verdict'] == 'watermark_detected', f'Interop failed: {res}'
+              print('KGW round-trip interop: OK (z=%.2f)' % res['z_score'])
           except Exception as e:
               print('Interop skipped:', e)
               sys.exit(0)
