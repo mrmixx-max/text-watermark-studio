@@ -326,6 +326,7 @@ class TestAlgorithmSurface:
 # ---------------------------------------------------------------- CLI mldsa-65
 @pytest.mark.skipif(not _supports("mldsa-65"), reason="cryptography < 50: no mldsa-65")
 class TestCliMldsa65:
+    @pytest.mark.skipif(not mldsa_available(), reason="cryptography mldsa module not installed")
     def test_cli_keygen_sign_verify_roundtrip(self, tmp_path):
         r = run_cli(["report-keygen", "--algorithm", "mldsa-65",
                      "--output-dir", str(tmp_path)], cwd=tmp_path)

@@ -125,6 +125,7 @@ class TestTrustAndPinning:
         assert v["reason"] == "key_not_pinned"
         assert v["trust"] == "pinned_key"
 
+    @pytest.mark.skipif(not mldsa_status()["available"], reason="cryptography>=50 mit mldsa fehlt")
     def test_cli_public_key_acts_as_pinning(self, tmp_path, pair):
         if not mldsa_status()["available"]:
             pytest.skip("cryptography>=50 mit mldsa fehlt")

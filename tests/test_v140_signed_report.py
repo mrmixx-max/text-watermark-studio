@@ -390,6 +390,7 @@ class TestMldsa44:
         with pytest.raises(ValueError):
             sign_report(PAYLOAD, SECRET, algorithm="mldsa-44")
 
+    @pytest.mark.skipif(not mldsa_available(), reason="cryptography mldsa module not installed")
     def test_cli_keygen_sign_verify_roundtrip(self, tmp_path):
         r = run_cli(["report-keygen", "--output-dir", str(tmp_path)], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
