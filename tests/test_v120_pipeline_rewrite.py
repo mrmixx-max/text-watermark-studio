@@ -7,12 +7,7 @@ rewritten text differs and the report carries the rewrite phase. The API route
 exposes it.
 """
 
-import json
-import os
-import subprocess
-import sys
 
-import pytest
 
 from ai_watermark_toolkit.pipeline import run_pipeline
 
@@ -26,7 +21,7 @@ TEXT = (
 
 class TestPipelineRewrite:
     def test_default_has_no_rewrite_phase(self):
-        out, report = run_pipeline(TEXT)
+        _out, report = run_pipeline(TEXT)
         assert report["rewrite"] is None
         assert report["after"] is not None
 
@@ -39,7 +34,7 @@ class TestPipelineRewrite:
         assert out.startswith("The first sentence")
 
     def test_backtranslate_mode_has_phase(self):
-        out, report = run_pipeline(TEXT, rewrite_mode="backtranslate")
+        _out, report = run_pipeline(TEXT, rewrite_mode="backtranslate")
         assert report["rewrite"]["mode"] == "backtranslate"
         assert any("No-LLM path" in s for s in report["rewrite"]["change_log"])
 
@@ -54,6 +49,7 @@ class TestPipelineRewrite:
 class TestPipelineApi:
     def test_api_pipeline_with_rewrite_mode(self):
         from fastapi.testclient import TestClient
+
         from ai_watermark_toolkit.api.fastapi_app import app
         c = TestClient(app)
         r = c.post("/api/pipeline", json={"text": TEXT, "rewrite_mode": "structural"})
@@ -64,6 +60,7 @@ class TestPipelineApi:
 
     def test_api_pipeline_default_no_rewrite(self):
         from fastapi.testclient import TestClient
+
         from ai_watermark_toolkit.api.fastapi_app import app
         c = TestClient(app)
         r = c.post("/api/pipeline", json={"text": TEXT})

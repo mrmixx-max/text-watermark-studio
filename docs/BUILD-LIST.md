@@ -1,8 +1,8 @@
 # TWS Bau-Liste (Build List)
 
-> Lebendiges Dokument. Stand: 2026-08-13, nach Runde-2-Forschung (Markt + Repo + Literatur).
+> Lebendiges Dokument. Stand: 2026-08-18.
 > Regel: **Kein Block startet, bevor die laufenden Agents abgeschlossen sind.** Stale > 7 Tage → killen.
-> KPI-Basis: 541 Tests · 76 MCP-Tools · Commit `696d903`.
+> KPI-Basis: ~1070 Tests · 80 MCP-Tools · Version 2.4.1.
 
 ## Status der laufenden Agents (13.08.2026, ~13:15)
 

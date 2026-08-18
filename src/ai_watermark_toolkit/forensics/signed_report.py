@@ -45,9 +45,9 @@ import json
 from datetime import datetime, timezone
 
 try:
+    import cryptography as _cryptography
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric import mldsa
-    import cryptography as _cryptography
 
     _MLDSA_AVAILABLE = True
     _CRYPTOGRAPHY_VERSION = getattr(_cryptography, "__version__", "?")
@@ -61,7 +61,7 @@ except Exception:  # pragma: no cover - optional dependency
 # All three are supported by cryptography >= 50 (MLDSA44PrivateKey etc.);
 # older versions expose only MLDSA44/65/87 classes with generate_private_key().
 MLDSA_ALGORITHMS = {"mldsa-44": "MLDSA44", "mldsa-65": "MLDSA65", "mldsa-87": "MLDSA87"}
-SUPPORTED_ALGORITHMS = ("hmac-sha256",) + tuple(MLDSA_ALGORITHMS)
+SUPPORTED_ALGORITHMS = ("hmac-sha256", *tuple(MLDSA_ALGORITHMS))
 DEFAULT_ALGORITHM = "hmac-sha256"
 FORMAT_VERSION = 1
 

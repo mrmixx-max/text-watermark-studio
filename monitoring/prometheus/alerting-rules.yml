@@ -1,0 +1,89 @@
+groups:
+  - name: tws-alerts
+    interval: 30s
+    rules:
+      # High error rate: > 5% of HTTP requests are 5xx over 5 minutes
+      - alert: TWSHighErrorRate
+        expr: |
+          (
+            sum(rate(tws_http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(tws_http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TWS high 5xx error rate"
+          description: "More than 5% of requests are returning 5xx ({{ $value | humanizePercentage })."
+
+      # Critical error rate: > 20% 5xx over 5 minutes
+      - alert: TWSCriticalErrorRate
+        expr: |
+          (
+            sum(rate(tws_http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(tws_http_requests_total[5m]))
+          ) > 0.20
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "TWS critical 5xx error rate"
+          description: "More than 20% of requests are returning 5xx ({{ $value | humanizePercentage }})."
+
+      # High watermark operation error rate
+      - alert: TWSWatermarkOperationErrors
+        expr: |
+          (
+            sum(rate(tws_watermark_operations_total{status="error"}[5m]))
+            /
+            sum(rate(tws_watermark_operations_total[5m]))
+          ) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TWS watermark operation error rate > 10%"
+          description: "Watermark operations (embed/detect/clean/dilute) are failing at {{ $value | humanizePercentage }}."
+
+      # High request latency: p95 > 2s over 5 minutes
+      - alert: TWSHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(tws_http_request_duration_seconds_bucket[5m])) by (le)) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TWS p95 latency > 2s"
+          description: "95th percentile request latency is {{ $value }}s."
+
+      # Redis down: health endpoint reports redis: false
+      - alert: TWSRedisDown
+        expr: tws_http_requests_total{route="/health", status="503"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "TWS Redis connectivity lost"
+          description: "The /health endpoint is returning 503, indicating Redis is unreachable."
+
+      # High stream backlog
+      - alert: TWSStreamBacklog
+        expr: tws_stream_pending_jobs > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TWS stream backlog building up"
+          description: "{{ $value }} jobs pending in the Redis stream for > 10 minutes."
+
+      # DLQ growing
+      - alert: TWSDLQGrowing
+        expr: tws_stream_dead_letter_jobs > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TWS dead-letter queue has {{ $value }} jobs"
+          description: "Jobs have failed repeatedly and landed in the DLQ."

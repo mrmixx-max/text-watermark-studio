@@ -6,7 +6,6 @@ metadata/provenance fields and never re-reports unchanged files.
 """
 
 import json
-from pathlib import Path
 
 from ai_watermark_toolkit.forensics.report import build_report
 from ai_watermark_toolkit.forensics.watcher import scan_file, watch_dir

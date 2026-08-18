@@ -2,39 +2,39 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, Request, HTTPException
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from redis.asyncio import Redis
+
 from ..core.config import settings
 from ..core.logging import setup_logging
+from .middleware.prometheus import PrometheusMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
 from .middleware.request_id import RequestIDMiddleware
-from .middleware.prometheus import PrometheusMiddleware
-from .routes.text import router as text_router
-from .routes.jobs import router as jobs_router
-from .routes.studio import router as studio_router
-from .routes.queue import router as queue_router
-from .routes.streams import router as streams_router
-from .routes.ops import router as ops_router
-from .routes.forensics import router as forensics_router
-from .routes.lab import router as lab_router
-from .routes.documents import router as documents_router
-from .routes.pdf import router as pdf_router
-from .routes.rag import router as rag_router
-from .routes.llm import router as llm_router
-from .routes.routing import router as routing_router
-from .routes.prompts import router as prompts_router
-from .routes.optimization import router as optimization_router
-from .routes.multi_agent import router as multi_agent_router
-from .routes.graph import router as graph_router
-from .routes.community import router as community_router
-from .routes.rewrite import router as rewrite_router
-from .routes.exporting import router as exporting_router
 from .routes.cloud import router as cloud_router
-from .routes.metadata import router as metadata_router
+from .routes.community import router as community_router
+from .routes.documents import router as documents_router
+from .routes.exporting import router as exporting_router
+from .routes.forensics import router as forensics_router
+from .routes.graph import router as graph_router
+from .routes.jobs import router as jobs_router
+from .routes.lab import router as lab_router
 from .routes.llm import router as llm_router
+from .routes.metadata import router as metadata_router
+from .routes.multi_agent import router as multi_agent_router
+from .routes.ops import router as ops_router
+from .routes.optimization import router as optimization_router
+from .routes.pdf import router as pdf_router
+from .routes.prompts import router as prompts_router
+from .routes.queue import router as queue_router
+from .routes.rag import router as rag_router
+from .routes.rewrite import router as rewrite_router
 from .routes.routing import router as routing_router
+from .routes.streams import router as streams_router
+from .routes.studio import router as studio_router
+from .routes.text import router as text_router
 
 setup_logging(settings.log_level)
 WEB_ROOT = Path(__file__).resolve().parents[1] / 'web'

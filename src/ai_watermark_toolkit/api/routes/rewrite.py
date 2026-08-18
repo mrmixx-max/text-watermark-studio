@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Request
 import os
+
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, model_validator
+
 from ...rewrite.service import RewriteService
-from ..response_utils import respond, checkbox_to_bool
+from ..response_utils import checkbox_to_bool, respond
 
 router = APIRouter(prefix='/api/rewrite', tags=['rewrite'])
 svc = RewriteService(llm_backend=bool(os.getenv('LOCAL_LLM_ENABLED', '0') == '1'))

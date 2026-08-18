@@ -13,9 +13,11 @@ import pytest
 pytest.importorskip("markllm")
 pytest.importorskip("torch")
 
-import torch  # noqa: E402
+import torch
+from markllm.utils.transformers_config import TransformersConfig
+from markllm.watermark.kgw.kgw import KGWConfig, KGWUtils
 
-from ai_watermark_toolkit.interop.markllm import (  # noqa: E402
+from ai_watermark_toolkit.interop.markllm import (
     DEFAULT_GAMMA,
     DEFAULT_HASH_KEY,
     DEFAULT_PREFIX_LENGTH,
@@ -25,8 +27,6 @@ from ai_watermark_toolkit.interop.markllm import (  # noqa: E402
     _score_ids,
     detect_markllm,
 )
-from markllm.utils.transformers_config import TransformersConfig  # noqa: E402
-from markllm.watermark.kgw.kgw import KGWConfig, KGWUtils  # noqa: E402
 
 
 def _reference_utils():

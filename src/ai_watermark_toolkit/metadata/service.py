@@ -270,8 +270,6 @@ def _pdf(data: bytes, clean: bool) -> MetaReport:
     if data[:5] != b"%PDF-":
         rep.actions.append("not_a_pdf")
         return rep
-    text = data
-    removed = 0
     # /Metadata ... endobj streams (XMP) — located between obj/endobj pairs
     pattern = re.compile(rb"/Metadata\s+\d+\s+\d+\s+R\b")
     rep.hard_bound_c2pa_present = bool(pattern.search(data))
@@ -330,9 +328,7 @@ def _zip_container(data: bytes, clean: bool, fmt: str,
             content = zin.read(item.filename)
             if item.filename.startswith("customXml/"):
                 continue
-            if item.filename == core_path:
-                content = _scrub_xml(content)
-            elif app_path and item.filename == app_path:
+            if item.filename == core_path or (app_path and item.filename == app_path):
                 content = _scrub_xml(content)
             zout.writestr(item, content)
     rep.cleaned = out.getvalue()
@@ -433,8 +429,7 @@ def _isobmff(data: bytes, clean: bool, fmt: str) -> MetaReport:
                         rep.actions.append(f"removed_meta_subbox_{s_name}_ai_uuid")
                         sub_removed += s_header + len(s_payload)
                         continue
-                if s_fourcc in (b"xml ", b"bxml"):
-                    if _AI_KEY_HINTS.search(s_payload[:512]):
+                if s_fourcc in (b"xml ", b"bxml") and _AI_KEY_HINTS.search(s_payload[:512]):
                         rep.actions.append(f"removed_meta_subbox_{s_name}_xml_metadata")
                         sub_removed += s_header + len(s_payload)
                         continue

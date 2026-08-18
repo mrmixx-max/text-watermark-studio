@@ -1,5 +1,5 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
 
 def test_pdf_route_and_mcp_tools_exist():

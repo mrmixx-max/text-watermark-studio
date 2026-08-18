@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
 from ...optimization.service import PromptOptimizationService
 
 router = APIRouter(prefix='/api/optimization', tags=['optimization'])

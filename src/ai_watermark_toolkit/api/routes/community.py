@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
+
 from ...community.service import CommunityService
 from ..response_utils import respond
+
 router = APIRouter(prefix='/api/community', tags=['community'])
 svc = CommunityService()
 class DetectRequest(BaseModel): min_size: int = 2

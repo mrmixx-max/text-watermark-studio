@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Text Watermark Studio{% endblock %}</title>
+<meta name="description" content="Watermarking Lab Edition — Dashboard">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<style type="text/tailwindcss">
+@theme {
+  --font-body: 'Satoshi', 'Inter', sans-serif;
+  --font-display: 'General Sans', 'Inter', sans-serif;
+  --color-bg: #171614;
+  --color-surface: #1c1b19;
+  --color-surface-2: #201f1d;
+  --color-border: #393836;
+  --color-text: #cdccca;
+  --color-text-muted: #9a9996;
+  --color-primary: #4f98a3;
+  --color-primary-deep: #1a626b;
+  --color-success: #6daa45;
+  --color-warning: #e8af34;
+  --color-danger: #d163a7;
+}
+@layer base {
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { @apply min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] font-[var(--font-body)] antialiased; }
+}
+@layer components {
+  .panel { @apply rounded-2xl border border-white/8 bg-[color:color-mix(in_oklab,var(--color-surface)_94%,black)] shadow-[0_18px_40px_rgba(0,0,0,.28)]; }
+  .field { @apply w-full rounded-xl border border-white/10 bg-[var(--color-surface-2)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none; }
+  .label { @apply mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]; }
+  .btn-primary { @apply inline-flex min-h-10 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-deep)]; }
+  .btn-secondary { @apply inline-flex min-h-10 items-center justify-center rounded-xl border border-white/10 bg-white/3 px-4 text-sm font-semibold text-[var(--color-text)] transition hover:bg-white/6; }
+  .chip { @apply inline-flex items-center rounded-full border border-white/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-text-muted)]; }
+  .nav-link { @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-muted)] transition hover:bg-white/5 hover:text-[var(--color-text)]; }
+  .nav-link-active { @apply bg-white/8 text-[var(--color-text)]; }
+  .stat-card { @apply rounded-xl border border-white/8 bg-white/3 p-4; }
+  .indicator { @apply inline-block h-2 w-2 rounded-full; }
+}
+</style>
+</head>
+<body>
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside class="hidden w-56 flex-shrink-0 border-r border-white/8 bg-[var(--color-surface)] p-4 md:block">
+    <div class="mb-6 flex items-center gap-2 px-2">
+      <div class="h-8 w-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-sm font-bold text-white">T</div>
+      <div>
+        <div class="text-sm font-semibold">TWS</div>
+        <div class="text-xs text-[var(--color-text-muted)]">v{{ stats.version }}</div>
+      </div>
+    </div>
+    <nav class="space-y-1">
+      <a href="/dashboard/" class="nav-link {% if page == 'overview' %}nav-link-active{% endif %}">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Overview
+      </a>
+      <a href="/dashboard/watermark" class="nav-link {% if page == 'watermark' %}nav-link-active{% endif %}">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Watermark
+      </a>
+      <a href="/dashboard/files" class="nav-link {% if page == 'files' %}nav-link-active{% endif %}">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        Files
+      </a>
+      <a href="/dashboard/reports" class="nav-link {% if page == 'reports' %}nav-link-active{% endif %}">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Reports
+      </a>
+      <a href="/dashboard/settings" class="nav-link {% if page == 'settings' %}nav-link-active{% endif %}">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="mt-8 px-2">
+      <div class="text-xs text-[var(--color-text-muted)] mb-1">Environment</div>
+      <div class="chip">{{ stats.env }}</div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-auto">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-10 border-b border-white/8 bg-[var(--color-bg)]/80 backdrop-blur px-4 py-3 md:px-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-semibold">{% block page_title %}Dashboard{% endblock %}</h1>
+          <p class="text-xs text-[var(--color-text-muted)]">{% block page_subtitle %}Text Watermark Studio{% endblock %}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <span class="indicator bg-[var(--color-success)]" id="sse-indicator"></span>
+            <span class="text-xs text-[var(--color-text-muted)]" id="sse-status">Live</span>
+          </div>
+          <span class="chip" id="uptime-display">uptime: {{ stats.uptime_seconds }}s</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-4 md:p-6">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<script>
+// SSE: real-time stats
+(function() {
+  const indicator = document.getElementById('sse-indicator');
+  const status = document.getElementById('sse-status');
+  const uptime = document.getElementById('uptime-display');
+
+  function connect() {
+    const es = new EventSource('/dashboard/events/stats');
+    es.addEventListener('stats', function(e) {
+      try {
+        const data = JSON.parse(e.data);
+        if (uptime) uptime.textContent = 'uptime: ' + data.uptime_seconds + 's';
+        if (indicator) indicator.className = 'indicator bg-[var(--color-success)]';
+        if (status) status.textContent = 'Live';
+        // Dispatch custom event for page-specific handlers
+        window.dispatchEvent(new CustomEvent('tws:stats', { detail: data }));
+      } catch(err) { /* ignore parse errors */ }
+    });
+    es.onerror = function() {
+      if (indicator) indicator.className = 'indicator bg-[var(--color-danger)]';
+      if (status) status.textContent = 'Reconnecting...';
+      es.close();
+      setTimeout(connect, 3000);
+    };
+  }
+  connect();
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

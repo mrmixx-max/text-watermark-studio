@@ -1,0 +1,18 @@
+{
+  "compile_error_count": 2,
+  "compile_errors": [
+    [
+      "output/text-watermark-studio-v107-debug-pass/src/ai_watermark_toolkit/pdf/service.py",
+      "  File \"output/text-watermark-studio-v107-debug-pass/src/ai_watermark_toolkit/pdf/service.py\", line 9\n    excerpt = '\n              ^\nSyntaxError: unterminated string literal (detected at line 9)\n"
+    ],
+    [
+      "output/text-watermark-studio-v107-debug-pass/src/ai_watermark_toolkit/rag/chunking.py",
+      "  File \"output/text-watermark-studio-v107-debug-pass/src/ai_watermark_toolkit/rag/chunking.py\", line 8\n    separators = separators or ['\n                                ^\nSyntaxError: unterminated string literal (detected at line 8)\n"
+    ]
+  ],
+  "notes": [
+    "Hardened JSON/HTML response serialization with default=str.",
+    "Made routing service more defensive for missing keys and trimmed history.",
+    "Preserved previous smoke and compile improvements."
+  ]
+}

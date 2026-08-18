@@ -11,13 +11,12 @@ import subprocess
 import sys
 
 from ai_watermark_toolkit.forensics.invariant import (
-    encode_payload,
+    corrupt,
     decode_payload,
     embed_payload,
+    encode_payload,
     extract_payload,
-    corrupt,
 )
-
 
 _BANK_WORDS = [
     'schnell', 'schnelle', 'wichtig', 'wichtige', 'groß', 'große', 'klein',

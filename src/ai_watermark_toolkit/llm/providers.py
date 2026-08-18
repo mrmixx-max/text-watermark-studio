@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Any
 
-PROMPTS: Dict[str, str] = {
+PROMPTS: dict[str, str] = {
     "clarity": (
         "Rewrite the user's text in a clear, direct style. Remove filler words, "
         "flatten complex clauses, keep every fact. Return plain text only."
@@ -40,7 +40,7 @@ PROMPTS: Dict[str, str] = {
 }
 
 
-def build_rewrite_prompt(text: str, style: str = 'clarity', instruction: str | None = None) -> Dict[str, Any]:
+def build_rewrite_prompt(text: str, style: str = 'clarity', instruction: str | None = None) -> dict[str, Any]:
     base = PROMPTS.get(style, PROMPTS['clarity'])
     prompt = (
         f"{base} "

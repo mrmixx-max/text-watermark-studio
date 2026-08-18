@@ -11,7 +11,6 @@ Usage:
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
@@ -49,6 +48,4 @@ def _run(image_path: str) -> dict:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "usage: score_synthid_cli.py IMAGE"}))
         sys.exit(2)
-    print(json.dumps(_run(sys.argv[1]), ensure_ascii=False))

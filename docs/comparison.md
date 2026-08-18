@@ -1,6 +1,6 @@
 # Measurement first: how TWS differs from the viral "watermark strippers"
 
-> Stand: 2026-08-16. Dieses Dokument ist ehrliche Markt-Einordnung, kein
+> Stand: 2026-08-18. Dieses Dokument ist ehrliche Markt-Einordnung, kein
 > Shit-Talk. Es nennt keine Namen — die Muster sind branchenweit bekannt.
 
 ## Das Muster der viralen Stripper

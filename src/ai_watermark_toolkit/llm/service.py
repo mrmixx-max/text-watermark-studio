@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 
 LLM_CFG = Path(__file__).resolve().parents[3] / 'data' / 'local_llm.json'
 
@@ -55,7 +55,8 @@ class LocalLLMService:
     @staticmethod
     def ollama_base() -> str:
         """Ollama HTTP endpoint (override with OLLAMA_BASE_URL)."""
-        return os.getenv('OLLAMA_BASE_URL', 'http://127.0.0.1:11434').rstrip('/')
+        import os as _os
+        return _os.getenv('OLLAMA_BASE_URL', 'http://127.0.0.1:11434').rstrip('/')
 
     @staticmethod
     def _validate_url_scheme(url: str) -> None:
@@ -67,8 +68,8 @@ class LocalLLMService:
 
     def _ollama(self, path: str, method: str = 'GET', payload: dict | None = None,
                 timeout: int = 30):
-        import urllib.request
         import urllib.error
+        import urllib.request
         url = f"{self.ollama_base()}{path}"
         self._validate_url_scheme(url)
         data = json.dumps(payload).encode('utf-8') if payload is not None else None

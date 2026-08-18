@@ -10,9 +10,7 @@ import json
 import subprocess
 import sys
 
-import pytest
-
-from ai_watermark_toolkit.ui import render_banner, render_detect_report, __version__
+from ai_watermark_toolkit.ui import __version__, render_banner, render_detect_report
 from ai_watermark_toolkit.ui.banner import _PLAIN_LOGO
 
 

@@ -8,9 +8,7 @@ binary/unreadable files are skipped without crashing.
 
 from pathlib import Path
 
-from ai_watermark_toolkit.forensics.similarity import (
-    check_similarity, _minhash, _jaccard, render_text, render_json)
-
+from ai_watermark_toolkit.forensics.similarity import _jaccard, _minhash, check_similarity, render_json, render_text
 
 TEXT_A = (
     "Die Angeklagten haben am Abend des 14. März die Fenster des Rathauses "

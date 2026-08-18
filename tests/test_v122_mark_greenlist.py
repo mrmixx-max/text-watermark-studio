@@ -6,12 +6,12 @@ itself, mirroring what the benchmarks/kgw_e2e_proof.py script does against a
 real model.
 """
 
+from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB, coverage
 from ai_watermark_toolkit.forensics.kgw import (
     detect_kgw,
     mark_greenlist,
     tokenize,
 )
-from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB, coverage
 
 KEY = "proof-key-1"
 WRONG = "proof-key-2"

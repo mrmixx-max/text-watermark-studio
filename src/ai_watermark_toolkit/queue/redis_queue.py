@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import uuid
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+
 from redis.asyncio import Redis
+
 from ..core.config import settings
 
 JOB_PREFIX = 'tws:job:'

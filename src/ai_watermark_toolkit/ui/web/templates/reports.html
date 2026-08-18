@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Reports — Text Watermark Studio{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block page_subtitle %}Generate, sign, and verify forensic reports{% endblock %}
+
+{% block content %}
+<div class="grid gap-4 lg:grid-cols-2">
+  <!-- Generate Report -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Generate Report</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Build a forensic findings report for a text.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/report"
+          hx-target="#report-output"
+          hx-swap="innerHTML"
+          hx-on::after-request="if(event.detail.successful) window.dispatchEvent(new CustomEvent('tws:report'))">
+      <div>
+        <label class="label" for="report-text">Text</label>
+        <textarea id="report-text" name="text" class="field min-h-24" placeholder="Text to analyze for the report..."></textarea>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="label" for="report-lang">Language</label>
+          <select id="report-lang" name="lang" class="field">
+            <option value="de">German</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="report-key">Key (optional)</label>
+          <input id="report-key" name="key" class="field" placeholder="key_id / secret">
+        </div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="label" for="report-level">Level</label>
+          <select id="report-level" name="level" class="field">
+            <option value="word">Word</option>
+            <option value="bpe">BPE</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="report-context">Context</label>
+          <input id="report-context" name="context" type="number" class="field" value="1">
+        </div>
+      </div>
+      <button type="submit" class="btn-primary w-full">Generate Report</button>
+    </form>
+    <div id="report-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Report output will appear here.</div>
+  </div>
+
+  <!-- Sign Report -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Sign Report</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Sign a forensic findings payload (HMAC-SHA256 or ML-DSA).</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/report-sign"
+          hx-target="#sign-output"
+          hx-swap="innerHTML">
+      <div>
+        <label class="label" for="sign-input">Payload (JSON)</label>
+        <textarea id="sign-input" name="input" class="field min-h-24" placeholder='{"verdict":"no_signal","findings":[]}'></textarea>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="label" for="sign-algo">Algorithm</label>
+          <select id="sign-algo" name="algorithm" class="field">
+            <option value="hmac-sha256">HMAC-SHA256</option>
+            <option value="mldsa-44">ML-DSA-44</option>
+            <option value="mldsa-65">ML-DSA-65</option>
+            <option value="mldsa-87">ML-DSA-87</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="sign-key-id">Key ID</label>
+          <input id="sign-key-id" name="key_id" class="field" placeholder="default">
+        </div>
+      </div>
+      <div>
+        <label class="label" for="sign-secret">Secret</label>
+        <input id="sign-secret" name="secret" type="password" class="field" placeholder="HMAC secret">
+      </div>
+      <button type="submit" class="btn-primary w-full">Sign</button>
+    </form>
+    <div id="sign-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Signature output will appear here.</div>
+  </div>
+</div>
+
+<!-- Verify + Keygen -->
+<div class="mt-6 grid gap-4 lg:grid-cols-2">
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Verify Signature</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Verify a signed forensic findings document.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/report-verify"
+          hx-target="#verify-output"
+          hx-swap="innerHTML">
+      <div>
+        <label class="label" for="verify-input">Signed document (JSON)</label>
+        <textarea id="verify-input" name="input" class="field min-h-24" placeholder='{"signature":...}'></textarea>
+      </div>
+      <div>
+        <label class="label" for="verify-secret">Secret (for HMAC)</label>
+        <input id="verify-secret" name="secret" type="password" class="field" placeholder="HMAC secret">
+      </div>
+      <button type="submit" class="btn-primary w-full">Verify</button>
+    </form>
+    <div id="verify-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Verification result will appear here.</div>
+  </div>
+
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Key Generation</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Generate an ML-DSA keypair for signing forensic findings.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/report-keygen"
+          hx-target="#keygen-output"
+          hx-swap="innerHTML">
+      <div>
+        <label class="label" for="keygen-algo">Algorithm</label>
+        <select id="keygen-algo" name="algorithm" class="field">
+          <option value="mldsa-44">ML-DSA-44</option>
+          <option value="mldsa-65">ML-DSA-65</option>
+          <option value="mldsa-87">ML-DSA-87</option>
+        </select>
+      </div>
+      <div>
+        <label class="label" for="keygen-prefix">File prefix</label>
+        <input id="keygen-prefix" name="prefix" class="field" value="mldsa">
+      </div>
+      <button type="submit" class="btn-primary w-full">Generate Keypair</button>
+    </form>
+    <div id="keygen-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Key generation output will appear here.</div>
+  </div>
+</div>
+
+<!-- Export -->
+<div class="mt-6 panel p-5">
+  <h2 class="text-lg font-semibold">Export</h2>
+  <p class="mt-1 text-sm text-[var(--color-text-muted)]">Export analysis results in multiple formats.</p>
+  <form class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+        hx-post="/dashboard/api/export/run"
+        hx-target="#export-output"
+        hx-swap="innerHTML">
+    <div>
+      <label class="label" for="export-title">Title</label>
+      <input id="export-title" name="title" class="field" value="Analysis Export">
+    </div>
+    <div>
+      <label class="label" for="export-format">Format</label>
+      <select id="export-format" name="format" class="field">
+        <option value="md">Markdown</option>
+        <option value="html">HTML</option>
+        <option value="json">JSON</option>
+        <option value="csv">CSV</option>
+        <option value="txt">TXT</option>
+      </select>
+    </div>
+    <div>
+      <label class="label" for="export-style">Style</label>
+      <select id="export-style" name="style" class="field">
+        <option value="clean">Clean</option>
+        <option value="report">Report</option>
+        <option value="terminal">Terminal</option>
+      </select>
+    </div>
+    <div class="lg:col-span-2">
+      <label class="label" for="export-text">Content</label>
+      <textarea id="export-text" name="text" class="field" placeholder="Export content..."></textarea>
+    </div>
+    <div class="sm:col-span-2 lg:col-span-5">
+      <button type="submit" class="btn-primary w-full">Export</button>
+    </div>
+  </form>
+  <div id="export-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Export result will appear here.</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.addEventListener('tws:report', function() {
+  const el = document.getElementById('stat-reports');
+  if (el) el.textContent = parseInt(el.textContent || '0', 10) + 1;
+});
+</script>
+{% endblock %}

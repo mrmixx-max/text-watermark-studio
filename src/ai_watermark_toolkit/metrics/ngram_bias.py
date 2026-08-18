@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
-from collections import Counter
+import itertools
 import re
+from collections import Counter
+from dataclasses import asdict, dataclass
 
 
 @dataclass
@@ -18,7 +19,7 @@ class NgramBiasResult:
 
 def heuristic_ngram_bias(text: str) -> NgramBiasResult:
     tokens = re.findall(r"\w+", text.lower())
-    bigrams = list(zip(tokens, tokens[1:]))
+    bigrams = list(itertools.pairwise(tokens))
     if not bigrams:
         return NgramBiasResult(0.0, "", 0, "not enough tokens")
     counts = Counter(bigrams)

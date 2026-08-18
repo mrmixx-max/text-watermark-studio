@@ -13,11 +13,11 @@ import json
 import subprocess
 import sys
 
-from ai_watermark_toolkit.forensics.trace import (
-    trace_kgw,
-    format_trace,
-)
 from ai_watermark_toolkit.forensics.kgw import mark_greenlist
+from ai_watermark_toolkit.forensics.trace import (
+    format_trace,
+    trace_kgw,
+)
 
 KEY = "trace-test-key"
 GAMMA = 0.5

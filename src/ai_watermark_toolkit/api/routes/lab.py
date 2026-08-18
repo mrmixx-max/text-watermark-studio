@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from ...lab.service import WatermarkLabService
 
 router = APIRouter(prefix='/api/lab', tags=['lab'])
@@ -56,7 +57,7 @@ def demo(req: LabDemoRequest):
 
 @router.get('/mcp/tools', summary='Export MCP tool manifest')
 def mcp_tools():
-    from pathlib import Path
     import json
+    from pathlib import Path
     path = Path(__file__).resolve().parents[4] / 'mcp' / 'tools.json'
     return json.loads(path.read_text(encoding='utf-8'))

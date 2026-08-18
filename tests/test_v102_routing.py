@@ -1,5 +1,6 @@
-from pathlib import Path
 import json
+from pathlib import Path
+
 
 def test_routing_files_exist():
     root = Path(__file__).resolve().parents[1]

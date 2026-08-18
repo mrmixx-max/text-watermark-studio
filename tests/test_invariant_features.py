@@ -19,7 +19,6 @@ from ai_watermark_toolkit.forensics.invariant import (
 )
 from ai_watermark_toolkit.lab.families.semantic_structure import FamilyPlugin
 
-
 DEMO_TEXT = (
     'Der schnelle braune Fuchs springt über den faulen Hund. '
     'Dieser wichtige Test zeigt die robuste Wasserzeichen-Methode. '
@@ -28,7 +27,7 @@ DEMO_TEXT = (
 
 
 def test_detect_anchors_finds_keywords_and_proper_nouns():
-    tokens = 'Berlin ist die große Hauptstadt von Deutschland'.split()
+    tokens = ['Berlin', 'ist', 'die', 'große', 'Hauptstadt', 'von', 'Deutschland']
     anchors = detect_anchors(tokens)
     anchor_words = {tokens[i] for i in anchors}
     assert 'Berlin' in anchor_words

@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from typing import ClassVar
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -102,7 +103,7 @@ class StudioTUI(App):
     RichLog { background: #10161f; color: #d7e3ea; border: none; }
     """
 
-    BINDINGS = [
+    BINDINGS: ClassVar = [
         Binding("q", "quit", "Quit", show=True),
         Binding("up", "menu_up", "Menu up", show=True, priority=True),
         Binding("down", "menu_down", "Menu down", show=True, priority=True),
@@ -254,7 +255,7 @@ class StudioTUI(App):
         if not p:
             return
         try:
-            text = open(p, encoding="utf-8").read()
+            text = Path(p).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -262,7 +263,7 @@ class StudioTUI(App):
         # run the real multi-key detection (redlist sign + Bonferroni).
         keys = self._kgw_keys()
         if keys:
-            from ..forensics.kgw import detect_multi_key, DEFAULT_GAMMA
+            from ..forensics.kgw import DEFAULT_GAMMA, detect_multi_key
             flags = self._parse_tui_flags(p)
             if flags["key"]:
                 keys = [k for k in keys if k["key_id"] == flags["key"]] or keys
@@ -308,8 +309,8 @@ class StudioTUI(App):
             self._out("[yellow]ΔZ needs two files: Path: before.txt --after after.txt[/]")
             return
         try:
-            text_before = open(flags["path"], encoding="utf-8").read()
-            text_after = open(flags["after"], encoding="utf-8").read()
+            text_before = Path(flags["path"]).read_text(encoding="utf-8")
+            text_after = Path(flags["after"]).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -331,18 +332,19 @@ class StudioTUI(App):
     def action_finding(self) -> None:
         """KI-Erklärungs-Befund A-D (E2): Path: file.txt --key <id>
         --e-value --delta-z <after> --institutional-rule <t> --origin-history <t>."""
-        from ..forensics.finding import build_finding_report
-        from ..forensics.kgw import detect_multi_key, DEFAULT_GAMMA
-        from ..forensics.key_registry import KeyRegistry
-        from ..forensics.e_value import e_detect
-        from ..forensics.delta_z import delta_z
         import re as _re
+
+        from ..forensics.delta_z import delta_z
+        from ..forensics.e_value import e_detect
+        from ..forensics.finding import build_finding_report
+        from ..forensics.key_registry import KeyRegistry
+        from ..forensics.kgw import DEFAULT_GAMMA, detect_multi_key
         p = self._need_path()
         if not p:
             return
         flags = self._parse_tui_flags(p)
         try:
-            text = open(flags["path"], encoding="utf-8").read()
+            text = Path(flags["path"]).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -364,7 +366,7 @@ class StudioTUI(App):
                 text, key["secret"], gamma=gamma, level=level, context=context)
         if flags["delta_z"]:
             try:
-                after_text = open(flags["delta_z"], encoding="utf-8").read()
+                after_text = Path(flags["delta_z"]).read_text(encoding="utf-8")
             except OSError as e:
                 self._out(f"[red]{e}[/]")
                 return
@@ -392,7 +394,7 @@ class StudioTUI(App):
             return
         flags = self._parse_tui_flags(p)
         try:
-            payload = json.loads(open(flags["path"], encoding="utf-8").read())
+            payload = json.loads(Path(flags["path"]).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as e:
             self._out(f"[red]{e}[/]")
             return
@@ -420,7 +422,7 @@ class StudioTUI(App):
             return
         flags = self._parse_tui_flags(p)
         try:
-            signed = json.loads(open(flags["path"], encoding="utf-8").read())
+            signed = json.loads(Path(flags["path"]).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as e:
             self._out(f"[red]{e}[/]")
             return
@@ -469,7 +471,7 @@ class StudioTUI(App):
         if not p:
             return
         try:
-            text = open(p, encoding="utf-8").read()
+            text = Path(p).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -484,7 +486,7 @@ class StudioTUI(App):
         if not p:
             return
         try:
-            text = open(p, encoding="utf-8").read()
+            text = Path(p).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -494,7 +496,7 @@ class StudioTUI(App):
         self._out(out.text[:2000])
 
     def action_embed(self) -> None:
-        from ..forensics.kgw import mark_greenlist, DEFAULT_GAMMA
+        from ..forensics.kgw import DEFAULT_GAMMA, mark_greenlist
         p = self._need_path()
         if not p:
             return
@@ -504,7 +506,7 @@ class StudioTUI(App):
                       "API/CLI first, then retry.[/]")
             return
         try:
-            text = open(p, encoding="utf-8").read()
+            text = Path(p).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -524,11 +526,11 @@ class StudioTUI(App):
         if not p:
             return
         try:
-            text = open(p, encoding="utf-8").read()
+            text = Path(p).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
-        out, report = run_pipeline(text, rewrite_mode="structural")
+        _out, report = run_pipeline(text, rewrite_mode="structural")
         self._out("[green]Pipeline done.[/]")
         self._out(json.dumps(report, ensure_ascii=False, indent=2, default=str))
 
@@ -543,7 +545,7 @@ class StudioTUI(App):
                       "API/CLI first, then retry.[/]")
             return
         try:
-            text = open(p, encoding="utf-8").read()
+            text = Path(p).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -562,7 +564,7 @@ class StudioTUI(App):
         if not p:
             return
         try:
-            text = open(p, encoding="utf-8").read()
+            text = Path(p).read_text(encoding="utf-8")
         except OSError as e:
             self._out(f"[red]{e}[/]")
             return
@@ -573,6 +575,7 @@ class StudioTUI(App):
 
     def action_file_inspect(self) -> None:
         from pathlib import Path as P
+
         from ..metadata.service import inspect
         p = self._need_path()
         if not p:
@@ -586,6 +589,7 @@ class StudioTUI(App):
 
     def action_file_clean(self) -> None:
         from pathlib import Path as P
+
         from ..metadata.service import clean
         p = self._need_path()
         if not p:
@@ -603,6 +607,7 @@ class StudioTUI(App):
 
     def action_file_embed(self) -> None:
         from pathlib import Path as P
+
         from ..metadata.provenance import embed_provenance
         p = self._need_path()
         if not p:
@@ -626,6 +631,7 @@ class StudioTUI(App):
 
     def action_file_detect(self) -> None:
         from pathlib import Path as P
+
         from ..metadata.provenance import detect_provenance
         p = self._need_path()
         if not p:
@@ -779,8 +785,9 @@ class StudioTUI(App):
     def action_similarity(self) -> None:
         """Compare a text against a user-owned corpus. Path field format:
         `document.txt --corpus ./archiv` (threshold optional via --threshold)."""
-        from ..forensics.similarity import check_similarity
         from pathlib import Path as _P
+
+        from ..forensics.similarity import check_similarity
         raw = self._read_path()
         parts = [p.strip() for p in raw.split("--corpus")] if "--corpus" in raw else [raw]
         target = parts[0]

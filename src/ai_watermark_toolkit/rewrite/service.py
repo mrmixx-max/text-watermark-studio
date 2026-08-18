@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import json
-import re
 import os
+import re
 from difflib import SequenceMatcher
-from typing import Dict
 
 try:
     import httpx
@@ -78,7 +76,7 @@ class RewriteService:
         # rotate the middle block (keep first + last stable for coherence)
         middle = sentences[1:-1]
         rotated = middle[1:] + middle[:1]
-        return ' '.join([sentences[0]] + rotated + [sentences[-1]])
+        return ' '.join([sentences[0], *rotated, sentences[-1]])
 
     def _protect(self, text: str):
         """Protect numbers, URLs, quotes and proper nouns from rewrite edits.
@@ -89,7 +87,7 @@ class RewriteService:
         "example.com") and leaked nested protected tokens. URLs are matched
         FIRST so later word patterns never see inside them.
         """
-        protected: Dict[str, str] = {}
+        protected: dict[str, str] = {}
         patterns = [
             r'https?://[^\s"\']+',
             r'\b\d+(?:[\.,]\d+)?%?\b',
@@ -110,7 +108,7 @@ class RewriteService:
 
         return re.sub(combined, _sub, text), protected
 
-    def _restore(self, text: str, protected: Dict[str, str]):
+    def _restore(self, text: str, protected: dict[str, str]):
         for k, v in protected.items():
             text = text.replace(k, v)
         return text
@@ -141,8 +139,7 @@ class RewriteService:
         text = ' '.join(cleaned)
         text = text.replace(' in order to ', ' to ')
         text = text.replace(' due to the fact that ', ' because ')
-        text = text.replace(' at this point in time ', ' now ')
-        return text
+        return text.replace(' at this point in time ', ' now ')
 
     def _tone(self, text: str, mode: str):
         if mode == 'formal':
@@ -157,10 +154,7 @@ class RewriteService:
         original = text
         use_llm = self.llm_backend if use_llm is None else use_llm
         if use_llm:
-            if mode == 'backtranslate':
-                llm_out = self._llm_backtranslate(text)
-            else:
-                llm_out = self._llm_rewrite(text, mode)
+            llm_out = self._llm_backtranslate(text) if mode == 'backtranslate' else self._llm_rewrite(text, mode)
             similarity = round(SequenceMatcher(None, original, llm_out).ratio(), 4)
             steps = [f'Local LLM rewrite via {self.llm_model} ({self.llm_base}).',
                      f'Applied rewrite mode: {mode}.']

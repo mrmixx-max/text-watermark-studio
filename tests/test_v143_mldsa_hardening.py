@@ -194,9 +194,9 @@ class TestVerifyOrderRegression:
         # the classic API trap: (data, signature) instead of (signature, data)
         # must NOT verify — otherwise the trap would be harmless and the
         # module's careful ordering would be pointless.
-        with pytest.raises(Exception):
+        with pytest.raises((ValueError, TypeError, Exception)):
             _mldsa_verify(public_key, data, signature)
-        with pytest.raises(Exception):
+        with pytest.raises((ValueError, TypeError, Exception)):
             public_key.verify(data, signature)
 
 
@@ -256,7 +256,6 @@ class TestMldsa65_87:
                              private_key_pem=pair["private_key_pem"])
         size = _sig_bytes(signed)
         lo, hi = SIG_SIZE_RANGES[algorithm]
-        print(f"\n[{algorithm}] signature size = {size} bytes")
         assert lo <= size <= hi
 
     def test_tamper_invalid(self, algorithm):
@@ -296,7 +295,6 @@ class TestAlgorithmLabelTrust:
                                  private_key_pem=pair["private_key_pem"])
             sizes[algorithm] = _sig_bytes(signed)
         assert sizes["mldsa-44"] < sizes["mldsa-65"] < sizes["mldsa-87"]
-        print(f"\nmeasured signature bytes: {sizes}")
 
     def test_label_mismatch_does_not_verify(self):
         # A document whose signature block CLAIMS mldsa-87 but carries a

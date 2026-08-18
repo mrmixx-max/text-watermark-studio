@@ -1,8 +1,10 @@
+from typing import Any
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field, model_validator
-from typing import Dict, Any
+
 from ...exporting.service import ExportService
-from ..response_utils import respond, parse_metadata_field
+from ..response_utils import parse_metadata_field, respond
 
 router = APIRouter(prefix='/api/export', tags=['export'])
 svc = ExportService()
@@ -12,7 +14,7 @@ class ExportRequest(BaseModel):
     text: str
     format: str = Field(default='md')
     style: str = Field(default='clean')
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode='before')
     @classmethod

@@ -1,7 +1,16 @@
-from .service import inspect, clean, SUPPORTED, MetaReport
-from .provenance import embed_provenance, detect_provenance, EmbedResult, DetectResult
-from .synthid import synthid_available, score_synthid
+from .provenance import DetectResult, EmbedResult, detect_provenance, embed_provenance
+from .service import SUPPORTED, MetaReport, clean, inspect
+from .synthid import score_synthid, synthid_available
 
-__all__ = ["inspect", "clean", "SUPPORTED", "MetaReport",
-           "embed_provenance", "detect_provenance", "EmbedResult", "DetectResult",
-           "synthid_available", "score_synthid"]
+__all__ = [
+           "SUPPORTED",
+           "DetectResult",
+           "EmbedResult",
+           "MetaReport",
+           "clean",
+           "detect_provenance",
+           "embed_provenance",
+           "inspect",
+           "score_synthid",
+           "synthid_available",
+]

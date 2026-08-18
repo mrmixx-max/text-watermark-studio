@@ -16,22 +16,18 @@ independence assumption. That exact failure was found during development.
 
 import random
 
+from ai_watermark_toolkit.forensics.ensemble import ensemble_detect
 from ai_watermark_toolkit.forensics.kgw import (
+    DEFAULT_GAMMA,
     detect_kgw,
     detect_multi_key,
     embed_kgw,
     green_token,
     tokenize,
-    DEFAULT_GAMMA,
 )
-from ai_watermark_toolkit.forensics.ensemble import ensemble_detect
 
-_SIL1 = ("ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu "
-         "ga ge gi go gu ka ke ki ko ku la le li lo lu ma me mi mo mu "
-         "na ne ni no nu pa pe pi po pu ra re ri ro ru sa se si so su "
-         "ta te ti to tu va ve vi vo vu wa we wi wo wu za ze zi zo zu").split()
-_SIL2 = ("an en in on un ar er ir or ur al el il ol ul at et it ot ut "
-         "as es is os us").split()
+_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
+_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
 VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 
 KEY_A = "test-secret-alpha-001"
@@ -154,7 +150,7 @@ class TestKgwEmbed:
         t_orig = tokenize(text)
         t_new = tokenize(emb["text"])
         assert len(t_new) == len(t_orig), (len(t_orig), len(t_new))
-        same = sum(1 for a, b in zip(t_orig, t_new) if a == b)
+        same = sum(1 for a, b in zip(t_orig, t_new, strict=False) if a == b)
         assert same / len(t_orig) > 0.6, (same, len(t_orig))
 
     def test_original_unwatermarked_text_no_signal(self):

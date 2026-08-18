@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from .families.unicode_zero_width import FamilyPlugin as UnicodeZeroWidth
-from .families.lexical_choice import FamilyPlugin as LexicalChoice
-from .families.syntactic_pattern import FamilyPlugin as SyntacticPattern
 from .families.format_layout import FamilyPlugin as FormatLayout
+from .families.lexical_choice import FamilyPlugin as LexicalChoice
+from .families.localized_provenance import FamilyPlugin as LocalizedProvenance
 from .families.sampling_bias import FamilyPlugin as SamplingBias
 from .families.semantic_structure import FamilyPlugin as SemanticStructure
-from .families.localized_provenance import FamilyPlugin as LocalizedProvenance
+from .families.syntactic_pattern import FamilyPlugin as SyntacticPattern
 from .families.training_time import FamilyPlugin as TrainingTime
+from .families.unicode_zero_width import FamilyPlugin as UnicodeZeroWidth
 
 
 def get_family_plugins():

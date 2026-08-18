@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 SCHEMA_PATH = Path(__file__).resolve().parents[3] / 'data' / 'graph' / 'schema.json'
 GRAPH_PATH = Path(__file__).resolve().parents[3] / 'data' / 'graph' / 'graph.json'

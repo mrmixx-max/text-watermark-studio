@@ -1,8 +1,10 @@
+from typing import Any
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field, model_validator
-from typing import Any, Dict
+
 from ...routing.service import ModelRoutingService
-from ..response_utils import respond, checkbox_to_bool
+from ..response_utils import checkbox_to_bool, respond
 
 router = APIRouter(prefix='/api/routing', tags=['routing'])
 svc = ModelRoutingService()
@@ -23,7 +25,7 @@ class DecideRequest(BaseModel):
 
 class ConfigureRequest(BaseModel):
     profile: str = 'default'
-    config: Dict[str, Any] = Field(default_factory=dict)
+    config: dict[str, Any] = Field(default_factory=dict)
 
 @router.get('/status', operation_id='routing_status')
 def status(request: Request):

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Files — Text Watermark Studio{% endblock %}
+{% block page_title %}Files{% endblock %}
+{% block page_subtitle %}Upload, clean, and inspect files{% endblock %}
+
+{% block content %}
+<div class="grid gap-4 lg:grid-cols-2">
+  <!-- File Inspect -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Inspect File</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Analyze a file for metadata, C2PA, and watermark signals.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/file-inspect"
+          hx-target="#inspect-output"
+          hx-swap="innerHTML">
+      <div>
+        <label class="label" for="inspect-input">File path</label>
+        <input id="inspect-input" name="input" class="field" placeholder="path/to/file.png">
+      </div>
+      <button type="submit" class="btn-primary w-full">Inspect</button>
+    </form>
+    <div id="inspect-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Inspection results will appear here.</div>
+  </div>
+
+  <!-- File Clean -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Clean File</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Strip metadata and provenance from a file.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/file-clean"
+          hx-target="#file-clean-output"
+          hx-swap="innerHTML">
+      <div>
+        <label class="label" for="clean-input">Input file</label>
+        <input id="clean-input" name="input" class="field" placeholder="path/to/input.png">
+      </div>
+      <div>
+        <label class="label" for="clean-output">Output file</label>
+        <input id="clean-output" name="output" class="field" placeholder="path/to/output.png">
+      </div>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="verify" class="w-auto">
+        <span class="text-[var(--color-text-muted)]">Verify after clean</span>
+      </label>
+      <button type="submit" class="btn-primary w-full">Clean File</button>
+    </form>
+    <div id="file-clean-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Clean result will appear here.</div>
+  </div>
+</div>
+
+<div class="mt-6 grid gap-4 lg:grid-cols-2">
+  <!-- File Embed -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Embed Provenance</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Embed a C2PA provenance mark into a file.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/file-embed"
+          hx-target="#file-embed-output"
+          hx-swap="innerHTML">
+      <div>
+        <label class="label" for="fem-input">Input file</label>
+        <input id="fem-input" name="input" class="field" placeholder="path/to/image.png">
+      </div>
+      <div>
+        <label class="label" for="fem-output">Output file</label>
+        <input id="fem-output" name="output" class="field" placeholder="path/to/marked.png">
+      </div>
+      <div>
+        <label class="label" for="fem-key">Key</label>
+        <input id="fem-key" name="key" class="field" placeholder="key_id (must carry a secret)">
+      </div>
+      <button type="submit" class="btn-primary w-full">Embed Provenance</button>
+    </form>
+    <div id="file-embed-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Embed result will appear here.</div>
+  </div>
+
+  <!-- File Detect -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Detect Provenance</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Verify a file's provenance mark against registered keys.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/file-detect"
+          hx-target="#file-detect-output"
+          hx-swap="innerHTML">
+      <div>
+        <label class="label" for="fdet-input">File to verify</label>
+        <input id="fdet-input" name="input" class="field" placeholder="path/to/file.png">
+      </div>
+      <button type="submit" class="btn-primary w-full">Detect Provenance</button>
+    </form>
+    <div id="file-detect-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Detection result will appear here.</div>
+  </div>
+</div>
+
+<!-- Batch operations -->
+<div class="mt-6 panel p-5">
+  <h2 class="text-lg font-semibold">Batch Operations</h2>
+  <p class="mt-1 text-sm text-[var(--color-text-muted)]">Process an entire directory of files.</p>
+  <form class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        hx-post="/dashboard/api/jobs"
+        hx-target="#batch-output"
+        hx-swap="innerHTML">
+    <div>
+      <label class="label" for="batch-input">Input directory</label>
+      <input id="batch-input" name="input_dir" class="field" placeholder="./input">
+    </div>
+    <div>
+      <label class="label" for="batch-output">Output directory</label>
+      <input id="batch-output" name="output_dir" class="field" placeholder="./output">
+    </div>
+    <div>
+      <label class="label" for="batch-mode">Mode</label>
+      <select id="batch-mode" name="mode" class="field">
+        <option value="pipeline">Pipeline</option>
+        <option value="detect">Detect</option>
+        <option value="clean">Clean</option>
+        <option value="dilute">Dilute</option>
+        <option value="embed">Embed</option>
+      </select>
+    </div>
+    <div class="flex items-end">
+      <button type="submit" class="btn-primary w-full">Run Batch</button>
+    </div>
+  </form>
+  <div id="batch-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Batch results will appear here.</div>
+</div>
+{% endblock %}

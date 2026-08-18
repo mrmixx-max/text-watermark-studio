@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Request, Response
+
 from ...core.config import settings
-from ...observability.metrics import render_metrics, STREAM_PENDING_GAUGE, STREAM_DEAD_LETTER_GAUGE, DLQ_REPLAYS_TOTAL
+from ...observability.metrics import DLQ_REPLAYS_TOTAL, STREAM_DEAD_LETTER_GAUGE, STREAM_PENDING_GAUGE, render_metrics
 from ...streams.redis_streams import RedisStreamsService
 from ..response_utils import get_redis
 

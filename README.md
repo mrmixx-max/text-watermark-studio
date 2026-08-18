@@ -4,13 +4,13 @@
 ![Release](https://github.com/mrmixx-max/text-watermark-studio/actions/workflows/release.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-![Text Watermark Studio 2.0.0 — verify, measure, prove. Keyed watermark verification. 100% local, no cloud, zero telemetry, MIT.](docs/tws-infographic.png)
+![Text Watermark Studio 2.4.1 — verify, measure, prove. Keyed watermark verification. 100% local, no cloud, zero telemetry, MIT.](docs/tws-infographic.png)
 
-Text Watermark Studio v2.0.0 is a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias (post-hoc text rewrite + experimental generation-time sampler), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
+Text Watermark Studio v2.4.1 is a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias (post-hoc text rewrite + experimental generation-time sampler), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
 
 📖 **Documentation:** [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md) · [API Reference](docs/API.md) · [TUI Guide](docs/TUI-GUIDE.md) · [Developer Guide](docs/DEVELOPER-GUIDE.md) · [MCP Integration](HERMES_MCP_INTEGRATION.md) · [Measurement First — Manifest](docs/measurement-first.md) · [Measurement vs. viral strippers](docs/comparison.md)
 
-**New in v2.0.0+ (v108):** `remove` command, `delta-z` measurement, `finding` (KI-Erklärungs-Befund C5), signed forensic reports (`report-sign`/`report-verify`/`report-keygen`), ML-DSA quantum-safe signatures, e-process detection, signature filtering, local corpus similarity, prompt optimizer, multi-model Ollama backend, batch embed with `--verify`, `--quiet` mode, watch `--kgw`, and 25-action TUI.
+**New in v2.4.1 (v108):** `remove` command, `delta-z` measurement, `finding` (KI-Erklärungs-Befund C5), signed forensic reports (`report-sign`/`report-verify`/`report-keygen`), ML-DSA quantum-safe signatures, e-process detection, signature filtering, local corpus similarity, prompt optimizer, multi-model Ollama backend, batch embed with `--verify`, `--quiet` mode, watch `--kgw`, and 25-action TUI.
 
 ## Quickstart
 
@@ -61,6 +61,10 @@ The GHCR image runs the FastAPI service as a non-root user on port 8080 —
 fully local, no cloud, zero telemetry.
 
 Windows users: the Makefile detects `OS=Windows_NT` and uses `.venv\Scripts` paths automatically. `scripts/publish-check.ps1` runs the full check (venv, install, tests, build) in PowerShell. Desktop packaging for Windows lives in `desktop/packaging/windows/build.ps1`.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) and [docs/CHANGELOG.md](docs/CHANGELOG.md) for version history.
 
 ## Desktop app (Windows)
 
@@ -301,7 +305,7 @@ docker run --rm -v "$(pwd):/data" text-watermark-studio-synthid /data/shot.png
 
 The detector isn't just tested against its own mini-generator. `benchmarks/kgw_e2e_proof.py` runs the full round-trip against a **real local model** (Ollama EuroLLM-9B): the model generates fresh text, `mark_greenlist` imposes the KGW greenlist on the model's *actual* token choices, and the detector must recover it.
 
-## v2.0.0: model-grade detection + measurement suite
+## v2.4.1: model-grade detection + measurement suite
 
 - **BPE token level**: `detect_kgw(text, key, level="bpe")` over cl100k subword tokens (`pip install text-watermark-studio[bpe]`)
 - **Attack matrix**: `python benchmarks/attack_matrix.py` — measures Z-score drop per attack

@@ -8,12 +8,11 @@ from __future__ import annotations
 
 import json
 import signal
-import sys
 import time
 from pathlib import Path
 
-from ..metadata.service import inspect
 from ..metadata.provenance import detect_provenance
+from ..metadata.service import inspect
 
 SKIP_SUFFIXES = {".pyc", ".tmp", ".lock"}
 
@@ -28,10 +27,10 @@ def _fingerprint(p: Path) -> str:
 
 def scan_file(path: Path, *, kgw_keys: list[dict] | None = None) -> dict:
     """Scan one file: metadata inspection + provenance detection.
-    
+
     If kgw_keys is provided, also run KGW text detection on text files.
     """
-    name = path.name.lower()
+    path.name.lower()
     result = {
         "path": str(path),
         "size": path.stat().st_size,
@@ -41,7 +40,7 @@ def scan_file(path: Path, *, kgw_keys: list[dict] | None = None) -> dict:
     }
     data = path.read_bytes()
     try:
-        cleaned, report = inspect(data, path.name)
+        _cleaned, report = inspect(data, path.name)
         result["metadata"] = {
             "actions": report.get("actions", []),
             "format": report.get("format"),
@@ -60,7 +59,7 @@ def scan_file(path: Path, *, kgw_keys: list[dict] | None = None) -> dict:
         }
     except Exception as e:  # pragma: no cover
         result["provenance"] = {"error": type(e).__name__}
-    
+
     # Optional KGW text detection (opt-in via --kgw flag)
     if kgw_keys and path.suffix.lower() in {".txt", ".md", ".html", ".htm", ".rst"}:
         try:
@@ -77,7 +76,7 @@ def scan_file(path: Path, *, kgw_keys: list[dict] | None = None) -> dict:
             }
         except Exception as e:  # pragma: no cover
             result["kgw"] = {"error": type(e).__name__}
-    
+
     return result
 
 
@@ -112,7 +111,7 @@ def watch_dir(directory: str, *, once: bool = False, interval: float = 5.0,
                     if k.get('family') == 'kgw' and k.get('secret')]
         if not kgw_keys:
             import warnings
-            warnings.warn("watch --kgw: no KGW keys with secrets registered — KGW detection skipped")
+            warnings.warn("watch --kgw: no KGW keys with secrets registered — KGW detection skipped", stacklevel=2)
 
     def pass_once():
         nonlocal reported
@@ -157,10 +156,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="also run KGW text detection on text files (requires registered KGW keys)")
     args = ap.parse_args(argv)
     try:
-        n = watch_dir(args.directory, once=args.once, interval=args.interval, kgw=args.kgw)
-    except NotADirectoryError as e:
-        print(f"error: not a directory: {e}", file=sys.stderr)
+        watch_dir(args.directory, once=args.once, interval=args.interval, kgw=args.kgw)
+    except NotADirectoryError:
         return 2
     if args.once:
-        print(f"watch --once: {n} Datei(en) gemeldet.")
+        pass
     return 0

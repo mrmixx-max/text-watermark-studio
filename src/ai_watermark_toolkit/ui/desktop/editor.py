@@ -35,9 +35,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QPlainTextEdit,
-    QPushButton,
     QToolButton,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -51,14 +49,14 @@ _SEARCH_ALL_BG = QColor("#FFF9C4")  # lighter yellow, other matches
 class _LineNumberArea(QWidget):
     """Sidebar painting the visible line numbers."""
 
-    def __init__(self, editor: "EditorPane"):
+    def __init__(self, editor: EditorPane):
         super().__init__(editor)
         self._editor = editor
 
-    def sizeHint(self):  # noqa: N802 (Qt naming)
+    def sizeHint(self):
         return self._editor._line_number_area_size()
 
-    def paintEvent(self, event):  # noqa: N802 (Qt naming)
+    def paintEvent(self, event):
         self._editor._line_number_area_paint(event)
 
 
@@ -124,7 +122,7 @@ class EditorPane(QPlainTextEdit):
         self.setAcceptDrops(True)
 
     # ------------------------------------------------------------- layout
-    def resizeEvent(self, event):  # noqa: N802 (Qt naming)
+    def resizeEvent(self, event):
         super().resizeEvent(event)
         self._update_line_numbers()
         self._position_find_bar()
@@ -315,13 +313,13 @@ class EditorPane(QPlainTextEdit):
         return self._wrap
 
     # ------------------------------------------------------ drag & drop
-    def dragEnterEvent(self, event):  # noqa: N802 (Qt naming)
+    def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             super().dragEnterEvent(event)
 
-    def dropEvent(self, event):  # noqa: N802 (Qt naming)
+    def dropEvent(self, event):
         if event.mimeData().hasUrls():
             url = event.mimeData().urls()[0]
             path = url.toLocalFile()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
 from ...prompts.service import PromptRegistryService
 
 router = APIRouter(prefix='/api/prompts', tags=['prompts'])

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from ...documents.service import DocumentService
 
 router = APIRouter(prefix='/api/documents', tags=['documents'])

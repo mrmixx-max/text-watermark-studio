@@ -44,6 +44,12 @@ curl -H "Authorization: Bearer your-secret-key" http://127.0.0.1:8080/api/forens
 |---|---|---|
 | GET | `/health` | Liveness probe — returns `{ok, env, redis, version}` |
 | GET | `/ready` | Readiness probe — 503 if Redis unavailable |
+| GET | `/metrics` | Prometheus scrape target |
+
+```bash
+curl http://127.0.0.1:8080/health | python -m json.tool
+# {"ok": true, "env": "production", "redis": true, "version": "2.4.1"}
+```
 
 ## Text processing
 
@@ -51,10 +57,16 @@ curl -H "Authorization: Bearer your-secret-key" http://127.0.0.1:8080/api/forens
 
 ```
 POST /api/detect
-Body: {text: string, lang?: "auto"|"de"|"en", intensity?: string}
+Body: {text: string, lang?: "auto"|"de"|"en"}
 ```
 
 Returns unicode/stego findings + AI phrasing marker scores.
+
+```bash
+curl -s http://127.0.0.1:8080/api/detect \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Sample text...", "lang": "auto"}' | python -m json.tool
+```
 
 ### Clean
 

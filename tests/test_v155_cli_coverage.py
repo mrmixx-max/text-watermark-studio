@@ -10,18 +10,16 @@ Targets functions and branches in cli.py that existing tests miss:
 
 import json
 import os
-import sys
-import tempfile
 import subprocess
-from pathlib import Path
+import sys
 
 import pytest
 
 from ai_watermark_toolkit.cli import (
+    _read,
+    _resolve_key,
     _resolve_key_arg,
     _resolve_secret_arg,
-    _resolve_key,
-    _read,
     main_entry,
 )
 
@@ -664,6 +662,7 @@ class TestCliImageScore:
 
 import argparse
 import io
+
 
 class MockRegistry:
     """Minimal mock of KeyRegistry for _resolve_key tests."""

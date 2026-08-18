@@ -17,7 +17,6 @@ import pytest
 
 from ai_watermark_toolkit.rewrite.service import RewriteService
 
-
 TEXT = (
     "The first sentence establishes context. "
     "The second provides the main argument. "
@@ -44,26 +43,26 @@ class TestProtect:
     def test_numbers_protected(self):
         svc = RewriteService()
         text = "There are 42 items and 100% certainty."
-        protected_text, protected = svc._protect(text)
+        _protected_text, protected = svc._protect(text)
         assert any("42" in v or "100%" in v for v in protected.values())
 
     def test_proper_nouns_protected(self):
         svc = RewriteService()
         text = "Alice visited Berlin."
-        protected_text, protected = svc._protect(text)
+        _protected_text, protected = svc._protect(text)
         assert any(n in str(protected.values()) for n in ["Alice", "Berlin"])
 
     def test_quotes_protected(self):
         svc = RewriteService()
         text = 'He said "Hello World" and left.'
-        protected_text, protected = svc._protect(text)
+        protected_text, _protected = svc._protect(text)
         assert '"Hello World"' not in protected_text
         assert "__PROTECTED_" in protected_text
 
     def test_single_quotes_protected(self):
         svc = RewriteService()
         text = "It's an 'important' matter."
-        protected_text, protected = svc._protect(text)
+        protected_text, _protected = svc._protect(text)
         # The regex captures single-quoted strings: 'important'
         # But "It's" has 's after It — not a quoted string. The pattern
         # r"'[^']+'" should match 'important' only.
@@ -78,7 +77,7 @@ class TestProtect:
     def test_no_matches(self):
         svc = RewriteService()
         text = "this is a plain lowercase text with no numbers or urls"
-        protected_text, protected = svc._protect(text)
+        protected_text, _protected = svc._protect(text)
         # Proper nouns are uppercase-starting words like "Alice" etc.
         # All-lowercase has no proper noun matches
         assert protected_text == text
@@ -87,7 +86,7 @@ class TestProtect:
         svc = RewriteService()
         text = ("Visit https://site1.com and https://site2.org/path "
                 "and http://site3.net.")
-        protected_text, protected = svc._protect(text)
+        protected_text, _protected = svc._protect(text)
         assert "https://site1.com" not in protected_text
         assert "https://site2.org/path" not in protected_text
         assert "http://site3.net" not in protected_text
@@ -95,7 +94,7 @@ class TestProtect:
     def test_proper_noun_with_underscores(self):
         svc = RewriteService()
         text = "MyClass_V2 and SomeMethod_test."
-        protected_text, protected = svc._protect(text)
+        _protected_text, protected = svc._protect(text)
         assert any("MyClass_V2" in v for v in protected.values())
 
 

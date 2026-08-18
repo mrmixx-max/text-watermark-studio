@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from ..forensics.key_registry import KeyRegistry
 from .family_registry import list_families
 from .plugin_loader import get_family_plugins
-from ..forensics.key_registry import KeyRegistry
 
 
 class WatermarkLabService:

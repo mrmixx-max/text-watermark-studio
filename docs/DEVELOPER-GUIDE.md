@@ -1,6 +1,6 @@
 # Text Watermark Studio — Developer Guide
 
-Version 2.0.0 · MIT · 100% local, zero telemetry
+Version 2.4.1 · MIT · 100% local, zero telemetry
 
 This guide covers the architecture, how to extend the toolkit, and how to run the test suite.
 
@@ -33,7 +33,7 @@ text-watermark-studio/
 │   ├── pipeline.py               # Detection pipeline
 │   └── report.py                 # JSON report writer
 ├── hermes/skills/                 # Hermes skill bundles
-├── mcp/tools.json                 # MCP tool manifest (65+ tools)
+├── mcp/tools.json                 # MCP tool manifest (80 tools)
 ├── tests/                         # pytest test suite
 ├── benchmarks/                    # Reproducible benchmarks
 ├── docs/                          # Documentation
@@ -60,7 +60,7 @@ Each domain has its own route module under `api/routes/`:
 
 | Module | Prefix | Description |
 |---|---|---|
-| `text.py` | `/api/*` | Detect, clean, dilute |
+| `text.py` | `/api/*` | Detect, clean, dilute, pipeline |
 | `forensics.py` | `/api/forensics/*` | Keys, detect, embed, delta-z, finding |
 | `metadata.py` | `/api/metadata/*` | File provenance, SynthID |
 | `documents.py` | `/api/documents/*` | Load, export |
@@ -119,7 +119,7 @@ pip install -e ".[dev,bpe]"
 ## Testing
 
 ```bash
-pytest tests/          # full suite (~540 tests, deterministic, no network)
+pytest tests/          # full suite (~1070 tests, deterministic, no network)
 pytest -q              # quiet mode
 pytest -x              # stop on first failure
 pytest -k "kgw"        # filter by keyword

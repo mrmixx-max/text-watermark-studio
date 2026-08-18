@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from statistics import mean, pstdev
 
 

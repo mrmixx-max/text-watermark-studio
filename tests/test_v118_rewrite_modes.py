@@ -7,10 +7,9 @@ Contract:
   'structural' one. Prompts for the phases exist and are distinct.
 """
 
-import pytest
 
+from ai_watermark_toolkit.llm.providers import build_rewrite_prompt
 from ai_watermark_toolkit.rewrite.service import RewriteService
-from ai_watermark_toolkit.llm.providers import build_rewrite_prompt, PROMPTS
 
 TEXT = (
     "The first sentence establishes context. "

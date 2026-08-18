@@ -5,19 +5,12 @@ verifying each stage produces correct, consistent output.
 """
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
-import pytest
-
+from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+from ai_watermark_toolkit.forensics.kgw import DEFAULT_GAMMA, detect_multi_key, mark_greenlist
 from ai_watermark_toolkit.pipeline import detect_text, run_pipeline
+from ai_watermark_toolkit.report import sha256_text
 from ai_watermark_toolkit.transform.clean import clean_text
 from ai_watermark_toolkit.transform.dilute import dilute_text
-from ai_watermark_toolkit.forensics.kgw import mark_greenlist, detect_multi_key, DEFAULT_GAMMA
-from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
-from ai_watermark_toolkit.sanitize_unicode import analyze, sanitize
-from ai_watermark_toolkit.markers.scanner import scan_markers
-from ai_watermark_toolkit.report import sha256_text
 
 
 class TestFullPipelineEmbedDetectClean:
@@ -144,7 +137,7 @@ class TestFullPipelineEmbedDetectClean:
     def test_pipeline_reduces_markers(self):
         """Pipeline should reduce or maintain marker counts (never increase)."""
         raw = "Hello\u200bWorld\u202e test\u2060 text with markers"
-        out, report = run_pipeline(raw, lang="en", intensity="standard")
+        _out, report = run_pipeline(raw, lang="en", intensity="standard")
         before_count = report["before"]["layers"]["unicode"]["count"]
         after_count = report["after"]["layers"]["unicode"]["count"]
         assert after_count <= before_count
@@ -193,7 +186,7 @@ class TestPipelineWithStegoText:
     def test_full_pipeline_removes_all_markers(self):
         """Full pipeline should remove all unicode markers from stego text."""
         raw = "The\u200b quick\u202e brown\u2060 fox\u200d jumps\u2061"
-        out, report = run_pipeline(raw, lang="en", intensity="aggressive")
+        _out, report = run_pipeline(raw, lang="en", intensity="aggressive")
         after_count = report["after"]["layers"]["unicode"]["count"]
         assert after_count == 0
 

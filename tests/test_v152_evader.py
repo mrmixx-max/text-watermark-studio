@@ -10,8 +10,8 @@ quantifies the cost.
 import subprocess
 import sys
 
-from ai_watermark_toolkit.forensics.kgw import mark_greenlist, detect_kgw
 from ai_watermark_toolkit.forensics.evader import evade, format_evade_report
+from ai_watermark_toolkit.forensics.kgw import detect_kgw, mark_greenlist
 
 KEY = "evader-test-key"
 GAMMA = 0.5

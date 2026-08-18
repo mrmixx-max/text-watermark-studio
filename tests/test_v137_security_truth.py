@@ -18,13 +18,12 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 
-from ai_watermark_toolkit.core.config import settings
-from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
-from ai_watermark_toolkit.forensics.kgw import mark_greenlist
-
 from fastapi.testclient import TestClient
+
 import ai_watermark_toolkit.api.fastapi_app as fastapi_app
 import ai_watermark_toolkit.api.routes.forensics as forensics_route
+from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+from ai_watermark_toolkit.forensics.kgw import mark_greenlist
 
 KEY_A = "kgw-secret-a-0001"
 KEY_B = "kgw-secret-b-0002"
@@ -56,7 +55,7 @@ def _run_cli(args, cwd):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(REPO / "src")
     return subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli"] + args,
+        [sys.executable, "-m", "ai_watermark_toolkit.cli", *args],
         capture_output=True, text=True, env=env, cwd=str(cwd),
     )
 
@@ -78,6 +77,7 @@ def api_key_enabled(monkeypatch):
     # with a SimpleNamespace(api_key="", app_env="development"); to enforce
     # fail-closed here, patch the SAME object the middleware reads.
     from types import SimpleNamespace
+
     from ai_watermark_toolkit.api.middleware import auth as auth_mod
 
     monkeypatch.setattr(

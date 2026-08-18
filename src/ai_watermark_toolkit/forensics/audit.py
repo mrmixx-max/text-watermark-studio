@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any
 
 AUDIT_LOG = Path(__file__).resolve().parents[3] / 'data' / 'audit.log'
 
 
-def append_audit(event: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+def append_audit(event: str, payload: dict[str, Any]) -> dict[str, Any]:
     AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
     entry = {
         'event': event,

@@ -13,8 +13,8 @@ This test is filesystem-safe: it writes only into tmp_path (never data/).
 
 import pytest
 
-from ai_watermark_toolkit.forensics.kgw import detect_kgw, mark_greenlist
 from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
+from ai_watermark_toolkit.forensics.kgw import detect_kgw, mark_greenlist
 
 KEY = "bpe-rate-consistency-key"
 GAMMA = 0.5

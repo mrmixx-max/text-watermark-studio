@@ -98,7 +98,7 @@ def _softmax_sample(rng: random.Random, logits: dict[str, float]) -> str:
     total = sum(weights)
     r = rng.random() * total
     acc = 0.0
-    for t, w in zip(tokens, weights):
+    for t, w in zip(tokens, weights, strict=False):
         acc += w
         if r < acc:
             return t
@@ -128,7 +128,7 @@ def default_vocab() -> dict[str, float]:
     """
     from ..forensics.frequent_vocab import FREQUENT_VOCAB
     words = sorted({w for ws in FREQUENT_VOCAB.values() for w in ws if " " not in w})
-    return {w: 0.0 for w in words}
+    return dict.fromkeys(words, 0.0)
 
 
 def generate_marked_text(prefix: str | list[str] = "", vocab: dict[str, float] | None = None,

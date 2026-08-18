@@ -1,8 +1,8 @@
-from ai_watermark_toolkit.sanitize_unicode import analyze, sanitize
 from ai_watermark_toolkit.markers.scanner import scan_markers
+from ai_watermark_toolkit.pipeline import detect_text, run_pipeline
+from ai_watermark_toolkit.sanitize_unicode import analyze, sanitize
 from ai_watermark_toolkit.transform.clean import clean_text
 from ai_watermark_toolkit.transform.dilute import dilute_text
-from ai_watermark_toolkit.pipeline import detect_text, run_pipeline
 
 
 def test_unicode_detect_and_clean():

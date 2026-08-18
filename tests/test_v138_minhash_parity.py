@@ -20,7 +20,12 @@ Konstanten eingefroren — die neue Implementierung muss sie reproduzieren.
 from pathlib import Path
 
 from ai_watermark_toolkit.forensics.similarity import (
-    check_similarity, clear_signature_cache, _minhash, _jaccard, _verdict)
+    _jaccard,
+    _minhash,
+    _verdict,
+    check_similarity,
+    clear_signature_cache,
+)
 
 TEXT_A = (
     "Die Angeklagten haben am Abend des 14. März die Fenster des Rathauses "

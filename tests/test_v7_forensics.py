@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 
 
 def test_forensics_files_exist():

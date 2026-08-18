@@ -11,14 +11,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def run_cli(args: list[str], input_text: str | None = None, env: dict | None = None) -> subprocess.CompletedProcess:
     """Run ai-wm CLI as a subprocess."""
-    cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli"] + args
+    cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", *args]
     if env is None:
         env = os.environ.copy()
     return subprocess.run(

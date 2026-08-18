@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+
 from ..sanitize_unicode import sanitize
 from ..strip_markup import strip_markup
 

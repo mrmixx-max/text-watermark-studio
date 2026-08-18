@@ -6,8 +6,8 @@ from dataclasses import asdict
 from typing import Any
 
 from .markers.scanner import scan_markers
-from .metrics.style_features import compute_style_features
 from .metrics.ngram_bias import heuristic_ngram_bias
+from .metrics.style_features import compute_style_features
 from .report import sha256_text
 from .sanitize_unicode import analyze
 from .transform.clean import clean_text

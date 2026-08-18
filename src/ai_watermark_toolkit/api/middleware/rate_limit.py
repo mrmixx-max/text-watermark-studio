@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse

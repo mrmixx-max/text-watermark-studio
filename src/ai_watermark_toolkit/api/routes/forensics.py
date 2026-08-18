@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from ..middleware.auth import require_api_key
-from ...forensics.key_registry import KeyRegistry
-from ...forensics.signed_report import sign_report, verify_report
-from ...forensics.ensemble import ensemble_detect
+
 from ...forensics.audit import AuditLogger
-from ...forensics.kgw import detect_multi_key, mark_greenlist
 from ...forensics.delta_z import delta_z, delta_z_report, delta_z_transform
+from ...forensics.ensemble import ensemble_detect
+from ...forensics.key_registry import KeyRegistry
+from ...forensics.kgw import detect_multi_key, mark_greenlist
+from ...forensics.signed_report import sign_report, verify_report
 from ...plugins.registry import get_plugins
+from ..middleware.auth import require_api_key
 
 router = APIRouter(prefix='/api/forensics', tags=['forensics'])
 keys = KeyRegistry('data/key_registry.json')
@@ -148,7 +149,7 @@ def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
     kgw_keys = [k for k in registry
                 if k.get('family') == 'kgw' and k.get('secret')]
     kgw_results = {k['key_id']: r
-                   for k, r in zip(kgw_keys, kgw.get('results', []))}
+                   for k, r in zip(kgw_keys, kgw.get('results', []), strict=False)}
     result = ensemble_detect(req.text, registry, window=req.window,
                              level=req.level, context=req.context,
                              kgw_results=kgw_results, exclude_demo=True)
@@ -326,11 +327,11 @@ def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)
         raise HTTPException(status_code=404, detail=f'key_not_found: {req.key_id}')
     if not key.get('secret'):
         raise HTTPException(status_code=400, detail='key_has_no_secret')
+    from ...forensics.delta_z import delta_z, delta_z_transform
+    from ...forensics.e_value import e_detect
     from ...forensics.finding import build_finding_report
     from ...forensics.frs import compute_frs
     from ...forensics.kgw import detect_multi_key
-    from ...forensics.e_value import e_detect
-    from ...forensics.delta_z import delta_z, delta_z_transform
     gamma = key.get('gamma') or 0.25
     # context-Typ-Dispatch (Runde-3-Lücke E1): int = KGW-Fenster c
     # (bestehender Vertrag), dict = Evidenzklasse-D-Kontext. Ein dict

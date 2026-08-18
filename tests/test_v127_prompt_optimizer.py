@@ -6,7 +6,6 @@ with rollback. Everything writes to tmp_path — never into tracked data/.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -38,8 +37,7 @@ def optimizer(tmp_path):
              "protected_terms": ["security"]},
         ],
     }), encoding="utf-8")
-    svc = PromptOptimizationService(registry=registry, eval_path=eval_path)
-    return svc
+    return PromptOptimizationService(registry=registry, eval_path=eval_path)
 
 
 class TestEvalSet:
@@ -81,9 +79,7 @@ class TestScoring:
     def test_guardrail_blocks_term_dropping_candidate(self):
         """A prompt that explicitly tells the rewrite to drop numbers must
         never pass the guardrail on the 12.4/2026 case."""
-        svc = None  # built below with an eval whose protected terms must survive
 
-        import tempfile
         from ai_watermark_toolkit.optimization.metrics import composite
         evil = composite(
             "Revenue growth of 12.4 percent in 2026.",

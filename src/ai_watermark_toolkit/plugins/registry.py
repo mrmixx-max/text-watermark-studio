@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from .base import DetectorPlugin
+from .audio_watermark import AudioWatermarkPlugin
+from .code_watermark import CodeWatermarkPlugin
+from .video_watermark import VideoWatermarkPlugin
 
 
 class SimpleHeuristicPlugin(DetectorPlugin):
@@ -13,4 +16,17 @@ class SimpleHeuristicPlugin(DetectorPlugin):
 
 
 def get_plugins() -> list[DetectorPlugin]:
-    return [SimpleHeuristicPlugin()]
+    return [
+        SimpleHeuristicPlugin(),
+        CodeWatermarkPlugin(),
+        AudioWatermarkPlugin(),
+        VideoWatermarkPlugin(),
+    ]
+
+
+def get_plugin(name: str) -> DetectorPlugin | None:
+    """Get a plugin by name."""
+    for plugin in get_plugins():
+        if plugin.name == name:
+            return plugin
+    return None

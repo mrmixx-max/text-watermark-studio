@@ -270,7 +270,7 @@ def delta_z(text_before: str, text_after: str, key_id_or_secret: str, *,
     was honest (a full rewrite removes the signal without "cleaning").
     """
     if not isinstance(text_before, str) or not isinstance(text_after, str):
-        raise ValueError("text_before and text_after must be strings")
+        raise TypeError("text_before and text_after must be strings")
     reg = registry if registry is not None else KeyRegistry("data/key_registry.json")
     key = _resolve_key(reg, key_id_or_secret)
     gamma = key.get("gamma") or DEFAULT_GAMMA
@@ -280,10 +280,7 @@ def delta_z(text_before: str, text_after: str, key_id_or_secret: str, *,
 
     z_before = before["z_score"]
     z_after = after["z_score"]
-    if z_before is not None and z_after is not None:
-        delta = round(z_before - z_after, 4)
-    else:
-        delta = None
+    delta = round(z_before - z_after, 4) if z_before is not None and z_after is not None else None
     removed = bool(
         before["verdict"] == "watermark_detected"
         and after["verdict"] != "watermark_detected"
@@ -337,7 +334,7 @@ def delta_z_transform(text: str, key_id_or_secret: str,
     that is regeneration, not 'cleaning').
     """
     if not isinstance(text, str):
-        raise ValueError("text must be a string")
+        raise TypeError("text must be a string")
     transformed, meta = _apply_transform(
         text, method, seed=seed, truncate_fraction=truncate_fraction,
         rewrite_mode=rewrite_mode, use_llm=use_llm,

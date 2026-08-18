@@ -5,7 +5,6 @@ Tests both the FastAPI app (via TestClient) and the simple stdlib HTTP server
 """
 from __future__ import annotations
 
-import json
 import socket
 import subprocess
 import sys
@@ -33,6 +32,7 @@ class TestFastAPIApp:
     @pytest.fixture
     def client(self):
         from fastapi.testclient import TestClient
+
         from ai_watermark_toolkit.api.fastapi_app import app
         return TestClient(app)
 

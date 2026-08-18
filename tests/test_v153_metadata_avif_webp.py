@@ -20,11 +20,11 @@ Fixtures are built in-memory (deterministic, portable, no data/ writes).
 import struct
 
 from ai_watermark_toolkit.metadata.service import (
+    SUPPORTED,
     XMP_UUID,
     clean,
     inspect,
     verify_clean,
-    SUPPORTED,
 )
 
 
@@ -167,7 +167,7 @@ class TestWebp:
         assert cleaned == data
 
     def test_not_a_webp(self):
-        cleaned, rep = clean(b"NOTRIFF....", "fake.webp")
+        _cleaned, rep = clean(b"NOTRIFF....", "fake.webp")
         assert "not_a_webp" in rep["actions"]
 
 
@@ -205,5 +205,5 @@ class TestDispatch:
         assert "webp" in SUPPORTED
 
     def test_unsupported_still_unsupported(self):
-        cleaned, rep = clean(b"data", "file.xyz")
+        _cleaned, rep = clean(b"data", "file.xyz")
         assert "unsupported_format" in rep["actions"]

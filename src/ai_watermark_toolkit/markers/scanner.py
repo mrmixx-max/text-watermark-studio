@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 DEFAULT_PATTERNS: list[tuple[str, int, str, str]] = [
     ("en", 3, r"\bdelve(?:s|d)? into\b", "delve into"),

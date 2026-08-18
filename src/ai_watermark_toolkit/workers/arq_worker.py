@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
-from arq.connections import RedisSettings
+from typing import ClassVar
+
 from arq import create_pool
-from ..pipeline import run_pipeline
+from arq.connections import RedisSettings
+
 from ..core.config import settings
+from ..pipeline import run_pipeline
 
 
 async def startup(ctx):
@@ -27,7 +30,7 @@ async def process_text_job(ctx, job_json: str):
 
 
 class WorkerSettings:
-    functions = [process_text_job]
+    functions: ClassVar = [process_text_job]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(settings.redis_url)

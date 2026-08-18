@@ -57,5 +57,4 @@ class Handler(BaseHTTPRequestHandler):
 
 def serve(host: str = '127.0.0.1', port: int = 8080):
     server = HTTPServer((host, port), Handler)
-    print(f'serving on http://{host}:{port}')
     server.serve_forever()

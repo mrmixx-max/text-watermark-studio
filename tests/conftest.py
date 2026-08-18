@@ -34,3 +34,41 @@ def _fail_open_dev_auth(monkeypatch):
         "settings",
         SimpleNamespace(api_key="", app_env="development"),
     )
+
+
+@pytest.fixture(autouse=True)
+def _ensure_demo_kgw_key(monkeypatch):
+    """Ensure the demo-kgw-1 key exists in the registry with a secret.
+    
+    Many API/CLI tests reference 'demo-kgw-1' as a valid KGW key with a
+    secret. Some tests (v147/v149) rely on this key being present at
+    runtime. The registry file is gitignored and may be missing after
+    a fresh checkout or after another test cleaned it up."""
+    import json as _json
+    from pathlib import Path as _Path
+    
+    reg_path = _Path("data/key_registry.json")
+    try:
+        data = _json.loads(reg_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        data = {"keys": []}
+    
+    keys = data.get("keys", [])
+    has_kgw_secret = any(
+        k.get("key_id") == "demo-kgw-1" and k.get("secret")
+        for k in keys
+    )
+    if not has_kgw_secret:
+        keys.append({
+            "key_id": "demo-kgw-1",
+            "family": "kgw",
+            "status": "active",
+            "owner": "local",
+            "secret": "demo-kgw-secret-0001",
+            "gamma": 0.5,
+        })
+        data["keys"] = keys
+        reg_path.write_text(
+            _json.dumps(data, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )

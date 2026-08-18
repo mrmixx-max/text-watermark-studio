@@ -73,7 +73,7 @@ def _permute(h64: int, i: int) -> int:
 def _minhash(text: str, n: int = _SIG_LEN, k: int = _K_DEFAULT) -> tuple[tuple[int, ...], list[tuple[str, ...]]]:
     sh = _shingles(text, k)
     if not sh:
-        return tuple(), []
+        return (), []
     digests = [_shingle_digest(s) for s in sh]
     # Transposed scan: track the running minimum per permutation while
     # iterating shingles once (same minima as `min(...)` per permutation,
@@ -91,7 +91,7 @@ def _minhash(text: str, n: int = _SIG_LEN, k: int = _K_DEFAULT) -> tuple[tuple[i
 def _jaccard(sig_a: tuple[int, ...], sig_b: tuple[int, ...]) -> float:
     if not sig_a or not sig_b:
         return 0.0
-    equal = sum(1 for a, b in zip(sig_a, sig_b) if a == b)
+    equal = sum(1 for a, b in zip(sig_a, sig_b, strict=False) if a == b)
     return equal / len(sig_a)
 
 

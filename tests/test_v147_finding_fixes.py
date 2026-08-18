@@ -15,11 +15,11 @@ from pathlib import Path
 import pytest
 
 from ai_watermark_toolkit.forensics.finding import build_finding_report
+from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
 from ai_watermark_toolkit.forensics.frs import compute_frs
 from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
 from ai_watermark_toolkit.forensics.kgw import mark_greenlist
-from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
-from ai_watermark_toolkit.forensics.signed_report import sign_report, verify_report
+from ai_watermark_toolkit.forensics.signed_report import verify_report
 
 REPO = Path(__file__).resolve().parents[1]
 SRC = REPO / "src"
@@ -76,9 +76,7 @@ class TestFrs:
 
     def test_verdict_rules_strict(self):
         # Score hoch + Gate offen = NOT
-        frs = compute_frs(scores={k: 5 for k in ("T1", "T2", "T3", "T4", "L1",
-                                                 "L2", "L3", "L4", "O1", "O2",
-                                                 "O3", "O4")})
+        frs = compute_frs(scores=dict.fromkeys(("T1", "T2", "T3", "T4", "L1", "L2", "L3", "L4", "O1", "O2", "O3", "O4"), 5))
         assert frs["score"] == 60
         assert frs["gates"]["G1"]["met"] is False
         assert frs["verdict"] == "NOT_FORENSIC_READY"
@@ -141,8 +139,10 @@ class TestFindingContext:
         assert report["findings"][0]["context_missing"] is True  # ohne Kontext ehrlich begrenzt
 
     def test_api_context_dict_sets_context(self, marked):
-        from fastapi.testclient import TestClient
         from types import SimpleNamespace
+
+        from fastapi.testclient import TestClient
+
         import ai_watermark_toolkit.api.middleware.auth as auth_mod
         from ai_watermark_toolkit.api import fastapi_app
         auth_mod.settings = SimpleNamespace(api_key="test-secret")
@@ -160,8 +160,10 @@ class TestFindingContext:
 # ------------------------------------------- E3: API/MCP detect neue Felder
 class TestDetectApiFields:
     def _client(self, monkeypatch):
-        from fastapi.testclient import TestClient
         from types import SimpleNamespace
+
+        from fastapi.testclient import TestClient
+
         import ai_watermark_toolkit.api.middleware.auth as auth_mod
         from ai_watermark_toolkit.api import fastapi_app
         monkeypatch.setattr(auth_mod, "settings",

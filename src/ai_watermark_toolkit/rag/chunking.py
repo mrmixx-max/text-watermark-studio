@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any
+from typing import Any
 
 
 class TextChunker:
-    def split_text(self, text: str, chunk_size: int = 600, overlap: int = 80, separators: List[str] | None = None):
+    def split_text(self, text: str, chunk_size: int = 600, overlap: int = 80, separators: list[str] | None = None):
         separators = separators or ["\n\n", "\n", ". ", " "]
         text = text or ""
         chunks = []
@@ -29,7 +29,7 @@ class TextChunker:
             start = max(split_at - overlap, start + 1)
         return chunks
 
-    def split_with_metadata(self, text: str, chunk_size: int = 600, overlap: int = 80) -> List[Dict[str, Any]]:
+    def split_with_metadata(self, text: str, chunk_size: int = 600, overlap: int = 80) -> list[dict[str, Any]]:
         chunks = self.split_text(text, chunk_size=chunk_size, overlap=overlap)
         return [
             {'chunk_id': f'chunk-{i+1}', 'text': chunk, 'chars': len(chunk)}

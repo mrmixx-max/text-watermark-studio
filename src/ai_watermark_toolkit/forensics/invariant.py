@@ -28,20 +28,14 @@ from __future__ import annotations
 import json
 import re
 import urllib.request
-from typing import Dict, List, Sequence, Tuple
+from collections.abc import Sequence
 
 # ---------------------------------------------------------------------------
 # Built-in anchors / stopwords (DE + EN, small but sufficient for tests/demo)
 # ---------------------------------------------------------------------------
 
 _STOPWORDS = frozenset(
-    """
-    a an and are as at be by for from has have he her his i in is it its
-    of on or that the their them they this to was we were will with you your
-    auch auf aus bei das dem den der die ein eine einem einen einer es für
-    hat ich im in ist mit nach nicht nur sein sich sie so und vom von vor
-    war werden wie zu zum zur über
-    """.split()
+    ["a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "have", "he", "her", "his", "i", "in", "is", "it", "its", "of", "on", "or", "that", "the", "their", "them", "they", "this", "to", "was", "we", "were", "will", "with", "you", "your", "auch", "auf", "aus", "bei", "das", "dem", "den", "der", "die", "ein", "eine", "einem", "einen", "einer", "es", "für", "hat", "ich", "im", "in", "ist", "mit", "nach", "nicht", "nur", "sein", "sich", "sie", "so", "und", "vom", "von", "vor", "war", "werden", "wie", "zu", "zum", "zur", "über"]
 )
 
 
@@ -60,7 +54,7 @@ def _is_proper_noun(word: str, index: int, tokens: Sequence[str]) -> bool:
     return True
 
 
-def detect_anchors(tokens: Sequence[str]) -> List[int]:
+def detect_anchors(tokens: Sequence[str]) -> list[int]:
     """Return indices of invariant anchor words (keywords / proper nouns).
 
     Heuristic: drop stopwords and pure punctuation; keep words that appear
@@ -69,13 +63,13 @@ def detect_anchors(tokens: Sequence[str]) -> List[int]:
     are the words an adversary cannot replace without losing meaning.
     """
     clean = [_WORD_CLEAN_RE.sub("", t) for t in tokens]
-    freq: Dict[str, int] = {}
+    freq: dict[str, int] = {}
     for w in clean:
         low = w.lower()
         if low and low not in _STOPWORDS and not low.isdigit():
             freq[low] = freq.get(low, 0) + 1
 
-    anchors: List[int] = []
+    anchors: list[int] = []
     for i, w in enumerate(clean):
         if not w:
             continue
@@ -95,7 +89,7 @@ def select_mask_positions(
     tokens: Sequence[str],
     anchors: Sequence[int],
     max_masks: int | None = None,
-) -> List[int]:
+) -> list[int]:
     """Choose mask positions: adjacent to anchors, never the anchors themselves.
 
     Anchors are invariant by construction; the words *next* to them are the
@@ -105,7 +99,7 @@ def select_mask_positions(
     """
     anchor_set = set(anchors)
     n = len(tokens)
-    candidates: List[int] = []
+    candidates: list[int] = []
     # 1st pass: immediate neighbours of anchors
     for a in anchors:
         for idx in (a - 1, a + 1):
@@ -135,7 +129,7 @@ def state_of(text: str, max_masks: int | None = None) -> dict:
 # Candidate source: built-in synonym bank + optional Ollama infill
 # ---------------------------------------------------------------------------
 
-_SYNONYMS: Dict[str, Tuple[str, ...]] = {
+_SYNONYMS: dict[str, tuple[str, ...]] = {
     # DE (incl. common inflections so demo text hits the bank)
     "schnell": ("flink", "rasch", "zügig"),
     "schnelle": ("flinke", "rasche", "zügige"),
@@ -187,7 +181,7 @@ _SYNONYMS: Dict[str, Tuple[str, ...]] = {
 }
 
 
-def _synonym_candidates(word: str) -> List[str]:
+def _synonym_candidates(word: str) -> list[str]:
     low = word.lower()
     return [s for s in _SYNONYMS.get(low, ()) if s.lower() != low]
 
@@ -198,7 +192,7 @@ def _ollama_infill(
     model: str,
     top_k: int = 3,
     timeout: float = 30.0,
-) -> List[str]:
+) -> list[str]:
     """Ask a local Ollama model to fill one masked position (best effort).
 
     Returns up to ``top_k`` candidate tokens. Failures (model missing,
@@ -263,7 +257,7 @@ def _ollama_infill(
 def candidate_sets(
     state: dict,
     options: dict | None = None,
-) -> Tuple[Dict[int, List[str]], Dict[int, str]]:
+) -> tuple[dict[int, list[str]], dict[int, str]]:
     """Per-mask candidate lists + the original token (for decode comparison).
 
     Priority: explicit ``candidates`` option (caller-provided) > Ollama infill
@@ -273,15 +267,15 @@ def candidate_sets(
     opts = options or {}
     tokens = state["tokens"]
     masks = state["masks"]
-    orig: Dict[int, str] = {i: tokens[i] for i in masks}
+    orig: dict[int, str] = {i: tokens[i] for i in masks}
     explicit = opts.get("candidates") or {}
     model = opts.get("ollama_model")
     use_ollama = bool(opts.get("ollama_infill") and model)
 
-    cands: Dict[int, List[str]] = {}
+    cands: dict[int, list[str]] = {}
     for i in masks:
         word = tokens[i]
-        pool: List[str] = []
+        pool: list[str] = []
         if isinstance(explicit, dict) and str(i) in explicit:
             pool = list(explicit[str(i)])
         elif use_ollama:
@@ -292,7 +286,7 @@ def candidate_sets(
             # filter + alphabetically sort (paper §3.2 step 2).
             # The ORIGINAL token is deliberately excluded from the codebook:
             # an unmarked token must NOT decode as a valid bit.
-            dedup = sorted(set(p.lower() for p in pool if p.lower() != word.lower()))
+            dedup = sorted({p.lower() for p in pool if p.lower() != word.lower()})
             if len(dedup) >= 2:
                 cands[i] = dedup[:4]
     return cands, orig
@@ -332,7 +326,7 @@ def embed(
         return {"text": text, "bits_embedded": 0, "masks": masks, "choices": {}, "state": state}
 
     tokens = list(state["tokens"])
-    choices: Dict[int, str] = {}
+    choices: dict[int, str] = {}
     used = 0
     for i in masks:
         if used >= len(bits):
@@ -372,8 +366,8 @@ def extract(
     masks = sorted(cands.keys())
 
     wm_tokens = watermarked.split()
-    recovered_bits: List[str] = []
-    recovered: Dict[int, str] = {}
+    recovered_bits: list[str] = []
+    recovered: dict[int, str] = {}
     known = 0
     total = 0
     for i in masks:
@@ -414,7 +408,7 @@ def corrupt(text: str, ratio: float = 0.05, seed: int = 0, mode: str = "substitu
     rng = random.Random(seed)  # nosec B311 — deterministic seeded RNG for forensics sampling, not crypto
     tokens = text.split()
     anchors = set(detect_anchors(tokens))
-    n_corrupt = max(1, int(round(ratio * len(tokens))))
+    n_corrupt = max(1, round(ratio * len(tokens)))
     corruptible = [i for i in range(len(tokens)) if i not in anchors]
     if not corruptible:
         return text
@@ -465,7 +459,7 @@ def encode_payload(payload: str) -> str:
     return prefix + body
 
 
-def decode_payload(bits: str, strict: bool = False) -> Tuple[str, int]:
+def decode_payload(bits: str, strict: bool = False) -> tuple[str, int]:
     """Decode a payload bit string produced by :func:`encode_payload`.
 
     Returns ``(payload, bits_consumed)``. Unknown bits beyond the payload are
@@ -548,7 +542,7 @@ def extract_payload(
         res["payload_valid"] = False
         res["payload_reason"] = "mask_position_unknown"
         return res
-    payload, consumed = decode_payload(bits)
+    payload, _consumed = decode_payload(bits)
     res["payload"] = payload
     res["payload_valid"] = True
     res["payload_reason"] = "ok"

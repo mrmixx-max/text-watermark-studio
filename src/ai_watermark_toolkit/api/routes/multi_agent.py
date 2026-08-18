@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from ...multi_agent.service import MultiAgentService
 
 router = APIRouter(prefix='/api/multi-agent', tags=['multi-agent'])

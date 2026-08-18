@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import time
+
 from starlette.middleware.base import BaseHTTPMiddleware
-from ...observability.metrics import HTTP_REQUESTS_TOTAL, HTTP_REQUEST_DURATION_SECONDS
+
+from ...observability.metrics import HTTP_REQUEST_DURATION_SECONDS, HTTP_REQUESTS_TOTAL
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):

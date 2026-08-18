@@ -45,12 +45,12 @@ from ai_watermark_toolkit.forensics.delta_z import (
     delta_z_report,
     delta_z_transform,
 )
+from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
 from ai_watermark_toolkit.forensics.key_registry import (
     KeyRegistry,
     mask_secret_key_id,
 )
 from ai_watermark_toolkit.forensics.kgw import mark_greenlist
-from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
 from ai_watermark_toolkit.forensics.signed_report import verify_report
 
 REPO = Path(__file__).resolve().parents[1]
@@ -306,6 +306,7 @@ class TestCliDeltaZ:
 class TestApiDeltaZ:
     def _client(self, tmp_path, monkeypatch):
         from fastapi.testclient import TestClient
+
         from ai_watermark_toolkit.api import fastapi_app
         from ai_watermark_toolkit.api.routes import forensics as forensics_route
 
@@ -390,6 +391,7 @@ class TestApiDeltaZ:
 
     def test_api_requires_auth(self, tmp_path, monkeypatch, marked):
         from types import SimpleNamespace
+
         from ai_watermark_toolkit.api.middleware import auth as auth_mod
         c = self._client(tmp_path, monkeypatch)
         self._register(c)

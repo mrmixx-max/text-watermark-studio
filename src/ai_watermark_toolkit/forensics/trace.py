@@ -25,14 +25,14 @@ Design notes:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .kgw import detect_kgw, tokenize, DEFAULT_GAMMA
+from .kgw import DEFAULT_GAMMA, detect_kgw, tokenize
 
 
-def _windows(tokens: List[str], window: int, step: int) -> List[Dict[str, Any]]:
+def _windows(tokens: list[str], window: int, step: int) -> list[dict[str, Any]]:
     """Split token list into overlapping windows with word offsets."""
-    out: List[Dict[str, Any]] = []
+    out: list[dict[str, Any]] = []
     n = len(tokens)
     if n == 0:
         return out
@@ -64,10 +64,10 @@ def trace_kgw(
     level: str = 'word',
     context: int = 1,
     window: int = 500,
-    step: Optional[int] = None,
+    step: int | None = None,
     threshold: float = 4.0,
     signature_filter: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Sliding-window KGW Z-score trajectory over a long text.
 
     Returns a dict with ``windows`` (one entry per window: index, word
@@ -86,8 +86,8 @@ def trace_kgw(
         }
     step = step or window
     windows = _windows(tokens, window, step)
-    results: List[Dict[str, Any]] = []
-    finding_windows: List[int] = []
+    results: list[dict[str, Any]] = []
+    finding_windows: list[int] = []
     for w in windows:
         r = detect_kgw(
             w['text'], key, gamma=gamma, level=level,
@@ -108,7 +108,7 @@ def trace_kgw(
             'finding': bool(is_finding),
         })
     # Merge adjacent finding windows into spans.
-    spans: List[Dict[str, Any]] = []
+    spans: list[dict[str, Any]] = []
     if finding_windows:
         cur = [finding_windows[0]]
         for i in finding_windows[1:]:
@@ -135,7 +135,7 @@ def trace_kgw(
     }
 
 
-def _span_from_windows(indexes: List[int], results: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _span_from_windows(indexes: list[int], results: list[dict[str, Any]]) -> dict[str, Any]:
     """Build a span (start/end word offsets + peak z) from window indexes."""
     entries = [r for r in results if r['index'] in indexes]
     if not entries:
@@ -152,17 +152,17 @@ def _span_from_windows(indexes: List[int], results: List[Dict[str, Any]]) -> Dic
     }
 
 
-def format_trace(trace: Dict[str, Any], text: Optional[str] = None,
+def format_trace(trace: dict[str, Any], text: str | None = None,
                  context_chars: int = 80) -> str:
     """Human-readable trajectory report for CLI output."""
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append(f"KGW Z-score trajectory: {trace['total_windows']} windows"
                  f" (window={trace['window_words']}w, step={trace['step_words']}w,"
                  f" threshold z>={trace['threshold']})")
     w = trace.get('whole_doc') or {}
     wz = w.get('z_score')
     lines.append(f"Whole document: z={wz} ({w.get('verdict')})"
-                 + (f" — note how the global view dilutes local spikes" if wz is not None and wz < trace['threshold'] else ""))
+                 + (" — note how the global view dilutes local spikes" if wz is not None and wz < trace['threshold'] else ""))
     if not trace['windows']:
         lines.append("(empty text)")
         return '\n'.join(lines)

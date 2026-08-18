@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
-from redis.asyncio import Redis
-from ...queue.redis_queue import RedisQueueService, BACKPRESSURE_KEY
+
+from ...queue.redis_queue import BACKPRESSURE_KEY, RedisQueueService
 from ..response_utils import get_redis
 
 router = APIRouter(prefix='/api/queue', tags=['queue'])

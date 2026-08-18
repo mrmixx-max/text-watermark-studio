@@ -21,7 +21,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -29,26 +28,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from ai_watermark_toolkit.api import fastapi_app
 from ai_watermark_toolkit.api.routes import forensics as forensics_route
 from ai_watermark_toolkit.forensics.ensemble import ensemble_detect
+from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
 from ai_watermark_toolkit.forensics.kgw import (
     DEFAULT_GAMMA,
     detect_kgw,
     detect_multi_key,
     green_token,
-    mark_greenlist,
 )
-from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
 from ai_watermark_toolkit.forensics.report import build_report
 
 REPO = Path(__file__).resolve().parents[1]
 
 # Syllable-generated pseudo-vocab (mirrors test_v113/v132): enough DISTINCT
 # (prev, token) pairs so the Z-test's independence assumption holds.
-_SIL1 = ("ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu "
-         "ga ge gi go gu ka ke ki ko ku la le li lo lu ma me mi mo mu "
-         "na ne ni no nu pa pe pi po pu ra re ri ro ru sa se si so su "
-         "ta te ti to tu va ve vi vo vu wa we wi wo wu za ze zi zo zu").split()
-_SIL2 = ("an en in on un ar er ir or ur al el il ol ul at et it ot ut "
-         "as es is os us").split()
+_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
+_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
 VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 
 KEY_A = "test-secret-alpha-001"
@@ -121,7 +115,7 @@ def _run_cli(args, cwd):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(REPO / "src")
     return subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli"] + args,
+        [sys.executable, "-m", "ai_watermark_toolkit.cli", *args],
         capture_output=True, text=True, env=env, cwd=str(cwd),
     )
 

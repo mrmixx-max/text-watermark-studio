@@ -248,6 +248,7 @@ class TestCliSignedReport:
 class TestApiSignedReport:
     def _client(self, tmp_path, monkeypatch):
         from fastapi.testclient import TestClient
+
         from ai_watermark_toolkit.api import fastapi_app
         from ai_watermark_toolkit.api.routes import forensics as forensics_route
         from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
@@ -322,6 +323,7 @@ class TestApiSignedReport:
 
     def test_api_requires_auth_when_configured(self, tmp_path, monkeypatch):
         from types import SimpleNamespace
+
         from ai_watermark_toolkit.api.middleware import auth as auth_mod
         c = self._client(tmp_path, monkeypatch)
         self._register_key(c)  # register while auth is still off

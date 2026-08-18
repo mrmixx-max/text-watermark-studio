@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .base import LabFamily
 from ...forensics.kgw import DEFAULT_GAMMA, detect_kgw, mark_greenlist
+from .base import LabFamily
 
 
 class FamilyPlugin(LabFamily):

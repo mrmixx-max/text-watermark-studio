@@ -9,7 +9,7 @@ import io
 import struct
 import zipfile
 
-from ai_watermark_toolkit.metadata.service import clean, inspect, SUPPORTED
+from ai_watermark_toolkit.metadata.service import SUPPORTED, clean, inspect
 
 
 def _png_chunk(ctype: bytes, payload: bytes) -> bytes:
@@ -59,10 +59,10 @@ class TestJpeg:
 class TestSvg:
     def test_metadata_and_ai_attrs_removed(self):
         svg = (
-            '<svg xmlns="http://www.w3.org/2000/svg" data-ai-origin="claude">'
-            '<metadata><rdf:RDF><cc:Work>provenance</cc:Work></rdf:RDF></metadata>'
-            '<circle cx="1" cy="1" r="1"/></svg>'
-        ).encode()
+            b'<svg xmlns="http://www.w3.org/2000/svg" data-ai-origin="claude">'
+            b'<metadata><rdf:RDF><cc:Work>provenance</cc:Work></rdf:RDF></metadata>'
+            b'<circle cx="1" cy="1" r="1"/></svg>'
+        )
         cleaned, rep = clean(svg, "logo.svg")
         assert "removed_svg_metadata_and_ai_attrs" in rep["actions"]
         assert b"<metadata" not in cleaned
@@ -92,11 +92,11 @@ class TestDocx:
 class TestHtml:
     def test_ai_meta_and_jsonld_removed(self):
         html = (
-            '<html><head><meta name="generator" content="Claude">'
-            '<meta name="provenance" content="c2pa">'
-            '<script type="application/ld+json">{"@context":"https://schema.org","generator":"AI"}</script>'
-            '</head><body data-ai-content="yes">hi</body></html>'
-        ).encode()
+            b'<html><head><meta name="generator" content="Claude">'
+            b'<meta name="provenance" content="c2pa">'
+            b'<script type="application/ld+json">{"@context":"https://schema.org","generator":"AI"}</script>'
+            b'</head><body data-ai-content="yes">hi</body></html>'
+        )
         cleaned, rep = clean(html, "page.html")
         assert "removed_ai_meta_tag" in rep["actions"]
         assert "removed_jsonld_provenance_block" in rep["actions"]
@@ -108,8 +108,8 @@ class TestHtml:
 class TestMarkdown:
     def test_ai_frontmatter_keys_removed(self):
         md = (
-            "---\ntitle: Report\ngenerated_by: Claude\nmodel_name: claude-sonnet\ndate: 2026-01-01\n---\n\n# Body\n"
-        ).encode()
+            b"---\ntitle: Report\ngenerated_by: Claude\nmodel_name: claude-sonnet\ndate: 2026-01-01\n---\n\n# Body\n"
+        )
         cleaned, rep = clean(md, "draft.md")
         assert "removed_ai_frontmatter_key" in rep["actions"]
         assert rep["removed_keys"] == ["generated_by", "model_name"]

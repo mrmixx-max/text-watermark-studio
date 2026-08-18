@@ -1,7 +1,7 @@
 # TWS v108 — Benchmark Report
 
 **Generated:** 2026-08-18
-**Environment:** Python 3.11.15, Windows 11, `text-watermark-studio` v2.0.0 (v108 deep-debug)
+**Environment:** Python 3.11.15, Windows 11, `text-watermark-studio` v2.4.1 (v108 deep-debug)
 **Hardware:** Webma host (local CPU, no GPU acceleration)
 
 ---

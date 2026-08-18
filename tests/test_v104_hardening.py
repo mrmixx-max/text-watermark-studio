@@ -1,5 +1,6 @@
-from pathlib import Path
 import py_compile
+from pathlib import Path
+
 
 def test_python_sources_compile(tmp_path):
     root = Path(__file__).resolve().parents[1]

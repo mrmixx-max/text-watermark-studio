@@ -21,14 +21,14 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from .metrics import composite
 
 EVAL_PATH = Path(__file__).resolve().parents[3] / 'data' / 'optimization_evals.json'
 
 # one changed variable per candidate (vs. the base prompt)
-_VARIABLES: List[Dict[str, Any]] = [
+_VARIABLES: list[dict[str, Any]] = [
     {"variant": "output_format", "changed_variable": "output format instruction",
      "append": " Return only the rewritten text with no preamble."},
     {"variant": "style_rule", "changed_variable": "style constraint",
@@ -52,7 +52,7 @@ class PromptOptimizationService:
 
     # ---- eval set ----------------------------------------------------------
 
-    def eval_cases(self) -> List[Dict[str, Any]]:
+    def eval_cases(self) -> list[dict[str, Any]]:
         data = json.loads(self.eval_path.read_text(encoding="utf-8"))
         cases = data.get("evals", [])
         if data.get("locked") is not True:
@@ -64,16 +64,13 @@ class PromptOptimizationService:
 
     # ---- candidates --------------------------------------------------------
 
-    def variants(self, system: str) -> List[Dict[str, Any]]:
+    def variants(self, system: str) -> list[dict[str, Any]]:
         """Base + candidates, each changing exactly one variable."""
         base = system.strip()
         out = [{"variant": "baseline", "changed_variable": None,
                 "system_prompt": base}]
         for v in _VARIABLES:
-            if v.get("prepend"):
-                prompt = v["prepend"] + base
-            else:
-                prompt = base + v["append"]
+            prompt = v["prepend"] + base if v.get("prepend") else base + v["append"]
             out.append({"variant": v["variant"],
                         "changed_variable": v["changed_variable"],
                         "system_prompt": prompt})
@@ -92,7 +89,7 @@ class PromptOptimizationService:
 
     # ---- scoring -----------------------------------------------------------
 
-    def score_candidate(self, candidate: Dict[str, Any]) -> Dict[str, Any]:
+    def score_candidate(self, candidate: dict[str, Any]) -> dict[str, Any]:
         """Average composite score over all locked eval cases."""
         cases = self.eval_cases()
         per_case = []
@@ -105,7 +102,7 @@ class PromptOptimizationService:
         return {"candidate": candidate, "per_case": per_case,
                 "avg_score": round(avg, 4), "guardrail_passed": guard}
 
-    def optimize(self, system: str) -> Dict[str, Any]:
+    def optimize(self, system: str) -> dict[str, Any]:
         """Run the loop: baseline -> candidates -> scores -> winner
         (evaluation only; nothing is promoted)."""
         cases = self.eval_cases()
@@ -132,7 +129,7 @@ class PromptOptimizationService:
 
     def promote(self, system: str, template_id: str,
                 candidate_variant: str | None = None,
-                version: str | None = None) -> Dict[str, Any]:
+                version: str | None = None) -> dict[str, Any]:
         """Promote the best (or a named) candidate into the registry as an
         immutable new version — only if it beats the baseline AND passes the
         guardrail. Returns the new template record."""
@@ -188,10 +185,10 @@ class PromptOptimizationService:
         self.registry.create_version(record)
         return record
 
-    def history(self, template_id: str) -> List[Dict[str, Any]]:
+    def history(self, template_id: str) -> list[dict[str, Any]]:
         return [t for t in self.registry.list_templates() if t.get("id") == template_id]
 
-    def rollback(self, template_id: str, version: str) -> Dict[str, Any]:
+    def rollback(self, template_id: str, version: str) -> dict[str, Any]:
         """Restore a previous version as the new stable one (immutable
         history, rollback-ready)."""
         target = self.registry.get_template(template_id, version=version)

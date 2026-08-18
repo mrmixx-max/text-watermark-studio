@@ -8,15 +8,9 @@ happy path. This file targets:
   edge cases in nfkc/fold_confusables handling
 """
 
-import json
-import os
-import sys
-from pathlib import Path
 
-import pytest
 
 from ai_watermark_toolkit.pipeline import detect_text, run_pipeline
-
 
 TEXT = (
     "The first sentence establishes context. "
@@ -122,12 +116,12 @@ class TestRunPipelineEdgeCases:
 
     def test_whitespace_text(self):
         """Whitespace-only text doesn't crash."""
-        out, report = run_pipeline("   \n\n  ")
+        out, _report = run_pipeline("   \n\n  ")
         assert isinstance(out, str)
 
     def test_single_word(self):
         """Single word pipeline doesn't crash."""
-        out, report = run_pipeline("Hello")
+        out, _report = run_pipeline("Hello")
         assert isinstance(out, str)
         assert out == "Hello" or len(out) > 0
 
@@ -143,7 +137,7 @@ class TestRunPipelineEdgeCases:
         """Confusable folding is applied when requested."""
         # Latin small letter long s (confusable with 'f')
         text = "The ſentence has confusables."
-        out, report = run_pipeline(text, fold_confusables=True)
+        out, _report = run_pipeline(text, fold_confusables=True)
         assert isinstance(out, str)
 
     def test_both_nfkc_and_fold(self):
@@ -156,22 +150,22 @@ class TestRunPipelineEdgeCases:
     def test_aggressive_pipeline(self):
         """Aggressive unicode scanning in pipeline mode."""
         text = "Hello\u200bWorld"
-        out, report = run_pipeline(text, aggressive=True)
+        _out, report = run_pipeline(text, aggressive=True)
         assert report["before"]["layers"]["unicode"]["count"] >= 1
 
     def test_light_intensity(self):
         """Light dilute intensity works."""
-        out, report = run_pipeline(TEXT, intensity="light")
+        out, _report = run_pipeline(TEXT, intensity="light")
         assert isinstance(out, str)
 
     def test_aggressive_intensity(self):
         """Aggressive dilute intensity works."""
-        out, report = run_pipeline(TEXT, intensity="aggressive")
+        out, _report = run_pipeline(TEXT, intensity="aggressive")
         assert isinstance(out, str)
 
     def test_invalid_intensity_falls_back(self):
         """Invalid intensity doesn't crash (silently falls back to default)."""
-        out, report = run_pipeline(TEXT, intensity="invalid-intensity-value-xyz")
+        out, _report = run_pipeline(TEXT, intensity="invalid-intensity-value-xyz")
         assert isinstance(out, str)
 
     def test_rewrite_mode_clarity(self):
@@ -193,22 +187,22 @@ class TestRunPipelineEdgeCases:
         assert report["rewrite"]["similarity_ratio"] < 1.0 or out != text
 
     def test_rewrite_mode_plain(self):
-        out, report = run_pipeline(TEXT, rewrite_mode="plain")
+        _out, report = run_pipeline(TEXT, rewrite_mode="plain")
         assert report["rewrite"]["mode"] == "plain"
 
     def test_rewrite_mode_formal(self):
-        out, report = run_pipeline(TEXT, rewrite_mode="formal")
+        _out, report = run_pipeline(TEXT, rewrite_mode="formal")
         assert report["rewrite"]["mode"] == "formal"
 
     def test_rewrite_report_has_change_log(self):
         """Rewrite report always includes change_log."""
-        out, report = run_pipeline(TEXT, rewrite_mode="clarity")
+        _out, report = run_pipeline(TEXT, rewrite_mode="clarity")
         assert "change_log" in report["rewrite"]
         assert len(report["rewrite"]["change_log"]) >= 1
 
     def test_pipeline_report_shape(self):
         """Pipeline report has all expected sections."""
-        out, report = run_pipeline(TEXT)
+        _out, report = run_pipeline(TEXT)
         expected_sections = {"before", "clean", "dilute", "rewrite", "after"}
         assert expected_sections.issubset(report.keys())
 
@@ -224,29 +218,29 @@ class TestRunPipelineEdgeCases:
     def test_long_text(self):
         """Long text doesn't crash the pipeline."""
         long_text = "Sentence one. " * 500
-        out, report = run_pipeline(long_text)
+        out, _report = run_pipeline(long_text)
         assert isinstance(out, str)
         assert len(out) > 0
 
     def test_mixed_language_text(self):
         """Mixed language text with unicode doesn't crash."""
         text = "Deutsch. English. Français. 中文. 日本語."
-        out, report = run_pipeline(text, lang="auto")
+        out, _report = run_pipeline(text, lang="auto")
         assert isinstance(out, str)
 
     def test_dilute_preserves_structure(self):
         """Dilute preserves code blocks (from test_toolkit parity)."""
         text = "Text. ```python\nx = 1\n``` End."
-        out, report = run_pipeline(text)
+        out, _report = run_pipeline(text)
         assert "```" in out
 
     def test_clean_applied_before_dilute(self):
         """Clean phase removes unicode before dilute processes."""
         text = "Hello\u200bWorld"
-        out, report = run_pipeline(text, nfkc=True, fold_confusables=True)
+        out, _report = run_pipeline(text, nfkc=True, fold_confusables=True)
         assert "\u200b" not in out
 
     def test_run_pipeline_rewrite_with_few_words(self):
         """Pipeline rewrite with very short text doesn't crash."""
-        out, report = run_pipeline("Short text.", rewrite_mode="structural")
+        out, _report = run_pipeline("Short text.", rewrite_mode="structural")
         assert isinstance(out, str)

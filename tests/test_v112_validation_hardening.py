@@ -15,7 +15,6 @@ import json
 import subprocess
 import sys
 
-import pytest
 from fastapi.testclient import TestClient
 
 from ai_watermark_toolkit.api.fastapi_app import app
@@ -25,10 +24,10 @@ class TestValidationHardening:
     def _isolated(self, tmp_path):
         """Point graph/community stores at a temp dir so tests never write
         into the tracked data/ files (that is what polluted data/graph)."""
-        from ai_watermark_toolkit.api.routes import graph as graph_routes
         from ai_watermark_toolkit.api.routes import community as community_routes
-        from ai_watermark_toolkit.graph_memory.service import GraphMemoryService
+        from ai_watermark_toolkit.api.routes import graph as graph_routes
         from ai_watermark_toolkit.community.service import CommunityService
+        from ai_watermark_toolkit.graph_memory.service import GraphMemoryService
         gp = tmp_path / 'graph.json'
         gp.write_text(json.dumps({'nodes': [], 'edges': []}), encoding='utf-8')
         cp = tmp_path / 'communities.json'

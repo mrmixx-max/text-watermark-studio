@@ -60,12 +60,8 @@ KEY_B = "test-secret-beta-002"
 
 # Syllable-built vocabulary (same construction as test_v113_kgw_detector):
 # enough DISTINCT (prev, token) pairs that green rates stay well-behaved.
-_SIL1 = ("ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu "
-         "ga ge gi go gu ka ke ki ko ku la le li lo lu ma me mi mo mu "
-         "na ne ni no nu pa pe pi po pu ra re ri ro ru sa se si so su "
-         "ta te ti to tu va ve vi vo vu wa we wi wo wu za ze zi zo zu").split()
-_SIL2 = ("an en in on un ar er ir or ur al el il ol ul at et it ot ut "
-         "as es is os us").split()
+_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
+_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
 VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 
 # "baban" dominates the FPR texts; (baban, baban) hashes RED for KEY_A.
@@ -318,7 +314,7 @@ class TestParity:
 
 class TestCliSignatureFilter:
     def _run(self, args, text):
-        cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "detect"] + args
+        cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "detect", *args]
         return subprocess.run(cmd, input=text, capture_output=True, text=True,
                               cwd=str(REPO_ROOT), timeout=180)
 

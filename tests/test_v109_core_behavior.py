@@ -5,13 +5,11 @@ dass Dateien existieren. Ergänzt die v8x-Struktur-Tests.
 """
 from __future__ import annotations
 
-import pytest
-
-from ai_watermark_toolkit.strip_markup import strip_markup
-from ai_watermark_toolkit.transform.strategies.rule_rewrite import apply_rule_rewrite
-from ai_watermark_toolkit.transform.dilute import dilute_text
 from ai_watermark_toolkit.ingest import read_text
 from ai_watermark_toolkit.report import sha256_text
+from ai_watermark_toolkit.strip_markup import strip_markup
+from ai_watermark_toolkit.transform.dilute import dilute_text
+from ai_watermark_toolkit.transform.strategies.rule_rewrite import apply_rule_rewrite
 
 
 # ---------------------------------------------------------------------------

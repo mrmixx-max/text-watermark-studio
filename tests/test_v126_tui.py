@@ -38,7 +38,7 @@ class TestCompose:
 
         async def check():
             app = StudioTUI()
-            async with app.run_test() as pilot:
+            async with app.run_test():
                 app.query_one("#menu-list")
                 app.query_one("#out")
                 app.query_one("#path")

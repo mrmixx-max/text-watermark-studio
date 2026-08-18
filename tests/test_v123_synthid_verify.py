@@ -5,8 +5,6 @@ on a clean score, 1 when the codebook is missing or the scorer errors. These
 tests exercise the script's verify branch with a mocked scorer wrapper.
 """
 
-import os
-import stat
 import subprocess
 from pathlib import Path
 
@@ -74,7 +72,7 @@ def test_verify_branch_catches_scorer_error(tmp_path):
 def test_verify_generates_valid_png(tmp_path):
     """The embedded test-image generator must produce a valid PNG signature."""
     img = tmp_path / "t.png"
-    proc = subprocess.run(
+    subprocess.run(
         ["bash", "-c",
          'import sys, struct, zlib\n'
          'out = sys.argv[1]\n'
@@ -91,8 +89,8 @@ def test_verify_generates_valid_png(tmp_path):
     )
     # note: this runs the generator as an argv-passed command; verify PNG magic
     # instead by importing the same logic via python.
-    from struct import pack
     import zlib as _z
+    from struct import pack
     def chunk(t, d):
         return pack(">I", len(d)) + t + d + pack(">I", _z.crc32(t + d) & 0xffffffff)
     w = h = 64

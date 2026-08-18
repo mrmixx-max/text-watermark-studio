@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from statistics import mean
 
-from .kgw import detect_kgw, DEFAULT_GAMMA
+from .kgw import DEFAULT_GAMMA, detect_kgw
 
 
 def segment_text(text: str, window: int = 400) -> list[str]:
@@ -108,9 +108,7 @@ def ensemble_detect(text: str, keys: list[dict], window: int = 400,
         verdict = 'redlist_detected'
     elif 'weak_redlist_signal' in kgw_verdicts:
         verdict = 'weak_redlist_signal'
-    elif 'watermark_detected' in kgw_verdicts:
-        verdict = 'strong_consistent_signal'
-    elif kgw_keys and ensemble_score >= 0.7:
+    elif 'watermark_detected' in kgw_verdicts or (kgw_keys and ensemble_score >= 0.7):
         verdict = 'strong_consistent_signal'
     elif kgw_keys and ensemble_score >= 0.35:
         verdict = 'weak_or_mixed_signal'

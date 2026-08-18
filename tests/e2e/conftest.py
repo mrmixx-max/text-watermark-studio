@@ -121,7 +121,7 @@ def cli_env(tmp_key_registry):
 
 def run_cli(args: list[str], input_text: str | None = None, env: dict | None = None) -> subprocess.CompletedProcess:
     """Run ai-wm CLI as a subprocess and return the result."""
-    cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli"] + args
+    cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", *args]
     return subprocess.run(
         cmd,
         input=input_text,

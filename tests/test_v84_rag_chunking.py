@@ -1,5 +1,5 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
 
 def test_rag_chunking_route_and_mcp_exist():

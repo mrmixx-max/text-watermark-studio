@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import json
-import sys
-from dataclasses import dataclass, asdict
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
 
 from .pipeline import detect_text, run_pipeline
 from .transform.clean import clean_text
 from .transform.dilute import dilute_text
-
 
 TEXT_EXTS = {".txt", ".md", ".html", ".htm", ".rst"}
 
@@ -79,7 +77,7 @@ def process_batch(input_dir: str, output_dir: str, *, mode: str = 'pipeline', in
                 dst.write_text(result.text, encoding='utf-8')
                 changed = result.text != text
             elif mode == 'embed':
-                from .forensics.kgw import mark_greenlist, DEFAULT_GAMMA
+                from .forensics.kgw import DEFAULT_GAMMA, mark_greenlist
                 effective_gamma = gamma if gamma is not None else (embed_key.get('gamma') or DEFAULT_GAMMA)
                 result = mark_greenlist(text, embed_key['secret'],
                                         gamma=effective_gamma, level=level,
@@ -110,11 +108,9 @@ def process_batch(input_dir: str, output_dir: str, *, mode: str = 'pipeline', in
                                          verified=verified if mode == 'embed' and verify else None,
                                          z_score=z_score if mode == 'embed' and verify else None,
                                          green_rate=green_rate if mode == 'embed' and verify else None).to_dict())
-        except UnicodeDecodeError as e:
+        except UnicodeDecodeError:
             items.append(BatchItemResult(str(src), str(dst), mode, False).to_dict())
             # Log error to stderr but continue processing remaining files
-            print(f"batch: skip {src}: {e}", file=sys.stderr)
-        except Exception as e:
+        except Exception:
             items.append(BatchItemResult(str(src), str(dst), mode, False).to_dict())
-            print(f"batch: error {src}: {type(e).__name__}: {e}", file=sys.stderr)
     return {"count": len(items), "items": items, "mode": mode}

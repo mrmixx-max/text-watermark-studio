@@ -10,8 +10,6 @@ import os
 import subprocess
 import sys
 
-import pytest
-
 CLI = [sys.executable, "-m", "ai_watermark_toolkit.cli"] if False else None
 
 TEXT = (

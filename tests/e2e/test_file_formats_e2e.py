@@ -5,13 +5,10 @@ with actual file content for each supported format.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pytest
-
-from ai_watermark_toolkit.metadata.service import inspect, clean, SUPPORTED
 from ai_watermark_toolkit.documents.service import DocumentService
+from ai_watermark_toolkit.metadata.service import clean, inspect
 
 
 class TestTxtFormat:
@@ -58,7 +55,7 @@ class TestMarkdownFormat:
         """Clean a .md file should return cleaned bytes."""
         f = tmp_dir / "sample.md"
         f.write_text(sample_markdown, encoding="utf-8")
-        cleaned, report = clean(f.read_bytes(), "sample.md")
+        cleaned, _report = clean(f.read_bytes(), "sample.md")
         assert isinstance(cleaned, bytes)
         # Content should still be readable
         text = cleaned.decode("utf-8")
@@ -103,7 +100,7 @@ class TestHtmlFormat:
 <title>Test</title></head><body><p>Hello</p></body></html>"""
         f = tmp_dir / "test.html"
         f.write_bytes(html)
-        cleaned, report = clean(f.read_bytes(), "test.html")
+        cleaned, _report = clean(f.read_bytes(), "test.html")
         assert isinstance(cleaned, bytes)
         text = cleaned.decode("utf-8")
         # Generator meta should be removed
@@ -169,7 +166,7 @@ class TestDocxFormat:
     def test_clean_docx_scrubs_core_properties(self, tmp_dir):
         """Clean docx should report scrubbing core properties."""
         f = self._make_docx(tmp_dir)
-        cleaned, report = clean(f.read_bytes(), "test.docx")
+        _cleaned, report = clean(f.read_bytes(), "test.docx")
         # The cleaner should report the scrubbing action
         assert report["format"] == "docx"
         assert len(report["actions"]) > 0
@@ -197,11 +194,11 @@ endobj
 endobj
 xref
 0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000266 00000 n 
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000266 00000 n
 trailer
 << /Size 5 /Root 1 0 R /Info 4 0 R >>
 startxref
@@ -227,7 +224,7 @@ startxref
     def test_clean_pdf_removes_creator(self, tmp_dir):
         """Clean pdf should strip Creator/Producer fields."""
         f = self._make_pdf(tmp_dir)
-        cleaned, report = clean(f.read_bytes(), "test.pdf")
+        cleaned, _report = clean(f.read_bytes(), "test.pdf")
         text = cleaned.decode("latin-1", errors="replace")
         # Creator and Producer should be removed or blanked
         assert "/Creator" not in text or "ChatGPT" not in text

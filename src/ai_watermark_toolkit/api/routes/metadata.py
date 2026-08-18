@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import tempfile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from ..middleware.auth import require_api_key
 from ...forensics.key_registry import KeyRegistry
 from ...metadata.provenance import detect_provenance, embed_provenance
 from ...metadata.service import SUPPORTED, clean, inspect
 from ...metadata.synthid import score_synthid
+from ..middleware.auth import require_api_key
 
 router = APIRouter(prefix='/api/metadata', tags=['metadata'])
 keys = KeyRegistry('data/key_registry.json')
@@ -21,7 +22,7 @@ def formats():
 
 
 @router.post('/inspect', summary='Inspect a file for AI provenance metadata (C2PA/EXIF/XMP)')
-def inspect_file(file: UploadFile = File(...)):
+def inspect_file(file: UploadFile = File(...)):  # noqa: B008
     if not file.filename:
         raise HTTPException(status_code=400, detail='filename_required')
     ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
@@ -32,7 +33,7 @@ def inspect_file(file: UploadFile = File(...)):
 
 
 @router.post('/clean', summary='Strip AI provenance metadata from a file, return cleaned bytes + report')
-def clean_file(file: UploadFile = File(...)):
+def clean_file(file: UploadFile = File(...)):  # noqa: B008
     if not file.filename:
         raise HTTPException(status_code=400, detail='filename_required')
     ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
@@ -49,7 +50,7 @@ def clean_file(file: UploadFile = File(...)):
 
 
 @router.post('/embed', summary='Embed your own signed provenance mark (HMAC, keyed) into a file')
-def embed_file(key_id: str, file: UploadFile = File(...),
+def embed_file(key_id: str, file: UploadFile = File(...),  # noqa: B008
                _auth: None = Depends(require_api_key)):
     if not file.filename:
         raise HTTPException(status_code=400, detail='filename_required')
@@ -67,7 +68,7 @@ def embed_file(key_id: str, file: UploadFile = File(...),
 
 
 @router.post('/detect', summary='Detect and verify studio provenance marks in a file')
-def detect_file(file: UploadFile = File(...),
+def detect_file(file: UploadFile = File(...),  # noqa: B008
                 _auth: None = Depends(require_api_key)):
     if not file.filename:
         raise HTTPException(status_code=400, detail='filename_required')
@@ -78,7 +79,7 @@ def detect_file(file: UploadFile = File(...),
 
 
 @router.post('/synthid-score', summary='Score an image for SynthID pixel marks (external checkout required)')
-def synthid_score(file: UploadFile = File(...), synthid_dir: str | None = None):
+def synthid_score(file: UploadFile = File(...), synthid_dir: str | None = None):  # noqa: B008
     if not file.filename:
         raise HTTPException(status_code=400, detail='filename_required')
     data = file.file.read()
@@ -89,7 +90,5 @@ def synthid_score(file: UploadFile = File(...), synthid_dir: str | None = None):
         return score_synthid(tmp_path, synthid_dir=synthid_dir)
     finally:
         import os
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp_path)
-        except OSError:
-            pass

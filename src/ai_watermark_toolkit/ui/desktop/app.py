@@ -19,9 +19,9 @@ from __future__ import annotations
 import json
 import sys
 
+from ...llm.service import LocalLLMService
 from .controller import DesktopController
 from .editor import EditorPane
-from ...llm.service import LocalLLMService
 
 try:  # optional GUI layer — import fails gracefully, main() explains
     from PySide6.QtCore import Qt
@@ -1014,12 +1014,6 @@ class MainWindow(QMainWindow):
 def main(argv: list[str] | None = None) -> int:
     """Entry point: ``python -m ai_watermark_toolkit.ui.desktop.app``."""
     if QApplication is None:  # pragma: no cover - missing optional dep
-        print(
-            "PySide6 is missing — the desktop app is an optional GUI wrapper.\n"
-            "Install: pip install PySide6\n"
-            "The core (CLI/API/TUI) works without Qt.",
-            file=sys.stderr,
-        )
         return 2
     app = QApplication(sys.argv if argv is None else list(argv))
     window = MainWindow()

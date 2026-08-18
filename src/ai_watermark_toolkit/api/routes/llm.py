@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, model_validator
+
 from ...llm.service import LocalLLMService
-from ..response_utils import respond, checkbox_to_bool
+from ..response_utils import checkbox_to_bool, respond
 
 router = APIRouter(prefix='/api/llm', tags=['llm'])
 svc = LocalLLMService()
@@ -14,8 +15,7 @@ class ConfigureRequest(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def normalize(cls, data):
-        if isinstance(data, dict):
-            if 'installed' in data:
+        if isinstance(data, dict) and 'installed' in data:
                 data['installed'] = checkbox_to_bool(data.get('installed'))
         return data
 

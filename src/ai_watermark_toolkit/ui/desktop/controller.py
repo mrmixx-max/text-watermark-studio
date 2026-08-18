@@ -127,7 +127,7 @@ class DesktopController:
             raise ValueError(f"Ungueltiges JSON: {e}") from e
         if not isinstance(obj, dict):
             raise ValueError("Erwartet ein JSON-Objekt (dict), "
-                             f"erhalten: {type(obj).__name__}")
+                            f"erhalten: {type(obj).__name__}")
         return obj
 
     # ------------------------------------------------------------- detect
@@ -269,7 +269,7 @@ class DesktopController:
     def sign_report_json(self, payload: dict, key_id: str) -> dict:
         """Sign a findings payload (HMAC-SHA256, registry secret)."""
         if not isinstance(payload, dict):
-            raise ValueError("payload muss ein JSON-Objekt (dict) sein.")
+            raise TypeError("payload muss ein JSON-Objekt (dict) sein.")
         key, from_registry = self._resolve_key(key_id)
         if not from_registry:
             raise ValueError(
@@ -281,7 +281,7 @@ class DesktopController:
     def verify_report_json(self, signed: dict, key_id: str) -> dict:
         """Verify a signed findings payload with the registry secret."""
         if not isinstance(signed, dict):
-            raise ValueError("signed muss ein JSON-Objekt (dict) sein.")
+            raise TypeError("signed muss ein JSON-Objekt (dict) sein.")
         key, from_registry = self._resolve_key(key_id)
         if not from_registry:
             raise ValueError(
@@ -537,11 +537,11 @@ class DesktopController:
                        delta_z_after: str | Path | None = None,
                        context: dict | None = None) -> dict:
         """KI-Erklärungs-Befund A-D (forensics.finding)."""
-        from ...forensics.finding import build_finding_report
-        from ...forensics.kgw import detect_multi_key, DEFAULT_GAMMA
-        from ...forensics.e_value import e_detect
         from ...forensics.delta_z import delta_z as _delta_z
+        from ...forensics.e_value import e_detect
+        from ...forensics.finding import build_finding_report
         from ...forensics.key_registry import KeyRegistry
+        from ...forensics.kgw import DEFAULT_GAMMA, detect_multi_key
         text = self.load_file(path)
         keys = self._require_kgw_keys()
         if key_id:
@@ -568,7 +568,7 @@ class DesktopController:
             raise FileNotFoundError(f"Datei nicht gefunden: {src}")
         payload = json.loads(src.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
-            raise ValueError("Payload muss ein JSON-Objekt (dict) sein.")
+            raise TypeError("Payload muss ein JSON-Objekt (dict) sein.")
         key = self._resolve_key(key_id)[0] if key_id \
             else self._require_kgw_keys()[0]
         if not key.get("secret"):
@@ -606,8 +606,7 @@ class DesktopController:
     def generate_keypair(self, target_dir: str | Path,
                          algorithm: str = "mldsa-44") -> dict:
         """Generate an ML-DSA keypair (report-keygen parity)."""
-        from ...forensics.signed_report import (
-            generate_mldsa_keypair, mldsa_status)
+        from ...forensics.signed_report import generate_mldsa_keypair, mldsa_status
         status = mldsa_status()
         if not status["available"]:
             raise RuntimeError(status["hint"])

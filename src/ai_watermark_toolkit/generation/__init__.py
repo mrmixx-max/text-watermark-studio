@@ -6,7 +6,7 @@ project remains the post-hoc text rewrite in ``forensics/kgw.py``
 (``mark_greenlist``).
 """
 
-from .kgw_sampler import (  # noqa: F401
+from .kgw_sampler import (
     SAMPLER_GAMMA,
     bias_logits,
     default_vocab,

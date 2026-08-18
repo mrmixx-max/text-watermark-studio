@@ -1,5 +1,5 @@
-from pathlib import Path
 import py_compile
+from pathlib import Path
 
 
 def test_all_python_compiles_after_deep_debug(tmp_path):

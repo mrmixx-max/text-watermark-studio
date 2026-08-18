@@ -1,8 +1,8 @@
+from ai_watermark_toolkit.documents.service import DocumentService
+from ai_watermark_toolkit.pdf.service import PDFService
+from ai_watermark_toolkit.rag.chunking import TextChunker
 from ai_watermark_toolkit.rewrite.service import RewriteService
 from ai_watermark_toolkit.routing.service import ModelRoutingService
-from ai_watermark_toolkit.rag.chunking import TextChunker
-from ai_watermark_toolkit.pdf.service import PDFService
-from ai_watermark_toolkit.documents.service import DocumentService
 
 
 def test_rewrite_smoke():

@@ -514,12 +514,12 @@ def classify_finding(detect_result: dict, context: dict | None = None, *,
     Aussagekraft begrenzt.
 
     Rückgabe: finding_id (F-xxxxxxxx, deterministisch), evidence_class
-    (A/B/C), category, observation (deutsch), beleg (Zahlen), 
+    (A/B/C), category, observation (deutsch), beleg (Zahlen),
     possible_explanations (>= 2), exculpatory, risk, priority (0-5,
     PRÜFbedarf — nicht Schuld), recommended_next_steps, context_missing.
     """
     if not isinstance(detect_result, dict):
-        raise ValueError("detect_result must be a dict")
+        raise TypeError("detect_result must be a dict")
     # detect_multi_key-Gesamtergebnis -> best + Bonferroni-p zusammenführen.
     if isinstance(detect_result.get("best"), dict):
         merged = dict(detect_result["best"])
@@ -615,7 +615,7 @@ def build_finding_report(results: dict, key_id: str = "unknown", *,
     (verify mit ``ai-wm report-verify`` oder :func:`verify_report`).
     """
     if not isinstance(results, dict):
-        raise ValueError("results must be a dict")
+        raise TypeError("results must be a dict")
     detect = results.get("detect", results)
     modules = [("detect", detect)]
     if results.get("e_value") is not None:

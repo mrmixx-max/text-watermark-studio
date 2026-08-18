@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import html
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 EXPORT_DIR = Path(__file__).resolve().parents[3] / 'output'
 

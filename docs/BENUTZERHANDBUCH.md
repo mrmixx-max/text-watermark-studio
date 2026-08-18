@@ -64,8 +64,8 @@ pip install -e ".[dev,bpe]"
 Installation prüfen:
 
 ```bash
-ai-wm splash
 ai-wm --help
+ai-wm detect --help
 ```
 
 ---
@@ -85,14 +85,20 @@ ai-wm clean artikel.txt -o sauber.txt
 # Markerlastige Phrasen umschreiben (drei Intensitäten)
 ai-wm dilute sauber.txt --intensity standard -o verdünnt.txt
 
-# Gesamte Kette: detect → clean → dilute → rewrite → detect
-ai-wm pipeline artikel.txt --rewrite-mode structural -o final.txt
+# Gesamte Kette: detect → clean → dilute → detect
+ai-wm pipeline artikel.txt -o final.txt
 
-# Text gegen einen KGW-Key testen
-ai-wm report artikel.txt --key demo-kgw-1 --pdf
+# Batch-Verarbeitung eines Ordners
+ai-wm batch ./eingang ./ausgang --mode detect
 
-# Ordner überwachen, Metadaten- und Provenance-Befunde melden
-ai-wm watch ./eingang --once
+# API-Server starten (22 Route-Module)
+ai-wm serve --host 127.0.0.1 --port 8080
+
+# Web-Dashboard starten
+ai-wm dashboard --port 8080
+
+# Terminal-UI starten (25 Aktionen)
+ai-wm tui
 ```
 
 ---
@@ -122,18 +128,23 @@ Score.
 
 ## 5. CLI-Referenz
 
-20 Subcommands. Exit-Codes: `0` sauber, `1` Funde/Fehler/nicht verfügbar,
-`2` Eingabefehler. `ai-wm tui` startet die menügesteuerte
-Terminal-Oberfläche (siehe §6).
+7 Subcommands. Exit-Codes: `0` sauber, `1` Funde/Fehler, `2` Eingabefehler.
+Zusätzliche Forensik-Funktionen (Embed, Report, Rewrite, Trace, Payload,
+Evade, Datei-Provenance, SynthID-Scoring, Similarity, Findings) sind über
+den **API-Server** (`ai-wm serve`), das **TUI** (`ai-wm tui`), die **Desktop-GUI**
+oder direkt via Python-Import verfügbar.
+
+```
+ai-wm --help              # alle Kommandos auflisten
+ai-wm detect --help       # Hilfe pro Kommando
+```
 
 ### detect
 ```bash
-ai-wm detect [input] [--stdin] [--lang auto|de|en] [--json] [--pretty]
-             [--aggressive] [-o OUTPUT]
+ai-wm detect [input] [--stdin] [--lang auto|de|en] [--json] [-o OUTPUT]
 ```
-Findet Unicode-/Stego- und KI-Phrasierungsmarker. `--aggressive` flaggt
-zusätzlich skriptspezifische Füller (Braille-Leerzeichen, Hangul, Khmer,
-…) — Opt-in, weil es legitimen Inhalt treffen kann.
+Findet Unicode-/Stego- und KI-Phrasierungsmarker. `--lang` wählt die
+Marker-Sprache (`auto` erkennt automatisch).
 
 ### clean
 ```bash
@@ -149,55 +160,29 @@ ai-wm dilute [input] [--stdin] --intensity light|standard|aggressive [-o OUTPUT]
 ```
 Schreibt markerlastige Phrasen um, 33 Regeln mit geschützten Tokens.
 
-### embed
-```bash
-ai-wm embed [input] [--stdin] --key KEY [--gamma GAMMA] [-o OUTPUT]
-```
-Setzt eine Greenlist-Marke in einen Text. `--key` muss eine key_id aus
-`data/key_registry.json` referenzieren, die ein Secret trägt.
+## 5b. Voller Funktionsumfang: API, TUI, Desktop, Python
+
+Die CLI deckt die Kern-Text-Pipeline (detect/clean/dilute/pipeline/batch) ab.
+Der volle Forensik-Funktionsumfang ist verfügbar über:
+
+| Schnittstelle | Start | Zusatzfunktionen |
+|---|---|---|
+| **API-Server** | `ai-wm serve` | 22 Route-Module: Forensics, Metadata, Dokumente, PDF, RAG, LLM, Routing, Prompts, Optimierung, Multi-Agent, Graph, Community, Export, Cloud-Upload, Queue/Streams |
+| **TUI** | `ai-wm tui` | 25-Aktionen-Menü: detect, clean, dilute, embed, pipeline, report, rewrite, Datei-Werkzeuge, SynthID-Scoring, Watch, Benchmarks, Systemstatus, Update |
+| **Desktop-GUI** | `python -m ai_watermark_toolkit.ui.desktop.app` | PySide6-GUI: Detect, Embed, Report, Sign/Verify, KGW-Demo — kein Server, kein Netzwerk |
+| **Python** | `from ai_watermark_toolkit.forensics import ...` | Direkter Zugriff auf alle Module: `kgw`, `e_process`, `delta_z`, `finding`, `signed_report`, `trace`, `invariant` (Payload), `evader`, `watcher`, `similarity`, `encoding_detect` |
+
+Siehe [API.md](API.md) für die volle REST-Referenz.
+Siehe [TUI-GUIDE.md](TUI-GUIDE.md) für die Terminal-UI.
+Siehe [../desktop/README.md](../desktop/README.md) für die Desktop-App.
 
 ### pipeline
 ```bash
 ai-wm pipeline [input] [--stdin] [--lang auto|de|en] [--nfkc]
                [--fold-confusables] --intensity light|standard|aggressive
-               [--rewrite-mode clarity|concise|plain|formal|structural|backtranslate]
-               [--aggressive] [-o OUTPUT] [--report REPORT]
+               [-o OUTPUT] [--report REPORT]
 ```
-Die volle Kette: detect → clean → dilute → rewrite → detect. `rewrite_mode`
-ist standardmäßig aus; explizit aktivieren.
-
-### report
-```bash
-ai-wm report [input] [--stdin] --key KEY [--lang en|de] [--pdf] [-o OUTPUT]
-```
-Selbsttragender HTML-Forensik-Befund: Z-Score, Green-Rate, p-Wert, Tabelle
-unsichtbarer Zeichen, Empfehlung. `--pdf` rendert via Edge headless
-(Windows). Ausgabe standardmäßig `tws-report-<ts>.html`.
-
-### watch
-```bash
-ai-wm watch VERZEICHNIS [--once] [--interval SEKUNDEN]
-```
-Überwacht einen Ordner (stdlib, keine Abhängigkeiten), gibt JSON-Zeilen pro
-Datei mit Metadaten- und Provenance-Befunden aus. `--once` macht einen
-einzelnen Durchlauf und beendet (sicher für Skripte und Cron).
-
-### rewrite
-```bash
-ai-wm rewrite [input] [--stdin] --mode clarity|concise|plain|formal|structural|backtranslate
-              [--use-llm] [--no-preserve] [--json] [-o OUTPUT]
-```
-`structural` ist regelbasiert (Satz-Rotation, erste/letzte Sätze verankert).
-`backtranslate` braucht das lokale LLM-Backend (siehe §12). `--use-llm`
-erzwingt das LLM-Backend für die übrigen Modi.
-
-### image-score
-```bash
-ai-wm image-score INPUT [--synthid-dir PFAD] [--json]
-```
-Bewertet ein Bild auf SynthID-Pixelmarken. Benötigt den externen Checkpoint
-(siehe §10); ohne ihn meldet es ehrlich `available: false` und endet mit
-Exit 1.
+Die volle Kette: detect → clean → dilute → detect.
 
 ### batch
 ```bash
@@ -211,67 +196,6 @@ Führt einen Modus über jede Datei in einem Verzeichnis aus.
 ai-wm serve [--host HOST] [--port PORT]
 ```
 Startet den FastAPI-Server (siehe §14).
-
-### file-inspect / file-clean / file-embed / file-detect
-```bash
-ai-wm file-inspect DATEI
-ai-wm file-clean DATEI -o AUSGABE
-ai-wm file-embed DATEI --key SCHLUESSEL -o AUSGABE
-ai-wm file-detect DATEI --key SCHLUESSEL
-```
-Metadaten-Inspektion/-Bereinigung (C2PA/EXIF/XMP) und signierte
-Provenienz-Marken in Dateien (Details in §9/§10).
-Die ``--verify``-Flagge (bei ``file-clean``) prüft die bereinigte Datei
-und meldet ``verified_clear | residual_hard_bound | no_c2pa_present``.
-Unterstützte Formate: PNG, JPEG, **WebP, AVIF, HEIC**, SVG, PDF, DOCX,
-ODT, HTML, Markdown.
-
-### trace
-```bash
-ai-wm trace [input] [--stdin] --key KEY [--window 500] [--step N]
-            [--threshold 4.0] [--json] [-o OUTPUT]
-```
-Z-Score-Trajektorie über lange Dokumente: Ein einzelner Z-Test über den
-ganzen Text mittelt lokale Signale weg — ein Manuskript mit 80% Mensch
-und einem eingefügten KI-Kapitel bleibt im globalen Wert unauffällig.
-`trace` schiebt ein Fenster (Standard 500 Wörter) über das Dokument und
-meldet den Z-Score pro Fenster mit Wort-Offsets; Fenster über der
-Schwelle (Standard z>=4) werden zu Spans mit Peak-Z und Textauszug
-zusammengefasst. Zu kurze Fenster (n<10) bleiben mit `reliable: false`
-in der Trajektorie. Demo: 600-Wörter-markierter Block in 3000-Wörter-Dokument
-wird bei Peak-Z=21.0 gefunden, während der Gesamt-Z bei 2.26 bleibt.
-
-### payload
-```bash
-ai-wm payload embed [input] [--stdin] --payload "text" -o WASSERZEICHEN.txt
-ai-wm payload extract WASSERZEICHEN.txt --reference ORIGINAL.txt [--json]
-```
-Multi-Bit-Wasserzeichen mit echter Payload (User-ID, Timestamp,
-Run-ID) über das Invariant-Feature-Codebook (Yoo et al., ACL 2023,
-light). 1 Bit pro Mask-Position; `extract` braucht den ORIGINAL-Text
-als Referenz (beide Seiten teilen die invarianten Anker). Warnung +
-Exit 1, wenn der Text zu klein für die Payload ist.
-
-### evade
-```bash
-ai-wm evade [input] [--stdin] --key KEY [--target-z 3.9] [--max-changes N]
-            [--ollama-model MODELL] [--json] [-o OUTPUT]
-```
-Adversariale Evaluation (White-Box, eigenes Schema): Stresstest der
-eigenen KGW-Implementierung. Ersetzt gierig grüne Tokens durch
-nicht-grüne Alternativen, bis der Z-Score unter das Ziel fällt, und
-misst den Preis: Änderungen, Änderungsquote, Wort-Überlappung,
-Z-Trajektorie pro Änderung. Optional Ollama-Infill für natürliche
-Kandidaten. Ehrlicher Scope: bekannter Key, eigenes Schema — misst die
-Robustheits-Untergrenze, nicht die Feld-Resistenz.
-
-### splash
-```bash
-ai-wm splash
-```
-Studio-Banner + Systemstatus.
-
----
 
 ## 6. Menügesteuerte Terminal-Oberfläche
 
@@ -327,7 +251,7 @@ Urteile: `Z ≥ 4,0` watermark_detected · `2,0 ≤ Z < 4` weak_signal ·
 Bonferroni-Korrektur an, damit viele Keys die False-Positive-Rate nicht
 aufblähen.
 
-### Token-Ebenen (2.0.0)
+### Token-Ebenen
 
 ```python
 from ai_watermark_toolkit.forensics.kgw import detect_kgw
@@ -358,10 +282,11 @@ detektieren. Gemessen:
 
 ## 8. Eigene Marken setzen
 
-**Text:** `ai-wm embed text.txt --key demo-kgw-1` (bzw. `mark_greenlist()`
-im Code) setzt die Greenlist durch Ersetzen nicht-grüner Wörter durch grüne
-aus einem Frequenz-Pool. Die Marke ist key-gebunden: Nur der
-Key-Inhaber detektiert sie; ein falscher Key meldet kein Signal.
+**Text (via TUI/Desktop/API):** Nutze die Embed-Aktion im TUI (`ai-wm tui`),
+der Desktop-GUI oder `POST /api/forensics/embed`. Im Code: `mark_greenlist()`
+setzt die Greenlist durch Ersetzen nicht-grüner Wörter durch grüne aus
+einem Frequenz-Pool. Die Marke ist key-gebunden: Nur der Key-Inhaber
+detektiert sie; ein falscher Key meldet kein Signal.
 
 Ehrliche Einschränkung: Die Ersetzungen stammen aus einem
 Frequenzvokabular, keine Synonyme — Wort-für-Wort-Nuance bleibt nicht
@@ -382,9 +307,11 @@ trägt ein öffentliches Demo-Secret — vor echtem Einsatz ersetzen:
 
 ## 9. Datei-Provenance (HMAC)
 
-`file-embed`/`file-detect` signieren Dateien mit einem HMAC über den
-Original-Inhalt und legen die Marke in der Datei ab (XMP-artiges Paket).
-8 Formate: PNG, JPEG, SVG, PDF, DOCX, ODT, HTML, Markdown.
+Nutze die File-Embed/File-Detect-Aktionen im TUI (`ai-wm tui`), der
+Desktop-GUI oder `POST /api/metadata/embed` und `POST /api/metadata/detect`.
+Signiert Dateien mit einem HMAC über den Original-Inhalt und legt die
+Marke in der Datei ab (XMP-artiges Paket). 8 Formate: PNG, JPEG, SVG, PDF,
+DOCX, ODT, HTML, Markdown.
 
 Eigenschaften:
 
@@ -404,7 +331,9 @@ ai-wm file-detect signiert.pdf --key mein-key --json
 
 ## 10. Metadaten-Bereinigung (C2PA / EXIF / XMP)
 
-`file-inspect`/`file-clean` prüfen und entfernen Metadaten:
+Nutze die File-Inspect/File-Clean-Aktionen im TUI (`ai-wm tui`), der
+Desktop-GUI oder `POST /api/metadata/inspect` und `POST /api/metadata/clean`.
+Prüft und entfernt Metadaten:
 
 - PNG: eXIf-, XMP-Chunks
 - JPEG: APP1/APP11-Segmente
@@ -433,18 +362,18 @@ scripts/setup_synthid.sh --verify
 generierten Testbild aus — Beweis für „funktioniert wirklich", nicht
 „sollte funktionieren". Danach:
 
-```bash
-ai-wm image-score foto.png
-```
+Nutze die Image-Score-Aktion im TUI (`ai-wm tui`), der Desktop GUI oder
+`POST /api/metadata/synthid-score`.
 
-Ohne den Checkpoint meldet `image-score` ehrlich `available: false` und
-endet mit Exit 1. Der Adapter tut nie so als ob.
+Ohne den Checkpoint meldet die Aktion ehrlich `available: false`.
+Der Adapter tut nie so als ob.
 
 ---
 
 ## 12. Rewrite-Engine
 
-`rewrite` und `pipeline --rewrite-mode` bieten:
+Nutze die Rewrite-Aktion im TUI (`ai-wm tui`), der Desktop-GUI oder
+`POST /api/rewrite/run`. Bietet:
 
 - **structural** — regelbasierte Satz-Rotation, erste/letzte Sätze
   verankert. Deterministisch, kein LLM.
@@ -476,16 +405,15 @@ Aktion im TUI: Menüpunkt 18, Modellname im Pfad-Feld.
 
 ---
 
-## 13. Befund-Report & Ordner-Watcher (2.0.0)
+## 13. Befund-Report & Ordner-Watcher
 
-`ai-wm report` erzeugt einen selbsttragenden HTML-Befund — KGW-Statistik,
-Tabelle unsichtbarer Zeichen, den analysierten Text und eine Empfehlung —
-mit optionalem `--pdf`-Rendering.
+Nutze die Report-Aktion im TUI (`ai-wm tui`), der Desktop-GUI oder
+`POST /api/forensics/finding` für einen strukturierten forensischen Befund
+mit Evidenzklassen A-D, Priorität 0-5, optional signiert.
 
-`ai-wm watch` überwacht ein Verzeichnis und gibt pro neuer/geänderter Datei
-eine JSON-Zeile mit `metadata`- (Inspect-Aktionen) und `provenance`-
-(found/valid/key_id) Befunden aus. Gebaut für Redaktionen, Editoren und
-Incident Response.
+Nutze die Watch-Aktion im TUI oder `POST /api/metadata/inspect` pro Datei
+zur Überwachung eines Verzeichnisses mit Metadaten- und Provenance-Befunden.
+Gebaut für Redaktionen, Editoren und Incident Response.
 
 ---
 
@@ -514,9 +442,11 @@ Die Marke überlebt je nach γ etwa 45–60 % Wort-Umsatz.
 ai-wm serve --port 8000
 ```
 
-FastAPI-App mit Routen für Textverarbeitung (`/api/pipeline`,
-`/api/rewrite/run`), Metadaten (`/api/metadata/inspect|clean|synthid-score|file-embed|file-detect`)
-sowie `/health`- und `/ready`-Probes. Swagger-UI unter `/docs`.
+FastAPI-App mit 22 Route-Modulen: Textverarbeitung (`/api/detect`,
+`/api/clean`, `/api/dilute`, `/api/pipeline`, `/api/rewrite/run`), Forensics
+(`/api/forensics/*`), Metadata (`/api/metadata/*`), Dokumente, PDF, RAG,
+LLM, Routing, Prompts, Optimierung, Multi-Agent, Graph, Community, Export,
+Cloud, Queue/Streams, sowie `/health`- und `/ready`-Probes. Swagger-UI unter `/docs`.
 
 ---
 
@@ -550,10 +480,10 @@ bekannt ist vs. Best-Effort-Behauptungen je Anbieter.
 | Symptom | Lösung |
 |---|---|
 | `ModuleNotFoundError: tiktoken` | `pip install text-watermark-studio[bpe]` |
-| `image-score` endet mit 1 | Checkpoint nicht eingerichtet — `scripts/setup_synthid.sh --verify` ausführen |
-| `rewrite --mode backtranslate` liefert Structural-Ergebnis | LLM-Backend nicht konfiguriert — `LOCAL_LLM_*`-Env-Variablen setzen (§11) |
-| `embed` endet mit 2 | `--key` referenziert eine key_id ohne Secret in `data/key_registry.json` |
-| `watch` meldet `unsupported`-Format | Dateityp nicht im unterstützten Satz des Metadaten-Layers — erwartetes, ehrliches Signal |
+|| SynthID-Scoring nicht verfügbar | Checkpoint nicht eingerichtet — `scripts/setup_synthid.sh --verify` ausführen |
+|| Rewrite liefert Structural-Ergebnis | LLM-Backend nicht konfiguriert — `LOCAL_LLM_*`-Env-Variablen setzen (§12) |
+|| Embed meldet fehlendes Secret | Key-ID hat kein Secret in `data/key_registry.json` |
+|| Metadaten meldet `unsupported`-Format | Dateityp nicht im unterstützten Satz — erwartetes, ehrliches Signal |
 
 ---
 
@@ -561,7 +491,7 @@ bekannt ist vs. Best-Effort-Behauptungen je Anbieter.
 
 ```bash
 pip install -e ".[dev,bpe]"
-pytest tests/          # 195 Tests, deterministisch, kein Netzwerk
+pytest tests/          # deterministisch, kein Netzwerk
 python benchmarks/attack_matrix.py
 ```
 
@@ -572,9 +502,8 @@ Test schreibt in getrackte `data/`-Dateien.
 
 ## 20. Lokaler Corpus-Abgleich
 
-```bash
-ai-wm similarity text.txt --corpus ./archiv [--threshold 0.4] [--top 5] [--json]
-```
+Nutze die Corpus-Similarity-Aktion im TUI (`ai-wm tui`), der Desktop-GUI
+oder `POST /api/forensics/similarity`:
 
 MinHash-Fingerprint-Vergleich eines Textes gegen **Ihren eigenen**
 Dokument-Korpus. Deterministisch, offline, mit Fundstellen-Zitaten als

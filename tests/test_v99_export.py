@@ -1,5 +1,6 @@
-from pathlib import Path
 import json
+from pathlib import Path
+
 
 def test_export_files_exist():
     root = Path(__file__).resolve().parents[1]

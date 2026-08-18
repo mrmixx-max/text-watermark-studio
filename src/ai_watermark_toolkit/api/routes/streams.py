@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
+
 from ...streams.redis_streams import RedisStreamsService
 from ..response_utils import get_redis
 

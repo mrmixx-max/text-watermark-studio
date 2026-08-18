@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from ai_watermark_toolkit.batch import process_batch
 

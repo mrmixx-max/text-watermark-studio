@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Watermark — Text Watermark Studio{% endblock %}
+{% block page_title %}Watermark{% endblock %}
+{% block page_subtitle %}Embed & detect text watermarks{% endblock %}
+
+{% block content %}
+<div class="grid gap-4 lg:grid-cols-2">
+  <!-- Detect panel -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Detect Watermark</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Analyze text for AI watermark signals.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/detect"
+          hx-target="#detect-output"
+          hx-swap="innerHTML"
+          hx-on::after-request="if(event.detail.successful) window.dispatchEvent(new CustomEvent('tws:detection'))">
+      <div>
+        <label class="label" for="detect-text">Text to analyze</label>
+        <textarea id="detect-text" name="text" class="field min-h-32" placeholder="Paste text to check for watermarks..."></textarea>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="label" for="detect-lang">Language</label>
+          <select id="detect-lang" name="lang" class="field">
+            <option value="auto">Auto</option>
+            <option value="en">English</option>
+            <option value="de">German</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="aggressive" class="w-auto">
+            <span class="text-[var(--color-text-muted)]">Aggressive mode</span>
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary w-full">Run Detection</button>
+    </form>
+    <div id="detect-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Detection results will appear here.</div>
+  </div>
+
+  <!-- Embed panel -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Embed Watermark</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Apply a KGW greenlist watermark to text.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/embed"
+          hx-target="#embed-output"
+          hx-swap="innerHTML"
+          hx-on::after-request="if(event.detail.successful) window.dispatchEvent(new CustomEvent('tws:embed'))">
+      <div>
+        <label class="label" for="embed-text">Source text</label>
+        <textarea id="embed-text" name="text" class="field min-h-32" placeholder="Text to watermark..."></textarea>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="label" for="embed-key">Key</label>
+          <input id="embed-key" name="key" class="field" placeholder="key_id or raw secret">
+        </div>
+        <div>
+          <label class="label" for="embed-gamma">Gamma</label>
+          <input id="embed-gamma" name="gamma" type="number" step="0.05" min="0" max="1" class="field" placeholder="0.25">
+        </div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="label" for="embed-level">Level</label>
+          <select id="embed-level" name="level" class="field">
+            <option value="word">Word</option>
+            <option value="bpe">BPE</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="embed-context">Context</label>
+          <input id="embed-context" name="context" type="number" class="field" value="1">
+        </div>
+      </div>
+      <button type="submit" class="btn-primary w-full">Embed Watermark</button>
+    </form>
+    <div id="embed-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Embedded text will appear here.</div>
+  </div>
+</div>
+
+<!-- Lab families -->
+<div class="mt-6 panel p-5">
+  <h2 class="text-lg font-semibold">Watermark Families</h2>
+  <p class="mt-1 text-sm text-[var(--color-text-muted)]">Run detection across all taxonomy-driven families.</p>
+  <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <form class="rounded-xl border border-white/8 bg-white/3 p-4"
+          hx-post="/dashboard/api/lab/detect-all"
+          hx-target="#lab-output"
+          hx-swap="innerHTML">
+      <label class="label" for="lab-text">Lab text</label>
+      <textarea id="lab-text" name="text" class="field min-h-24">Sample text for watermark family detection across all taxonomy-driven families.</textarea>
+      <button type="submit" class="btn-primary mt-3 w-full">Detect All Families</button>
+    </form>
+    <div class="sm:col-span-2 lg:col-span-3">
+      <div id="lab-output" class="rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)] min-h-full">
+        Family detection results will appear here.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Clean / Dilute -->
+<div class="mt-6 grid gap-4 lg:grid-cols-2">
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Clean Text</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Remove unicode stego signals and normalize.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/clean"
+          hx-target="#clean-output"
+          hx-swap="innerHTML"
+          hx-on::after-request="if(event.detail.successful) window.dispatchEvent(new CustomEvent('tws:clean'))">
+      <textarea name="text" class="field min-h-24" placeholder="Text to clean..."></textarea>
+      <div class="flex gap-3">
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="nfkc" class="w-auto"><span class="text-[var(--color-text-muted)]">NFKC</span></label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="fold_confusables" class="w-auto"><span class="text-[var(--color-text-muted)]">Fold confusables</span></label>
+      </div>
+      <button type="submit" class="btn-primary w-full">Clean</button>
+    </form>
+    <div id="clean-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Cleaned text will appear here.</div>
+  </div>
+
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Dilute Watermark</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Reduce watermark signal strength.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/dilute"
+          hx-target="#dilute-output"
+          hx-swap="innerHTML">
+      <textarea name="text" class="field min-h-24" placeholder="Text to dilute..."></textarea>
+      <div>
+        <label class="label" for="dilute-intensity">Intensity</label>
+        <select id="dilute-intensity" name="intensity" class="field">
+          <option value="light">Light</option>
+          <option value="standard">Standard</option>
+          <option value="aggressive">Aggressive</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary w-full">Dilute</button>
+    </form>
+    <div id="dilute-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Diluted text will appear here.</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update dashboard counters when operations complete
+window.addEventListener('tws:detection', function() {
+  const el = document.getElementById('stat-detections');
+  if (el) el.textContent = parseInt(el.textContent || '0', 10) + 1;
+});
+window.addEventListener('tws:embed', function() {
+  const el = document.getElementById('stat-embeds');
+  if (el) el.textContent = parseInt(el.textContent || '0', 10) + 1;
+});
+window.addEventListener('tws:clean', function() {
+  const el = document.getElementById('stat-cleans');
+  if (el) el.textContent = parseInt(el.textContent || '0', 10) + 1;
+});
+</script>
+{% endblock %}

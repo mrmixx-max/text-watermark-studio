@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 
 INVISIBLE_CPS = {
     0x00AD, 0x034F, 0x061C, 0x180E,
@@ -95,7 +95,7 @@ def sanitize(text: str, *, nfkc: bool = False, fold_confusables: bool = False,
     if fold_confusables:
         before = s
         s = s.translate(CONFUSABLES)
-        folds = sum(1 for a, b in zip(before, s) if a != b) + abs(len(before) - len(s))
+        folds = sum(1 for a, b in zip(before, s, strict=False) if a != b) + abs(len(before) - len(s))
     if nfkc:
         s = unicodedata.normalize("NFKC", s)
     s = re.sub(r"[^\S\n]+", " ", s)

@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 
 
 def test_debug_helpers_and_routes_exist():

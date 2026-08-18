@@ -31,8 +31,8 @@ from ai_watermark_toolkit.forensics.delta_z import (
     TRANSFORM_METHODS,
     delta_z_transform,
 )
-from ai_watermark_toolkit.forensics.kgw import mark_greenlist
 from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
+from ai_watermark_toolkit.forensics.kgw import mark_greenlist
 
 REPO = Path(__file__).resolve().parents[1]
 SRC = REPO / "src"
@@ -122,7 +122,7 @@ class TestRewriteInCore:
         assert "__PROTECTED_" not in out  # tokens restored, no leaks
 
     def test_unknown_mode_rejected(self, marked):
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             delta_z_transform(marked, KEY, method="rewrite",
                               rewrite_mode="nonsense-mode", use_llm=False)
 

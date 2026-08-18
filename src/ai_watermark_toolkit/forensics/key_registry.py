@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -116,7 +117,7 @@ class KeyRegistry:
         shutil.copy2(self.path, backup)
         return backup
 
-    def _raise_corrupt(self, reason: str) -> "RegistryCorruptError":
+    def _raise_corrupt(self, reason: str) -> RegistryCorruptError:
         return RegistryCorruptError(self.path, self._backup_corrupt(), reason)
 
     def _parse_file(self) -> dict:
@@ -177,8 +178,6 @@ class KeyRegistry:
                 fh.flush()
             os.replace(tmp, self.path)
         except BaseException:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp)
-            except OSError:
-                pass
             raise

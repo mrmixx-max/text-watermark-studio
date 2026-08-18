@@ -33,22 +33,22 @@ therefore measures the SCHEME'S robustness floor, not its field resistance.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
+from .frequent_vocab import FREQUENT_VOCAB
 from .kgw import (
+    DEFAULT_GAMMA,
     detect_kgw,
     green_token,
     tokenize,
-    DEFAULT_GAMMA,
 )
-from .frequent_vocab import FREQUENT_VOCAB
-
 
 # ---------------------------------------------------------------------------
 # Candidate pools (non-green alternatives)
 # ---------------------------------------------------------------------------
 
-def _candidate_pool(word: str) -> List[str]:
+def _candidate_pool(word: str) -> list[str]:
     """Return replacement candidates for a word.
 
     Priority: the frequency-vocabulary pool the word ITSELF belongs to
@@ -59,7 +59,7 @@ def _candidate_pool(word: str) -> List[str]:
     (word_overlap) depends on it.
     """
     low = word.lower()
-    cands: List[str] = []
+    cands: list[str] = []
     # Same-class first: only the pool containing the original word.
     for pool in FREQUENT_VOCAB.values():
         if low in pool:
@@ -72,7 +72,7 @@ def _candidate_pool(word: str) -> List[str]:
     ]
     # Dedupe, case-normalized, exclude the word itself.
     seen: set = set()
-    out: List[str] = []
+    out: list[str] = []
     for c in cands:
         if c.lower() != low and c.lower() not in seen:
             seen.add(c.lower())
@@ -85,7 +85,7 @@ def _first_non_green(
     ctx: Sequence[str],
     key: str,
     gamma: float,
-) -> Optional[str]:
+) -> str | None:
     """Return the first candidate that is NOT green for (key, ctx)."""
     for c in candidates:
         if not green_token(c, list(ctx), key, gamma):
@@ -104,10 +104,10 @@ def evade(
     level: str = "word",
     context: int = 1,
     target_z: float = 3.9,
-    max_changes: Optional[int] = None,
-    ollama_model: Optional[str] = None,
+    max_changes: int | None = None,
+    ollama_model: str | None = None,
     seed: int = 0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Push the KGW Z-score of ``text`` below ``target_z`` with minimal edits.
 
     Greedy loop: score every token, collect green positions, replace the
@@ -137,7 +137,7 @@ def evade(
         )
 
     # Score every token position against its greenlist context.
-    scored: List[Tuple[int, str, List[str], bool]] = []
+    scored: list[tuple[int, str, list[str], bool]] = []
     for i in range(1, n):
         ctx = tokens[max(0, i - context):i]
         is_green = green_token(tokens[i], ctx, key, gamma)
@@ -147,8 +147,8 @@ def evade(
     max_changes = max_changes or len(green_positions)
 
     work = list(tokens)
-    changed: List[Dict[str, Any]] = []
-    trajectory: List[Dict[str, Any]] = []
+    changed: list[dict[str, Any]] = []
+    trajectory: list[dict[str, Any]] = []
     z_now = before_z
 
     # Iterate: each round, try replacing green positions. To keep edits
@@ -200,18 +200,18 @@ def evade(
 def _result(
     original: str,
     evaded: str,
-    tokens_before: List[str],
-    tokens_after: List[str],
-    changes: List[Dict[str, Any]],
-    trajectory: List[Dict[str, Any]],
+    tokens_before: list[str],
+    tokens_after: list[str],
+    changes: list[dict[str, Any]],
+    trajectory: list[dict[str, Any]],
     target_z: float,
     z_before: float,
     z_after: float,
     similarity: float,
     status: str,
-    word_overlap: Optional[float] = None,
-    verdict_after: Optional[str] = None,
-) -> Dict[str, Any]:
+    word_overlap: float | None = None,
+    verdict_after: str | None = None,
+) -> dict[str, Any]:
     return {
         "status": status,
         "target_z": target_z,
@@ -246,7 +246,7 @@ def _word_overlap(a: str, b: str) -> float:
 
 
 def _ollama_candidates(sentence: str, mask_index: int, model: str,
-                       top_k: int = 3, timeout: float = 20.0) -> List[str]:
+                       top_k: int = 3, timeout: float = 20.0) -> list[str]:
     """Ask a local Ollama model for natural alternatives at one position.
 
     Best effort: any failure returns [] and the deterministic pool takes
@@ -283,14 +283,13 @@ def _ollama_candidates(sentence: str, mask_index: int, model: str,
     if "," not in out:
         return []
     words = [w for part in out.split(",") for w in re.findall(r"[A-Za-z'\-]+", part)]
-    words = [w for w in words if len(w) > 1][:top_k]
-    return words
+    return [w for w in words if len(w) > 1][:top_k]
 
 
-def format_evade_report(result: Dict[str, Any]) -> str:
+def format_evade_report(result: dict[str, Any]) -> str:
     """Human-readable report for CLI output."""
     lines = [
-        f"KGW adversarial evaluation (white-box, own scheme)",
+        "KGW adversarial evaluation (white-box, own scheme)",
         f"  status:    {result['status']}",
         f"  Z before:  {result['z_before']:+.2f}   Z after: {result['z_after']:+.2f}"
         f"   (target < {result['target_z']})",

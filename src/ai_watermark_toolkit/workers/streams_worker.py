@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import time
+
 from redis.asyncio import Redis
+
 from ..core.config import settings
 from ..pipeline import run_pipeline
 from ..streams.redis_streams import RedisStreamsService

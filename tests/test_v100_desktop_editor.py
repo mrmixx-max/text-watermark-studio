@@ -17,9 +17,7 @@ All key material lives in tmp_path.
 from __future__ import annotations
 
 import json
-import os
 import re
-from pathlib import Path
 
 import pytest
 
@@ -42,8 +40,8 @@ _PLAIN = ("This important change shows a new way to use the tool and "
 
 @pytest.fixture()
 def controller(tmp_path):
-    from ai_watermark_toolkit.ui.desktop import DesktopController
     from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+    from ai_watermark_toolkit.ui.desktop import DesktopController
     registry = tmp_path / "registry.json"
     KeyRegistry(registry).add_key(dict(REG_KEY))
     return DesktopController(registry_path=registry)
@@ -106,9 +104,10 @@ def test_editor_pane_offscreen(monkeypatch):
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
+
     from ai_watermark_toolkit.ui.desktop.editor import EditorPane
 
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     ed = EditorPane()
     ed.setPlainText(_PLAIN)
     assert ed.blockCount() >= 1
@@ -142,9 +141,8 @@ def test_editor_pane_offscreen(monkeypatch):
     # drag&drop: URL drop emits fileDropped with the local path
     dropped = []
     ed.fileDropped.connect(dropped.append)
-    from PySide6.QtCore import QMimeData, QUrl, Qt
+    from PySide6.QtCore import QMimeData, QPointF, Qt, QUrl
     from PySide6.QtGui import QDropEvent
-    from PySide6.QtCore import QPointF
     mime = QMimeData()
     mime.setUrls([QUrl.fromLocalFile("C:/tmp/sample.txt")])
     ev = QDropEvent(QPointF(10, 10), Qt.DropAction.CopyAction, mime,
@@ -156,6 +154,7 @@ def test_editor_pane_offscreen(monkeypatch):
 def test_editor_pane_controller_module_still_qt_free(controller):
     """The controller must stay Qt-free — the editor lives in the shell."""
     import inspect
+
     from ai_watermark_toolkit.ui.desktop import controller as cmod
     src = inspect.getsource(cmod)
     assert not re.search(r"^\s*(import|from)\s+(PySide6|PyQt)", src, re.M)
@@ -166,9 +165,10 @@ def test_main_window_embed_paints_markings(monkeypatch):
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
+
     from ai_watermark_toolkit.ui.desktop.app import MainWindow
 
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     win = MainWindow()
     win.editor.setPlainText(_PLAIN)
 
@@ -188,9 +188,10 @@ def test_editor_markings_invalidate_on_text_change(monkeypatch):
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
+
     from ai_watermark_toolkit.ui.desktop.editor import EditorPane
 
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     ed = EditorPane()
     result = mark_greenlist(_PLAIN, REG_KEY["secret"], REG_KEY["gamma"])
     subs = result["substitutions"]
@@ -221,9 +222,10 @@ def test_paste_shortcut_not_hijacked(monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtGui import QAction, QKeySequence
     from PySide6.QtWidgets import QApplication
+
     from ai_watermark_toolkit.ui.desktop.app import MainWindow
 
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     win = MainWindow()
 
     hijacked = []
@@ -257,7 +259,7 @@ def test_llm_widget_lists_models_and_activates(monkeypatch):
                         lambda self: {"model_variant": ""})
 
     from PySide6.QtWidgets import QApplication
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     win = appmod.MainWindow()
 
     assert win.llm_combo.isEnabled()
@@ -277,7 +279,7 @@ def test_llm_widget_graceful_without_ollama(monkeypatch):
     monkeypatch.setattr(appmod.LocalLLMService, "list_models", _boom)
 
     from PySide6.QtWidgets import QApplication
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     win = appmod.MainWindow()
 
     assert not win.llm_combo.isEnabled()

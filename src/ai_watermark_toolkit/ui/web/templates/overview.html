@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Overview — Text Watermark Studio{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block page_subtitle %}System health & recent detections{% endblock %}
+
+{% block content %}
+<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+  <div class="stat-card">
+    <div class="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Detections</div>
+    <div class="mt-1 text-2xl font-bold" id="stat-detections">{{ stats.detections_total }}</div>
+    <div class="mt-1 text-xs text-[var(--color-text-muted)]"><span id="stat-detections-rate">{{ stats.detections_last_minute }}</span>/min</div>
+  </div>
+  <div class="stat-card">
+    <div class="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Embeds</div>
+    <div class="mt-1 text-2xl font-bold" id="stat-embeds">{{ stats.embeds_total }}</div>
+    <div class="mt-1 text-xs text-[var(--color-text-muted)]">total watermark operations</div>
+  </div>
+  <div class="stat-card">
+    <div class="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Cleans</div>
+    <div class="mt-1 text-2xl font-bold" id="stat-cleans">{{ stats.cleans_total }}</div>
+    <div class="mt-1 text-xs text-[var(--color-text-muted)]">text normalizations</div>
+  </div>
+  <div class="stat-card">
+    <div class="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Reports</div>
+    <div class="mt-1 text-2xl font-bold" id="stat-reports">{{ stats.reports_total }}</div>
+    <div class="mt-1 text-xs text-[var(--color-text-muted)]">generated documents</div>
+  </div>
+</div>
+
+<div class="mt-6 grid gap-4 lg:grid-cols-3">
+  <div class="panel p-5 lg:col-span-2">
+    <h2 class="text-lg font-semibold">System Health</h2>
+    <div class="mt-4 space-y-3">
+      <div class="flex items-center justify-between rounded-xl border border-white/8 bg-white/3 p-3">
+        <div class="flex items-center gap-3">
+          <span class="indicator bg-[var(--color-success)]"></span>
+          <span class="text-sm">API Server</span>
+        </div>
+        <span class="chip text-[var(--color-success)]">Online</span>
+      </div>
+      <div class="flex items-center justify-between rounded-xl border border-white/8 bg-white/3 p-3">
+        <div class="flex items-center gap-3">
+          <span class="indicator bg-[var(--color-success)]" id="redis-indicator"></span>
+          <span class="text-sm">Redis Connection</span>
+        </div>
+        <span class="chip" id="redis-status">Checking...</span>
+      </div>
+      <div class="flex items-center justify-between rounded-xl border border-white/8 bg-white/3 p-3">
+        <div class="flex items-center gap-3">
+          <span class="indicator bg-[var(--color-success)]"></span>
+          <span class="text-sm">Watermark Engines</span>
+        </div>
+        <span class="chip text-[var(--color-success)]">Active</span>
+      </div>
+    </div>
+    <div class="mt-4">
+      <button class="btn-secondary" hx-get="/dashboard/api/health" hx-target="#health-output" hx-swap="innerHTML">Refresh Health</button>
+      <span id="health-output" class="ml-2 text-xs text-[var(--color-text-muted)]"></span>
+    </div>
+  </div>
+
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Quick Actions</h2>
+    <div class="mt-4 space-y-2">
+      <a href="/dashboard/watermark" class="btn-primary w-full">Run Detection</a>
+      <a href="/dashboard/watermark" class="btn-secondary w-full">Embed Watermark</a>
+      <a href="/dashboard/reports" class="btn-secondary w-full">Generate Report</a>
+      <a href="/dashboard/files" class="btn-secondary w-full">Upload File</a>
+    </div>
+  </div>
+</div>
+
+<div class="mt-6 panel p-5">
+  <h2 class="text-lg font-semibold">Recent Detections</h2>
+  <div class="mt-4 overflow-x-auto">
+    <table class="w-full text-sm" id="recent-detections-table">
+      <thead>
+        <tr class="border-b border-white/8 text-left text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
+          <th class="pb-2 pr-4">Time</th>
+          <th class="pb-2 pr-4">Verdict</th>
+          <th class="pb-2">Signal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for det in stats.recent_detections %}
+        <tr class="border-b border-white/5">
+          <td class="py-2 pr-4 text-[var(--color-text-muted)]">{{ det.ts }}</td>
+          <td class="py-2 pr-4">
+            {% if 'detected' in det.verdict %}
+              <span class="chip text-[var(--color-warning)]">{{ det.verdict }}</span>
+            {% else %}
+              <span class="chip text-[var(--color-success)]">{{ det.verdict }}</span>
+            {% endif %}
+          </td>
+          <td class="py-2 text-[var(--color-text-muted)]">{{ det.signal or det.text_preview }}</td>
+        </tr>
+        {% endfor %}
+        {% if not stats.recent_detections %}
+        <tr><td colspan="3" class="py-4 text-center text-[var(--color-text-muted)]">No detections yet. Run one from the Watermark page.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.addEventListener('tws:stats', function(e) {
+  const d = e.detail;
+  const el;
+  document.getElementById('stat-detections').textContent = d.detections_total;
+  document.getElementById('stat-detections-rate').textContent = d.detections_last_minute;
+  document.getElementById('stat-embeds').textContent = d.embeds_total;
+  document.getElementById('stat-cleans').textContent = d.cleans_total;
+  document.getElementById('stat-reports').textContent = d.reports_total;
+});
+</script>
+{% endblock %}

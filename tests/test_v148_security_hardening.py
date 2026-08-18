@@ -28,18 +28,20 @@ def run_cli(args, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
     return subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli"] + args,
+        [sys.executable, "-m", "ai_watermark_toolkit.cli", *args],
         capture_output=True, text=True, env=env, cwd=cwd or REPO)
 
 
 # ------------------------------------------------------------ P0-1: Auth/CORS
 class TestAuthFailClosed:
     def _client(self, api_key="", app_env="production"):
-        from fastapi.testclient import TestClient
         from types import SimpleNamespace
+
+        from fastapi.testclient import TestClient
+
+        import ai_watermark_toolkit.api.fastapi_app as app_mod
         import ai_watermark_toolkit.api.middleware.auth as auth_mod
         import ai_watermark_toolkit.core.config as cfg_mod
-        import ai_watermark_toolkit.api.fastapi_app as app_mod
         cfg_mod.settings = SimpleNamespace(
             api_key=api_key, app_env=app_env,
             cors_origins="*", app_name="t", log_level="INFO",
@@ -161,8 +163,7 @@ class TestKeygenPermissions:
 # -------------------------------------------------- P0-4: Secret-Maskierung (Rest)
 class TestSecretMasking:
     def test_mask_secret_key_id_is_deterministic_and_reversible_never(self):
-        from ai_watermark_toolkit.forensics.key_registry import (
-            mask_secret_key_id, is_masked_key_id)
+        from ai_watermark_toolkit.forensics.key_registry import is_masked_key_id, mask_secret_key_id
         m1 = mask_secret_key_id("geheim-123")
         m2 = mask_secret_key_id("geheim-123")
         assert m1 == m2

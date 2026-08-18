@@ -17,14 +17,14 @@ Deterministic synthesis, filesystem-safe (tmp_path only, never data/).
 """
 
 import hashlib
+from typing import ClassVar
 
+from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
 from ai_watermark_toolkit.forensics.kgw import (
-    DEFAULT_GAMMA,
     detect_kgw,
     green_token,
     mark_greenlist,
 )
-from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
 
 KEY = "context-window-key"
 WRONG = "context-window-wrong-key"
@@ -87,7 +87,7 @@ class TestContextOneByteIdentity:
     # sha256(f"{key}:{prev}:{token}"). The new list-based c=1 signature must
     # reproduce them byte-for-byte, so every pre-existing greenlist decision
     # is unchanged.
-    FIXED = [
+    FIXED: ClassVar = [
         ("world", "hello", "5e2ef91373ac90d9fbf2275cf79831db302852e5ef45ce346ae2f268a24d7816", False),
         ("the", "quick", "39dec8d744c9adf9e0bb75afc7f2592b5bea7c471adad3f5d61108db318469ce", True),
         ("data", "local", "d75918ecc34ebbd8c7c2db1bd3dcc43834274ff1927a2a91dae7f607f4776fa5", False),
@@ -98,7 +98,7 @@ class TestContextOneByteIdentity:
         key = "ctx-byte-key"
         for token, prev, old_digest, old_bool in self.FIXED:
             # historical hash
-            assert hashlib.sha256(f"{key}:{prev}:{token}".encode("utf-8")).hexdigest() == old_digest
+            assert hashlib.sha256(f"{key}:{prev}:{token}".encode()).hexdigest() == old_digest
             # new list-based signature must hash to the same digest
             new_digest = hashlib.sha256(
                 (f"{key}:" + ":".join([prev]) + f":{token}").encode("utf-8")

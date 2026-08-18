@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from ...forensics.invariant import corrupt, embed, extract, state_of
 from .base import LabFamily
-from ...forensics.invariant import embed, extract, state_of, corrupt
 
 
 class FamilyPlugin(LabFamily):

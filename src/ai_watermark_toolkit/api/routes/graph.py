@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
 from ...graph_memory.service import GraphMemoryService
+
 router = APIRouter(prefix='/api/graph', tags=['graph'])
 svc = GraphMemoryService()
 class NodeRequest(BaseModel): node: dict

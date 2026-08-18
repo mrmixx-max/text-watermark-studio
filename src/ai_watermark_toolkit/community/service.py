@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from collections import Counter, defaultdict
+from pathlib import Path
 
 GRAPH_PATH = Path(__file__).resolve().parents[3] / 'data' / 'graph' / 'graph.json'
 COMMUNITIES_PATH = Path(__file__).resolve().parents[3] / 'data' / 'graph' / 'communities.json'

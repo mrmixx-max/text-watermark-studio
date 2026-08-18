@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Settings — Text Watermark Studio{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}Keys, models, and configuration{% endblock %}
+
+{% block content %}
+<div class="grid gap-4 lg:grid-cols-2">
+  <!-- Forensic Keys -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Forensic Keys</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Manage registered detection keys.</p>
+    <div class="mt-4 space-y-3">
+      <button class="btn-secondary w-full" hx-get="/dashboard/api/forensics/keys" hx-target="#keys-output" hx-swap="innerHTML">List Keys</button>
+      <form class="rounded-xl border border-white/8 bg-white/3 p-4 space-y-2"
+            hx-post="/dashboard/api/forensics/keys"
+            hx-target="#keys-output"
+            hx-swap="innerHTML">
+        <div class="grid gap-2 sm:grid-cols-2">
+          <div><label class="label" for="key-id">Key ID</label><input id="key-id" name="key_id" class="field" placeholder="my-key"></div>
+          <div><label class="label" for="key-family">Family</label><input id="key-family" name="family" class="field" value="kgw"></div>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <div><label class="label" for="key-status">Status</label><input id="key-status" name="status" class="field" value="active"></div>
+          <div><label class="label" for="key-owner">Owner</label><input id="key-owner" name="owner" class="field" value="local"></div>
+        </div>
+        <button type="submit" class="btn-primary w-full">Add Key</button>
+      </form>
+    </div>
+    <div id="keys-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Keys will appear here.</div>
+  </div>
+
+  <!-- LLM Config -->
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Local LLM</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Configure the local model backend (Ollama).</p>
+    <div class="mt-4 space-y-3">
+      <button class="btn-secondary w-full" hx-get="/dashboard/api/llm/status" hx-target="#llm-output" hx-swap="innerHTML">Check Status</button>
+      <form class="rounded-xl border border-white/8 bg-white/3 p-4 space-y-2"
+            hx-post="/dashboard/api/llm/configure"
+            hx-target="#llm-output"
+            hx-swap="innerHTML">
+        <div>
+          <label class="label" for="llm-url">Server URL</label>
+          <input id="llm-url" name="server_base_url" class="field" value="http://127.0.0.1:8080/v1">
+        </div>
+        <div>
+          <label class="label" for="llm-variant">Model variant</label>
+          <select id="llm-variant" name="model_variant" class="field">
+            <option value="Q4_K_M">Q4_K_M</option>
+            <option value="Q5_K_S">Q5_K_S</option>
+            <option value="Q2_K">Q2_K</option>
+          </select>
+        </div>
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="installed" class="w-auto">
+          <span class="text-[var(--color-text-muted)]">Mark as installed</span>
+        </label>
+        <button type="submit" class="btn-primary w-full">Save</button>
+      </form>
+    </div>
+    <div id="llm-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">LLM status will appear here.</div>
+  </div>
+</div>
+
+<!-- Routing + Optimization -->
+<div class="mt-6 grid gap-4 lg:grid-cols-2">
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Model Routing</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Configure fallback-based model routing.</p>
+    <form class="mt-4 space-y-3"
+          hx-post="/dashboard/api/routing/decide"
+          hx-target="#routing-output"
+          hx-swap="innerHTML">
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="label" for="route-task">Task</label>
+          <select id="route-task" name="task" class="field">
+            <option value="general">General</option>
+            <option value="factcheck">Fact-check</option>
+            <option value="validation">Validation</option>
+            <option value="summarization">Summarization</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="route-profile">Profile</label>
+          <input id="route-profile" name="profile" class="field" value="default">
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="need_large_context" class="w-auto"><span class="text-[var(--color-text-muted)]">Large context</span></label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="privacy_mode" class="w-auto"><span class="text-[var(--color-text-muted)]">Privacy mode</span></label>
+      </div>
+      <button type="submit" class="btn-primary w-full">Decide Route</button>
+    </form>
+    <div id="routing-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Routing decision will appear here.</div>
+  </div>
+
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Prompt Templates</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Manage versioned prompt assets.</p>
+    <div class="mt-4 space-y-3">
+      <button class="btn-secondary w-full" hx-get="/dashboard/api/prompts/templates" hx-target="#prompts-output" hx-swap="innerHTML">List Templates</button>
+      <form class="rounded-xl border border-white/8 bg-white/3 p-4 space-y-2"
+            hx-post="/dashboard/api/prompts/render"
+            hx-target="#prompts-output"
+            hx-swap="innerHTML">
+        <div class="grid gap-2 sm:grid-cols-2">
+          <div><label class="label" for="prompt-tpl">Template ID</label><input id="prompt-tpl" name="template_id" class="field" value="rewrite.clean"></div>
+          <div><label class="label" for="prompt-ver">Version</label><input id="prompt-ver" name="version" class="field" placeholder="1.0.0"></div>
+        </div>
+        <div>
+          <label class="label" for="prompt-vars">Variables (JSON)</label>
+          <textarea id="prompt-vars" name="variables" class="field min-h-16">{"style":"clear","text":"sample"}</textarea>
+        </div>
+        <button type="submit" class="btn-primary w-full">Render</button>
+      </form>
+    </div>
+    <div id="prompts-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Prompt output will appear here.</div>
+  </div>
+</div>
+
+<!-- Queue / Streams Status -->
+<div class="mt-6 grid gap-4 lg:grid-cols-2">
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Queue Status</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Redis queue depth and backpressure.</p>
+    <div class="mt-4">
+      <button class="btn-secondary w-full" hx-get="/dashboard/api/queue/depth" hx-target="#queue-output" hx-swap="innerHTML">Check Queue</button>
+    </div>
+    <div id="queue-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Queue status will appear here.</div>
+  </div>
+
+  <div class="panel p-5">
+    <h2 class="text-lg font-semibold">Streams Status</h2>
+    <p class="mt-1 text-sm text-[var(--color-text-muted)]">Redis Streams metrics and DLQ.</p>
+    <div class="mt-4">
+      <button class="btn-secondary w-full" hx-get="/dashboard/api/streams/metrics" hx-target="#streams-output" hx-swap="innerHTML">Check Streams</button>
+    </div>
+    <div id="streams-output" class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/2 p-4 text-sm text-[var(--color-text-muted)]">Streams metrics will appear here.</div>
+  </div>
+</div>
+{% endblock %}

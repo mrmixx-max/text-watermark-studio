@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from .models import FamilySpec
 
-
 FAMILIES = [
     FamilySpec('unicode_zero_width', 'Unicode / Zero-Width', 'existing_text', 'invisible', 'fragile', 'private_or_public', ['raw_text_access'], 'Covers zero-width and Unicode-layer embeddings.'),
     FamilySpec('lexical_choice', 'Lexical Choice', 'existing_text', 'subtle', 'fragile_to_medium', 'heuristic', ['language_model_or_rules'], 'Encodes bits or provenance through synonym and token choice.'),

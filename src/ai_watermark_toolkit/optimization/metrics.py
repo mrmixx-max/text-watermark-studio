@@ -13,11 +13,9 @@ Metrics (0..1 each):
 
 from __future__ import annotations
 
-from typing import List
-
 
 def protected_term_preservation(original: str, rewritten: str,
-                                terms: List[str]) -> float:
+                                terms: list[str]) -> float:
     """1.0 if every protected term survives verbatim, else 0.0 (hard rule)."""
     if not terms:
         return 1.0
@@ -83,7 +81,7 @@ def lexical_balance(original: str, rewritten: str) -> float:
     return max(0.0, jaccard / 0.25)
 
 
-def composite(original: str, rewritten: str, terms: List[str]) -> dict:
+def composite(original: str, rewritten: str, terms: list[str]) -> dict:
     """Weighted composite with the hard guardrail applied first."""
     guard = protected_term_preservation(original, rewritten, terms)
     m = {
@@ -96,8 +94,5 @@ def composite(original: str, rewritten: str, terms: List[str]) -> dict:
                "length_ratio": 0.15,
                "marker_reduction": 0.25,
                "lexical_balance": 0.2}
-    if guard < 1.0:
-        score = 0.0  # hard guardrail: protected terms lost
-    else:
-        score = sum(m[k] * weights[k] for k in weights)
+    score = 0.0 if guard < 1.0 else sum(m[k] * weights[k] for k in weights)
     return {"metrics": m, "score": round(score, 4), "guardrail_passed": guard >= 1.0}

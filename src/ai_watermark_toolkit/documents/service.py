@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
-from typing import Dict, Any, List
+from dataclasses import asdict, dataclass, field
+from typing import Any
 
 SUPPORTED_FORMATS = ['md', 'markdown', 'txt', 'text']
 
@@ -12,7 +12,7 @@ class LoadedDocument:
     content: str
     normalized: str
     format: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -20,7 +20,7 @@ class LoadedDocument:
 
 @dataclass
 class DocumentService:
-    def supported(self) -> List[str]:
+    def supported(self) -> list[str]:
         return SUPPORTED_FORMATS
 
     def load_text(self, filename: str, content: str) -> LoadedDocument:
@@ -35,15 +35,15 @@ class DocumentService:
             metadata={'chars': len(content)},
         )
 
-    def export_markdown(self, title: str, body: str, metadata: Dict[str, Any] | None = None) -> str:
+    def export_markdown(self, title: str, body: str, metadata: dict[str, Any] | None = None) -> str:
         metadata = metadata or {}
         meta_lines = ['---'] + [f'{k}: {v}' for k, v in metadata.items()] + ['---', ''] if metadata else []
-        return '\n'.join(meta_lines + [f'# {title}', '', body.strip(), ''])
+        return '\n'.join([*meta_lines, f'# {title}', '', body.strip(), ''])
 
     def export_text(self, title: str, body: str) -> str:
         return f'{title}\n' + ('=' * len(title)) + f'\n\n{body.strip()}\n'
 
-    def export(self, title: str, body: str, fmt: str = 'md', metadata: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    def export(self, title: str, body: str, fmt: str = 'md', metadata: dict[str, Any] | None = None) -> dict[str, Any]:
         fmt = (fmt or 'md').lower()
         if fmt in {'md', 'markdown'}:
             content = self.export_markdown(title, body, metadata)

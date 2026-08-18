@@ -12,7 +12,6 @@ network, no data/ writes. All key material lives in tmp_path.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -437,6 +436,7 @@ def test_ui_smoke_offscreen(monkeypatch):
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
+
     from ai_watermark_toolkit.ui.desktop import app as app_mod
 
     qt_app = QApplication.instance() or QApplication([])

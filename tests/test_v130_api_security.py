@@ -12,12 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import pytest
 from fastapi.testclient import TestClient
 
 from ai_watermark_toolkit.api import fastapi_app
 from ai_watermark_toolkit.api.routes import forensics as forensics_route
-from ai_watermark_toolkit.core.config import settings
 from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
 
 REPO = Path(__file__).resolve().parents[1]
@@ -89,7 +87,7 @@ class TestKeySecretProtection:
         # patch the settings OBJECT the auth middleware sees (frozen settings
         # cannot be mutated) and verify the API rejects unauthenticated writes
         from types import SimpleNamespace
-        from ai_watermark_toolkit.api import middleware
+
         from ai_watermark_toolkit.api.middleware import auth as auth_mod
 
         monkeypatch.setattr(auth_mod, "settings", SimpleNamespace(api_key="test-secret"))

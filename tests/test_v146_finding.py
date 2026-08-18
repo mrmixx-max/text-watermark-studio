@@ -39,10 +39,13 @@ from pathlib import Path
 
 import pytest
 
+from ai_watermark_toolkit.forensics.delta_z import delta_z
+from ai_watermark_toolkit.forensics.e_value import e_detect
 from ai_watermark_toolkit.forensics.finding import (
     build_finding_report,
     classify_finding,
 )
+from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
 from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
 from ai_watermark_toolkit.forensics.kgw import (
     DEFAULT_GAMMA,
@@ -51,9 +54,6 @@ from ai_watermark_toolkit.forensics.kgw import (
     green_token,
     mark_greenlist,
 )
-from ai_watermark_toolkit.forensics.frequent_vocab import FREQUENT_VOCAB
-from ai_watermark_toolkit.forensics.e_value import e_detect
-from ai_watermark_toolkit.forensics.delta_z import delta_z
 from ai_watermark_toolkit.forensics.signed_report import verify_report
 
 REPO = Path(__file__).resolve().parents[1]
@@ -76,12 +76,8 @@ TEXT = (
 
 # Redlist-Korpus (test_v132-Muster): Silbenwörter, aus denen der Generator
 # aus dem KOMPLEMENT der Greenlist wählt (z -> stark negativ, reproduzierbar).
-_SIL1 = ("ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu "
-         "ga ge gi go gu ka ke ki ko ku la le li lo lu ma me mi mo mu "
-         "na ne ni no nu pa pe pi po pu ra re ri ro ru sa se si so su "
-         "ta te ti to tu va ve vi vo vu wa we wi wo wu za ze zi zo zu").split()
-_SIL2 = ("an en in on un ar er ir or ur al el il ol ul at et it ot ut "
-         "as es is os us").split()
+_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
+_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
 REDLIST_VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 REDLIST_KEY = "test-secret-alpha-001"
 
@@ -511,6 +507,7 @@ class TestCliFinding:
 class TestApiFinding:
     def _client(self, tmp_path, monkeypatch):
         from fastapi.testclient import TestClient
+
         from ai_watermark_toolkit.api import fastapi_app
         from ai_watermark_toolkit.api.routes import forensics as forensics_route
 
@@ -528,6 +525,7 @@ class TestApiFinding:
 
     def test_api_requires_auth(self, tmp_path, monkeypatch, marked):
         from types import SimpleNamespace
+
         from ai_watermark_toolkit.api.middleware import auth as auth_mod
         c = self._client(tmp_path, monkeypatch)
         self._register(c)

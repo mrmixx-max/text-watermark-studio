@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, File, Form, UploadFile
 from pydantic import BaseModel
+
 from ...pdf.service import PDFService
 
 router = APIRouter(prefix='/api/pdf', tags=['pdf'])
@@ -29,7 +30,7 @@ def extract(req: ExtractRequest):
 
 @router.post('/extract-window', summary='Extract a page window (demo: text-only)')
 async def extract_window(
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008
     start_page: int = Form(0),
     end_page: int | None = Form(None),
 ):

@@ -1,5 +1,5 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
 
 def test_prompt_registry_and_routes_exist():
