@@ -24,6 +24,34 @@ from ai_watermark_toolkit.forensics.signed_report import (
 )
 
 
+def _find_cli_python():
+    """Find the Python executable that can import cryptography."""
+    import sys
+    try:
+        import cryptography  # noqa: F401
+        return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
+    except ImportError:
+        pass
+    venv = os.environ.get("VIRTUAL_ENV")
+    if venv:
+        candidates = [
+            Path(venv) / "Scripts" / "python.exe",
+            Path(venv) / "bin" / "python",
+        ]
+        for py in candidates:
+            if py.exists():
+                try:
+                    result = subprocess.run(
+                        [str(py), "-c", "import cryptography; print(cryptography.__version__)"],
+                        capture_output=True, text=True, timeout=10
+                    )
+                    if result.returncode == 0:
+                        return [str(py), "-m", "ai_watermark_toolkit.cli"]
+                except Exception:
+                    pass
+    return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
+
+
 def run_cli(args, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
