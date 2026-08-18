@@ -83,9 +83,11 @@ def _supports(algorithm: str) -> bool:
 def run_cli(args, stdin=None, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
-    env["VIRTUAL_ENV"] = str(Path(sys.executable).parent.parent)
-    env["PATH"] = str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", "")
-    base = [sys.executable, "-m", "ai_watermark_toolkit.cli"]
+    venv = os.environ.get("VIRTUAL_ENV")
+    if venv:
+        env["VIRTUAL_ENV"] = venv
+        env["PATH"] = str(Path(venv) / "Scripts") + os.pathsep + env.get("PATH", "")
+    base = [str(Path(venv) / "Scripts" / "python.exe")] if venv else [sys.executable, "-m", "ai_watermark_toolkit.cli"]
     return subprocess.run(base + args, capture_output=True, text=True,
                           input=stdin, env=env, cwd=cwd or REPO)
 
