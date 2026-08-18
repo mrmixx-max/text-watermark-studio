@@ -27,6 +27,8 @@ from ai_watermark_toolkit.forensics.signed_report import (
 def run_cli(args, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
+    env["VIRTUAL_ENV"] = str(Path(sys.executable).parent.parent)
+    env["PATH"] = str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", "")
     return subprocess.run(
         [sys.executable, "-m", "ai_watermark_toolkit.cli", *args],
         capture_output=True, text=True, env=env, cwd=cwd or REPO)
