@@ -34,7 +34,7 @@ DEFAULT_PATH = "data/key_registry.json"
 # finding JSON. The reported identity becomes a one-way SHA-256 prefix —
 # enough to correlate documents of the same key, not enough to recover or
 # brute-force the secret (64 bits of the digest, no plaintext).
-SECRET_KEY_ID_PREFIX = "secret:"  # nosec B105  # URL-like prefix constant, not a credential
+SECRET_KEY_ID_PREFIX = "secret:"  # noqa: S105  # URL-like prefix constant, not a credential
 SECRET_KEY_ID_DIGEST_CHARS = 16
 
 
