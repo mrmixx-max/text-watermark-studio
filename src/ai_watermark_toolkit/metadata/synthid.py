@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import subprocess  # nosec B404 — used with list args only, no shell=True
+import sys
 from pathlib import Path
 
 CODEBOOK_REL = os.path.join("artifacts", "spectral_codebook_v4.npz")
@@ -61,6 +62,7 @@ def score_synthid(image_path: str, synthid_dir: str | None = None) -> dict:
     env["REVERSE_SYNTHID_DIR"] = str(d)
     try:
         proc = subprocess.run(  # nosec B603 — list args, no shell=True, paths from internal resolution
+            [sys.executable, str(scorer)],
             capture_output=True,
             text=True,
             timeout=300,

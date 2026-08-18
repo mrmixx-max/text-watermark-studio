@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import sys
 
-__version__ = "2.0.0"
+__version__ = "2.4.3"
 
 TEAL = "\033[36m"
 RED = "\033[31m"

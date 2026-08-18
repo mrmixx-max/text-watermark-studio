@@ -657,8 +657,9 @@ def mark_greenlist(
                 break
         if green_pick is None:
             # any fallback word that is green for (context, key)
-            rng.shuffle(fallback)
-            for c in fallback:
+            # Use a random start index instead of shuffle for O(1) instead of O(n)
+            start = rng.randrange(len(fallback)) if fallback else 0
+            for c in fallback[start:] + fallback[:start]:
                 if _is_green(c, ctx):
                     green_pick = c
                     break
