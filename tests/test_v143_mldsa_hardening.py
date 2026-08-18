@@ -108,6 +108,40 @@ def _find_cli_python():
     return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
 
 
+def _find_cli_python():
+    """Find the Python executable that can import cryptography."""
+    import sys
+    try:
+        import cryptography  # noqa: F401
+        return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
+    except ImportError:
+        pass
+    # Look for project venv (even if VIRTUAL_ENV is not set in this shell)
+    candidates = [
+        Path(REPO) / ".venv" / "Scripts" / "python.exe",
+        Path(REPO) / ".venv" / "bin" / "python",
+        Path(REPO) / "venv" / "Scripts" / "python.exe",
+        Path(REPO) / "venv" / "bin" / "python",
+    ]
+    env_venv = os.environ.get("VIRTUAL_ENV")
+    if env_venv:
+        candidates.insert(0, Path(env_venv) / "Scripts" / "python.exe")
+        candidates.insert(1, Path(env_venv) / "bin" / "python")
+    for py in candidates:
+        if py.exists():
+            try:
+                result = subprocess.run(
+                    [str(py), "-c", "import cryptography; print(cryptography.__version__)"],
+                    capture_output=True, text=True, timeout=10,
+                    env={**os.environ, "PYTHONPATH": str(SRC)}
+                )
+                if result.returncode == 0:
+                    return [str(py), "-m", "ai_watermark_toolkit.cli"]
+            except Exception:
+                pass
+    return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
+
+
 def run_cli(args, stdin=None, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
