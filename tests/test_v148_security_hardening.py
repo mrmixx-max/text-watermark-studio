@@ -31,11 +31,11 @@ def run_cli(args, cwd=None):
     if venv:
         env["VIRTUAL_ENV"] = venv
         env["PATH"] = str(Path(venv) / "Scripts") + os.pathsep + env.get("PATH", "")
-        base = [str(Path(venv) / "Scripts" / "python.exe")]
+        base = [str(Path(venv) / "Scripts" / "python.exe"), "-m", "ai_watermark_toolkit.cli"]
     else:
-        base = [sys.executable]
+        base = [sys.executable, "-m", "ai_watermark_toolkit.cli"]
     return subprocess.run(
-        base + ["-m", "ai_watermark_toolkit.cli", *args],
+        base + list(args),
         capture_output=True, text=True, env=env, cwd=cwd or REPO)
 
 
