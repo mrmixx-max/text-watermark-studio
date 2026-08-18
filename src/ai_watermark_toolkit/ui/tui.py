@@ -665,7 +665,7 @@ class StudioTUI(App):
             self._out("[red]Not a directory.[/]")
 
     def action_attack_matrix(self) -> None:
-        import subprocess
+        import subprocess  # nosec B404 — list args, no shell=True
         import sys
         from pathlib import Path as P
         script = P(__file__).resolve().parents[2] / "benchmarks" / "attack_matrix.py"
@@ -680,7 +680,7 @@ class StudioTUI(App):
         self._out(r.stdout[-3000:] or r.stderr[-2000:])
 
     def action_synthid_sweep(self) -> None:
-        import subprocess
+        import subprocess  # nosec B404 — list args, no shell=True
         import sys
         from pathlib import Path as P
         script = P(__file__).resolve().parents[2] / "benchmarks" / "synthid_sweep.py"
@@ -696,7 +696,7 @@ class StudioTUI(App):
 
     def action_update(self) -> None:
         """Check the installed version against PyPI; upgrade if newer exists."""
-        import subprocess
+        import subprocess  # nosec B404 — list args, no shell=True
         import sys
         import urllib.request
         try:
@@ -706,7 +706,7 @@ class StudioTUI(App):
             installed = "unknown"
         self._out(f"[cyan]Installed:[/] {installed}")
         try:
-            with urllib.request.urlopen(
+            with urllib.request.urlopen(  # nosec B310  # hardcoded HTTPS URL to PyPI
                 "https://pypi.org/pypi/text-watermark-studio/json", timeout=15
             ) as r:
                 import json as _json
@@ -720,7 +720,7 @@ class StudioTUI(App):
             return
         self._out(f"[yellow]Upgrade available ({installed} -> {latest}).[/]")
         self._out("Running pip install --upgrade text-watermark-studio ...")
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 — list args, no shell=True, hardcoded package name
             [sys.executable, "-m", "pip", "install", "--upgrade", "text-watermark-studio"],
             capture_output=True, text=True, timeout=600,
         )

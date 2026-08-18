@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from string import Template
 
 REGISTRY_PATH = Path(__file__).resolve().parents[3] / 'data' / 'prompts' / 'registry.json'
 

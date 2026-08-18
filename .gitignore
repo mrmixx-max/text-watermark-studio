@@ -7,6 +7,7 @@ dist/
 .venv/
 .venv-test/
 .eggs/
+*.egg
 
 # Env / secrets
 .env
@@ -16,6 +17,14 @@ dist/
 
 # Test / runtime artefacts
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+test-results.xml
+bandit-results.json
+trivy-results.sarif
 .ai_wm_jobs/
 output/
 *.report.json
@@ -32,6 +41,21 @@ data/graph/communities.json
 Thumbs.db
 .idea/
 .vscode/
+*.swp
+*.swo
+
+# Project-specific
 attack_matrix.json
 synthid_sweep.json
 data/key_registry.json
+bandit_results.json
+
+# Build artifacts
+*.whl
+*.spec
+desktop/build/
+desktop/dist/
+
+# Logs
+*.log
+logs/

@@ -220,8 +220,13 @@ def _apply_llm(system_prompt: str, text: str) -> str:
     Raises RuntimeError when the backend cannot produce output."""
     import os
     import urllib.request
+    from urllib.parse import urlparse
 
     base = os.environ.get("LOCAL_LLM_BASE_URL", "http://127.0.0.1:11434/v1")
+    # Validate scheme to prevent SSRF via env var injection
+    parsed = urlparse(base)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"LOCAL_LLM_BASE_URL scheme must be http/https, got: {parsed.scheme}")
     model = os.environ.get("LOCAL_LLM_MODEL", "eurollm-9b")
     payload = {
         "model": model,
@@ -237,7 +242,7 @@ def _apply_llm(system_prompt: str, text: str) -> str:
         headers={"Content-Type": "application/json"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:  # nosec B310  # scheme validated above
             data = json.loads(resp.read().decode("utf-8"))
         out = data["choices"][0]["message"]["content"]
     except Exception as e:

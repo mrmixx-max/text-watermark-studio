@@ -1,0 +1,67 @@
+# Docker ignore file
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+.venv-test/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build artifacts
+build/
+dist/
+*.whl
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tests
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+test-results.xml
+bandit-results.json
+trivy-results.sarif
+
+# Docs (not needed in image)
+docs/
+*.md
+!README.md
+
+# CI/CD
+.github/
+scripts/
+
+# Local data
+data/
+output/
+.ai_wm_jobs/
+
+# Benchmarks
+benchmarks/
+
+# Desktop / packaging
+desktop/
+packaging/
+
+# Misc
+.env
+.env.local
+*.pem
+*.key
+.DS_Store
+Thumbs.db

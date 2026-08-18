@@ -10,7 +10,8 @@
 # redistributed by this repository. Users must comply with the upstream
 # project's non-commercial Research License.
 
-FROM python:3.11-slim
+# ---- Build stage ----
+FROM python:3.11-slim AS builder
 
 ARG REVERSE_SYNTHID_REF=main
 
@@ -32,12 +33,33 @@ RUN git clone --depth 1 --filter=blob:none --sparse \
         '/LICENSE' \
         '/README.md'
 
+# ---- Production stage ----
+FROM python:3.11-slim AS production
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libgl1 \
+        libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+COPY --from=builder /opt/reverse-synthid /opt/reverse-synthid
 COPY scripts/requirements-synthid-scorer.txt /app/requirements-synthid-scorer.txt
 COPY src/ai_watermark_toolkit/metadata/score_synthid_cli.py /app/score_synthid_cli.py
 
 RUN pip install --no-cache-dir -r /app/requirements-synthid-scorer.txt
 
+# Non-root user
+RUN useradd --create-home --uid 1000 tws && \
+    mkdir -p /app/data && \
+    chown -R tws:tws /app
+WORKDIR /app
+USER tws
+
 ENV REVERSE_SYNTHID_DIR=/opt/reverse-synthid
 
-WORKDIR /app
+LABEL org.opencontainers.image.title="Text Watermark Studio - SynthID Scorer" \
+      org.opencontainers.image.description="Reverse SynthID pixel scorer" \
+      org.opencontainers.image.license="MIT"
+
 ENTRYPOINT ["python3", "/app/score_synthid_cli.py"]

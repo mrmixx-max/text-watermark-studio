@@ -103,7 +103,7 @@ def _transform_truncate(text: str, fraction: float = 0.6) -> str:
 
 def _transform_shuffle(text: str, seed: int = 42) -> str:
     """Word shuffle with a fixed seed (attack_matrix word_shuffle, seed 42)."""
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # nosec B311 — deterministic seeded RNG for attack matrix, not crypto
     words = text.split()
     rng.shuffle(words)
     return " ".join(words)

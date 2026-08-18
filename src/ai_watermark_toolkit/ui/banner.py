@@ -12,7 +12,6 @@ Design constraints:
 
 from __future__ import annotations
 
-import os
 import sys
 
 __version__ = "2.0.0"
@@ -47,8 +46,13 @@ def _ansi_on() -> None:
     """Enable ANSI on legacy Windows consoles (harmless elsewhere)."""
     if sys.platform == "win32":
         try:
-            os.system("")
-        except Exception:
+            # Enable ANSI escape sequences on Windows 10+
+            # Using ctypes instead of os.system("") for safety
+            import ctypes
+            kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+            # Enable ENABLE_VIRTUAL_TERMINAL_PROCESSING
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+        except (AttributeError, OSError):
             pass
 
 

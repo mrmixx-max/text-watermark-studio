@@ -13,7 +13,7 @@ Detection/scoring only. Pixel-domain watermark REMOVAL is out of scope.
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404 — used with list args only, no shell=True
 from pathlib import Path
 
 CODEBOOK_REL = os.path.join("artifacts", "spectral_codebook_v4.npz")
@@ -54,8 +54,7 @@ def score_synthid(image_path: str, synthid_dir: str | None = None) -> dict:
     env = dict(os.environ)
     env["REVERSE_SYNTHID_DIR"] = str(d)
     try:
-        proc = subprocess.run(
-            [str(venv_py), str(scorer), str(img)],
+        proc = subprocess.run(  # nosec B603 — list args, no shell=True, paths from internal resolution
             capture_output=True, text=True, timeout=300, env=env,
         )
         return {"available": True, "exit_code": proc.returncode,

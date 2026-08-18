@@ -10,10 +10,7 @@ is the deliverable.
 from __future__ import annotations
 
 import html
-import json
-import shutil
-import subprocess
-import tempfile
+import subprocess  # nosec B404 — used with list args only, no shell=True, no user input in argv
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -230,7 +227,7 @@ def render_pdf(html_path: Path) -> Path | None:
     if edge is None:
         return None
     out = html_path.with_suffix(".pdf")
-    subprocess.run(
+    subprocess.run(  # nosec B603 — list args, no shell=True, hardcoded Edge path
         [edge, "--headless", "--disable-gpu", "--no-sandbox",
          f"--print-to-pdf={out.resolve()}",
          "--no-pdf-header-footer",

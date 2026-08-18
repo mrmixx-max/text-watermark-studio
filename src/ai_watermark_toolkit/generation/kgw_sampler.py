@@ -153,7 +153,7 @@ def generate_marked_text(prefix: str | list[str] = "", vocab: dict[str, float] |
     """
     if vocab is None:
         vocab = default_vocab()
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # nosec B311 — deterministic seeded RNG for KGW sampling, not crypto
     history = tokenize(prefix) if isinstance(prefix, str) else list(prefix)
     generated: list[str] = []
     for _ in range(n_tokens):

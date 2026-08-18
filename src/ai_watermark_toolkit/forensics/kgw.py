@@ -39,6 +39,7 @@ _TOKEN_RE = re.compile(r"[A-Za-z0-9\u00C0-\u024F]+(?:['-][A-Za-z0-9\u00C0-\u024F
 _SPLIT_RE = re.compile(r"([A-Za-z0-9\u00C0-\u024F]+(?:['-][A-Za-z0-9\u00C0-\u024F]+)*)")
 
 _BPE_ENC = None
+_BPE_WORD_CACHE: dict[str, list[str]] = {}
 
 
 def _bpe_encoding():
@@ -71,6 +72,15 @@ def bpe_tokenize(text: str) -> list[str]:
     """
     enc = _bpe_encoding()
     return [t for t in (enc.decode([tok]).strip() for tok in enc.encode(text)) if t]
+
+
+def _bpe_subwords_cached(word: str) -> list[str]:
+    """BPE subwords for a single word, cached (hot-path helper for mark_greenlist)."""
+    cached = _BPE_WORD_CACHE.get(word)
+    if cached is None:
+        cached = bpe_tokenize(word)
+        _BPE_WORD_CACHE[word] = cached
+    return cached
 
 # Small built-in rewrite lexicon: content word -> synonyms. Demo-scale by
 # design; plug in WordNet or a domain lexicon for stronger coverage.
@@ -434,7 +444,7 @@ def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
 def _bpe_word_subwords(text: str) -> list[list[str]]:
     """Per-word BPE subword lists; mark and detect share this exact surface."""
     words = [m.group(0) for m in _TOKEN_RE.finditer(text)]
-    return [s for s in (bpe_tokenize(w) for w in words) if s]
+    return [s for s in (_bpe_subwords_cached(w) for w in words) if s]
 
 
 def _score_bpe_boundaries(subs: list[list[str]], key: str, gamma: float) -> tuple[int, int]:
@@ -578,10 +588,10 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     fallback = [w for ws in pool.values() for w in ws]
 
     def _first_bpe(word: str) -> str:
-        return bpe_tokenize(word)[0]
+        return _bpe_subwords_cached(word)[0]
 
     def _last_bpe(word: str) -> str:
-        return bpe_tokenize(word)[-1]
+        return _bpe_subwords_cached(word)[-1]
 
     def _is_green(cand: str, ctx: list[str]) -> bool:
         if level == "bpe":

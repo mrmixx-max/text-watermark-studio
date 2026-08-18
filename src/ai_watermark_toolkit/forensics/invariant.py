@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 import re
 import urllib.request
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 # ---------------------------------------------------------------------------
 # Built-in anchors / stopwords (DE + EN, small but sufficient for tests/demo)
@@ -43,6 +43,9 @@ _STOPWORDS = frozenset(
     war werden wie zu zum zur über
     """.split()
 )
+
+
+_WORD_CLEAN_RE = re.compile(r"[^A-Za-zÄÖÜäöüß0-9'\-]")
 
 
 def _is_proper_noun(word: str, index: int, tokens: Sequence[str]) -> bool:
@@ -65,7 +68,7 @@ def detect_anchors(tokens: Sequence[str]) -> List[int]:
     nouns (capitalized mid-sentence). Matches the paper's intent: anchors
     are the words an adversary cannot replace without losing meaning.
     """
-    clean = [re.sub(r"[^A-Za-zÄÖÜäöüß0-9'\-]", "", t) for t in tokens]
+    clean = [_WORD_CLEAN_RE.sub("", t) for t in tokens]
     freq: Dict[str, int] = {}
     for w in clean:
         low = w.lower()
@@ -112,7 +115,7 @@ def select_mask_positions(
     for i in range(n):
         if i in anchor_set or i in candidates:
             continue
-        low = re.sub(r"[^A-Za-zÄÖÜäöüß0-9'\-]", "", tokens[i]).lower()
+        low = _WORD_CLEAN_RE.sub("", tokens[i]).lower()
         if low and low not in _STOPWORDS:
             candidates.append(i)
     if max_masks is not None:
@@ -219,10 +222,10 @@ def _ollama_infill(
         "options": {"num_predict": 24, "temperature": 0.0},
     }).encode("utf-8")
     req = urllib.request.Request(
-        "http://localhost:11434/api/generate", data=payload,
+        "http://localhost:11434/api/generate", data=payload,  # nosec B310  # hardcoded localhost URL, not user-controlled
         headers={"Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
         data = json.loads(resp.read().decode("utf-8"))
     out = (data.get("response") or "").strip()
     # The prompt demands a comma-separated answer. If the model rambled
@@ -408,7 +411,7 @@ def corrupt(text: str, ratio: float = 0.05, seed: int = 0, mode: str = "substitu
     corruption that preserves utility hits the replaceable parts.
     """
     import random
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # nosec B311 — deterministic seeded RNG for forensics sampling, not crypto
     tokens = text.split()
     anchors = set(detect_anchors(tokens))
     n_corrupt = max(1, int(round(ratio * len(tokens))))

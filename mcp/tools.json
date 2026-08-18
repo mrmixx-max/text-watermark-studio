@@ -95,6 +95,20 @@
       }
     },
     {
+      "name": "forensics_embed",
+      "method": "POST",
+      "path": "/api/forensics/embed",
+      "description": "Embed a KGW greenlist watermark into text using a registered key (the studio's core text-marking capability)",
+      "body_schema": {
+        "text": "string",
+        "key_id": "string",
+        "level": "string",
+        "context": "integer",
+        "seed": "integer|null",
+        "gamma": "number|null"
+      }
+    },
+    {
       "name": "lab_pipeline",
       "method": "POST",
       "path": "/api/pipeline",
@@ -569,20 +583,6 @@
       "body_schema": {
         "signed": "object",
         "key_id": "string"
-      }
-    },
-    {
-      "name": "forensics_embed",
-      "method": "POST",
-      "path": "/api/forensics/embed",
-      "description": "Embed a deterministic KGW watermark into text with a registered key",
-      "body_schema": {
-        "text": "string",
-        "key_id": "string",
-        "level": "string",
-        "context": "integer",
-        "seed": "integer|null",
-        "gamma": "number|null"
       }
     },
     {

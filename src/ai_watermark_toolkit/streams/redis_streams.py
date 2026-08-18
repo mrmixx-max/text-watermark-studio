@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 import uuid
 from redis.asyncio import Redis
 from ..core.config import settings
+
+logger = logging.getLogger(__name__)
 
 JOB_PREFIX = 'tws:v6:job:'
 STATUS_INDEX_PREFIX = 'tws:v6:status:'
@@ -18,7 +21,7 @@ class RedisStreamsService:
         try:
             await self.redis.xgroup_create(settings.stream_key, settings.stream_group, id='0', mkstream=True)
         except Exception:
-            pass
+            logger.debug("stream group already exists or unavailable (continuing)", exc_info=True)
 
     async def enqueue(self, payload: dict) -> dict:
         job_id = str(uuid.uuid4())
@@ -99,5 +102,5 @@ class RedisStreamsService:
             elif isinstance(xp, (list, tuple)) and len(xp) >= 4:
                 pending = {'pending': xp[0], 'min': xp[1], 'max': xp[2], 'consumers': xp[3]}
         except Exception:
-            pass
+            logger.debug("xpending unavailable (continuing with defaults)", exc_info=True)
         return {'queued': queued, 'retrying': retrying, 'done': done, 'dead_letter': dead, 'pending': pending}

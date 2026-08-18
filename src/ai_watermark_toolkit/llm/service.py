@@ -57,16 +57,25 @@ class LocalLLMService:
         """Ollama HTTP endpoint (override with OLLAMA_BASE_URL)."""
         return os.getenv('OLLAMA_BASE_URL', 'http://127.0.0.1:11434').rstrip('/')
 
+    @staticmethod
+    def _validate_url_scheme(url: str) -> None:
+        """Reject non-HTTP(S) schemes to prevent SSRF via env var injection."""
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            raise ValueError(f"ollama_base scheme must be http/https, got: {parsed.scheme}")
+
     def _ollama(self, path: str, method: str = 'GET', payload: dict | None = None,
                 timeout: int = 30):
         import urllib.request
         import urllib.error
         url = f"{self.ollama_base()}{path}"
+        self._validate_url_scheme(url)
         data = json.dumps(payload).encode('utf-8') if payload is not None else None
         req = urllib.request.Request(url, data=data, method=method,
                                      headers={'Content-Type': 'application/json'})
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310  # scheme validated by _validate_url_scheme
                 return resp.read().decode('utf-8')
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"ollama_{path.lstrip('/').replace('/', '_')}_failed: "
@@ -95,12 +104,13 @@ class LocalLLMService:
             return line.get('status', '')
 
         url = f"{self.ollama_base()}/api/pull"
+        self._validate_url_scheme(url)
         payload = json.dumps({'name': model_name, 'stream': True}).encode('utf-8')
         req = urllib.request.Request(url, data=payload, method='POST',
                                      headers={'Content-Type': 'application/json'})
         last_status = ''
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310  # scheme validated by _validate_url_scheme
                 for raw in resp:
                     if not raw.strip():
                         continue

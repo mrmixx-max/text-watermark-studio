@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from fastapi import APIRouter, Request, Response
 from ...core.config import settings
 from ...observability.metrics import render_metrics, STREAM_PENDING_GAUGE, STREAM_DEAD_LETTER_GAUGE, DLQ_REPLAYS_TOTAL

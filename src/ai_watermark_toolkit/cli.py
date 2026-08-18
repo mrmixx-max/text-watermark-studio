@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from .ingest import read_text
 from .pipeline import detect_text, run_pipeline
@@ -111,6 +114,7 @@ def main() -> int:
         | ``2`` — usage or input error.
     """
     p = argparse.ArgumentParser(prog="ai-wm")
+    p.add_argument("--quiet", "-q", action="store_true", help="suppress status messages on stderr (machine-readable output only)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     d = sub.add_parser("detect")
@@ -214,6 +218,8 @@ def main() -> int:
     wc.add_argument("directory")
     wc.add_argument("--once", action="store_true", help="single scan pass, then exit")
     wc.add_argument("--interval", type=float, default=5.0, help="poll seconds (default 5)")
+    wc.add_argument("--kgw", action="store_true",
+                    help="also run KGW text detection on text files (requires registered KGW keys with secrets)")
 
     tui = sub.add_parser("tui", help="launch the menu-driven terminal UI (needs textual)")
 
@@ -261,12 +267,30 @@ def main() -> int:
     pl.add_argument("-o", "--output")
     pl.add_argument("--report")
 
+    rm = sub.add_parser("remove", help="best-effort watermark removal: clean unicode + dilute + structural rewrite (the README's honest removal path)")
+    rm.add_argument("input", nargs="?")
+    rm.add_argument("--stdin", action="store_true")
+    rm.add_argument("--lang", default="auto", choices=["auto", "de", "en"])
+    rm.add_argument("--intensity", default="standard", choices=["light", "standard", "aggressive"], help="dilute intensity (default standard)")
+    rm.add_argument("--rewrite-mode", default="structural", choices=["clarity", "concise", "plain", "formal", "structural", "backtranslate"], help="rewrite mode (default structural — reorders while keeping facts)")
+    rm.add_argument("--use-llm", action="store_true", help="force the local LLM backend for rewriting")
+    rm.add_argument("--no-preserve", action="store_true", help="disable protected-token preservation")
+    rm.add_argument("--aggressive", action="store_true", help="aggressive unicode scanning")
+    rm.add_argument("--json", action="store_true", help="machine-readable output")
+    rm.add_argument("-o", "--output")
+
     bt = sub.add_parser("batch")
     bt.add_argument("input_dir")
     bt.add_argument("output_dir")
-    bt.add_argument("--mode", default="pipeline", choices=["detect", "clean", "dilute", "pipeline"])
+    bt.add_argument("--mode", default="pipeline", choices=["detect", "clean", "dilute", "pipeline", "embed"])
     bt.add_argument("--lang", default="auto", choices=["auto", "de", "en"])
     bt.add_argument("--intensity", default="standard", choices=["light", "standard", "aggressive"])
+    bt.add_argument("--key", default=None, help="key_id for --mode embed (must carry a secret)")
+    bt.add_argument("--level", default="word", choices=["word", "bpe"], help="token level for --mode embed (default word)")
+    bt.add_argument("--context", type=int, default=1, help="greenlist context window c for --mode embed (default 1)")
+    bt.add_argument("--gamma", type=float, default=None, help="greenlist fraction for --mode embed (default: key's gamma or 0.25)")
+    bt.add_argument("--seed", type=int, default=None, help="RNG seed for deterministic --mode embed")
+    bt.add_argument("--verify", action="store_true", help="for --mode embed: run detection after embedding to confirm the watermark is detectable (Z>4)")
     bt.add_argument("--report")
 
     ks = sub.add_parser("kgw-sample", help="generate synthetic KGW-bias text and detect it (experimental generation-time bias demo)")
@@ -365,6 +389,13 @@ def main() -> int:
 
     args = p.parse_args()
 
+    # --quiet: suppress stderr status messages for scripted use. Errors
+    # printed via print(..., file=sys.stderr) are silenced; stdout JSON is
+    # untouched so pipelines keep working.
+    if getattr(args, "quiet", False):
+        import io
+        sys.stderr = io.StringIO()
+
     if args.cmd == "splash":
         from .ui import render_banner
         print(render_banner(color=not args.plain))
@@ -375,7 +406,7 @@ def main() -> int:
             kgw = [k for k in keys if k.get('family') == 'kgw' and k.get('secret')]
             print(f"  keys registered : {len(keys)} ({len(kgw)} KGW)")
         except Exception:
-            pass
+            logger.debug("key registry unavailable for splash display", exc_info=True)
         try:
             import json as _json
             llm = _json.loads(open('data/local_llm.json', encoding='utf-8').read())
@@ -619,7 +650,7 @@ def main() -> int:
                     key_secret = resolved.get("secret") or effective_key
                     key_label = resolved.get("key_id", effective_key)
             except Exception:
-                pass  # registry unavailable -> masked raw argument stays the label
+                logger.debug("registry unavailable -> masked raw argument stays the label", exc_info=True)
         html_out = build_report(text, key_secret, lang=args.lang,
                                 unicode_findings=[asdict(x) for x in uni],
                                 marker_hits=marker_hits,
@@ -631,7 +662,7 @@ def main() -> int:
             f.write(html_out)
         print(f"Befund geschrieben: {out_path}")
         if args.pdf:
-            pdf = render_pdf(__import__('pathlib').Path(out_path).resolve())
+            pdf = render_pdf(Path(out_path).resolve())
             if pdf:
                 print(f"PDF gerendert: {pdf}")
             else:
@@ -786,8 +817,11 @@ def main() -> int:
 
     if args.cmd == "watch":
         from .forensics.watcher import watch_dir
+        if args.interval <= 0:
+            print("ai-wm: error: --interval must be > 0", file=sys.stderr)
+            return 2
         try:
-            n = watch_dir(args.directory, once=args.once, interval=args.interval)
+            n = watch_dir(args.directory, once=args.once, interval=args.interval, kgw=getattr(args, "kgw", False))
         except NotADirectoryError as e:
             print(f"error: not a directory: {e}", file=sys.stderr)
             return 2
@@ -814,8 +848,57 @@ def main() -> int:
             write_json(args.report, report)
         return 0
 
+    if args.cmd == "remove":
+        # Best-effort watermark removal: the README is honest that statistical
+        # marks live in the wording itself — removal means rewording, not
+        # restructuring. This command chains clean → dilute → rewrite to
+        # degrade the signal as far as possible without an LLM. With
+        # --use-llm it forces the local LLM backend for a stronger rewrite.
+        # NOTE: clean_text and dilute_text are intentionally NOT re-imported
+        # here — they would shadow the module-level imports (same names) and
+        # Python's function scoping would make the clean/dilute handlers raise
+        # UnboundLocalError. Use the module-level imports directly.
+        import os as _os
+        from .rewrite.service import RewriteService
+        text = _read(args)
+        cleaned = clean_text(text, nfkc=True, fold_confusables=True)
+        diluted = dilute_text(cleaned.text, intensity=args.intensity)
+        svc = RewriteService(llm_backend=bool(_os.getenv('LOCAL_LLM_ENABLED', '0') == '1'))
+        use_llm = True if getattr(args, 'use_llm', False) else None
+        rewritten = svc.rewrite(diluted.text, mode=args.rewrite_mode,
+                                preserve=not getattr(args, 'no_preserve', False),
+                                use_llm=use_llm)
+        out = rewritten['rewritten']
+        if args.json:
+            report = {
+                "original_length": len(text),
+                "cleaned_length": len(cleaned.text),
+                "diluted_length": len(diluted.text),
+                "removed_length": len(out),
+                "unicode_removed": cleaned.unicode_removed,
+                "confusable_folds": cleaned.confusable_folds,
+                "phrases_rewritten": diluted.changed,
+                "rewrite_mode": args.rewrite_mode,
+                "rewritten": out,
+            }
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        else:
+            print(out)
+        if args.output:
+            Path(args.output).write_text(out, encoding="utf-8")
+        return 0
+
     if args.cmd == "batch":
-        report = process_batch(args.input_dir, args.output_dir, mode=args.mode, intensity=args.intensity, lang=args.lang)
+        if args.context < 1:
+            print("ai-wm: error: --context must be >= 1", file=sys.stderr)
+            return 2
+        if args.gamma is not None and not (0 < args.gamma <= 0.5):
+            print("ai-wm: error: --gamma must be in (0, 0.5]", file=sys.stderr)
+            return 2
+        report = process_batch(args.input_dir, args.output_dir, mode=args.mode, intensity=args.intensity, lang=args.lang,
+                               key_id=getattr(args, "key", None), level=getattr(args, "level", "word"),
+                               context=getattr(args, "context", 1), gamma=getattr(args, "gamma", None),
+                               seed=getattr(args, "seed", None), verify=getattr(args, "verify", False))
         rendered = json.dumps(report, ensure_ascii=False, indent=2)
         if args.report:
             write_json(args.report, report)

@@ -23,7 +23,7 @@ DEMO_KEYS: list[dict] = [
      "is_demo": True},
     {"key_id": "demo-kgw-1", "family": "kgw", "status": "active", "owner": "local",
      "trigger_phrase": "", "notes": "demo KGW key — public demo secret, replace for real use",
-     "secret": "demo-kgw-secret-0001", "gamma": 0.25, "is_demo": True},
+     "secret": "demo-kgw-secret-0001", "gamma": 0.25, "is_demo": True},  # nosec B105  # intentional public demo secret, not a real credential
 ]
 
 DEFAULT_PATH = "data/key_registry.json"
@@ -33,7 +33,7 @@ DEFAULT_PATH = "data/key_registry.json"
 # finding JSON. The reported identity becomes a one-way SHA-256 prefix —
 # enough to correlate documents of the same key, not enough to recover or
 # brute-force the secret (64 bits of the digest, no plaintext).
-SECRET_KEY_ID_PREFIX = "secret:"
+SECRET_KEY_ID_PREFIX = "secret:"  # nosec B105  # URL-like prefix constant, not a credential
 SECRET_KEY_ID_DIGEST_CHARS = 16
 
 

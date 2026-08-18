@@ -1,0 +1,39 @@
+# Production Docker Compose override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: redis-server --appendonly yes --maxmemory 200mb --maxmemory-policy allkeys-lru
+
+  app:
+    environment:
+      AI_WM_ENV: production
+      AI_WM_LOG_LEVEL: WARNING
+      AI_WM_RATE_LIMIT_REQUESTS: "120"
+      AI_WM_RATE_LIMIT_WINDOW_SEC: "60"
+    ports:
+      - "127.0.0.1:8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+  worker:
+    environment:
+      AI_WM_ENV: production
+      AI_WM_LOG_LEVEL: WARNING
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+    replicas: 2

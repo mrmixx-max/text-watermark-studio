@@ -6,19 +6,15 @@
 
 ![Text Watermark Studio 2.0.0 — verify, measure, prove. Keyed watermark verification. 100% local, no cloud, zero telemetry, MIT.](docs/tws-infographic.png)
 
-Text Watermark Studio v1.0.0 adds a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias (post-hoc text rewrite + experimental generation-time sampler), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
+Text Watermark Studio v2.0.0 is a taxonomy-driven watermarking lab with plugin families for Unicode, lexical, syntactic, format/layout, sampling-bias (post-hoc text rewrite + experimental generation-time sampler), semantic/structure, localized provenance and training-time ownership workflows. Installable: `pip install text-watermark-studio`.
 
-📖 **Documentation:** [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md) · [Measurement First — Manifest](docs/measurement-first.md) · [Measurement vs. viral strippers](docs/comparison.md)
+📖 **Documentation:** [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md) · [API Reference](docs/API.md) · [TUI Guide](docs/TUI-GUIDE.md) · [Developer Guide](docs/DEVELOPER-GUIDE.md) · [MCP Integration](HERMES_MCP_INTEGRATION.md) · [Measurement First — Manifest](docs/measurement-first.md) · [Measurement vs. viral strippers](docs/comparison.md)
 
-![Local AI Watermark Laboratory — workstation concept](docs/lab-workstation.png)
-
-![Hero card](docs/tws-hero-card.png)
+**New in v2.0.0+ (v108):** `remove` command, `delta-z` measurement, `finding` (KI-Erklärungs-Befund C5), signed forensic reports (`report-sign`/`report-verify`/`report-keygen`), ML-DSA quantum-safe signatures, e-process detection, signature filtering, local corpus similarity, prompt optimizer, multi-model Ollama backend, batch embed with `--verify`, `--quiet` mode, watch `--kgw`, and 25-action TUI.
 
 ## Quickstart
 
 Requires Python 3.10+.
-
-> **Sales catalogs:** [English](docs/marketing/tws-catalog-2026-en.html) · [Deutsch](docs/marketing/tws-catalog-2026-de.html) — one tool, seven application fields. Guides: [User Guide (EN)](docs/USER-GUIDE.md) · [Benutzerhandbuch (DE)](docs/BENUTZERHANDBUCH.md).
 
 ```bash
 # Install from PyPI (the CLI + library)
@@ -75,8 +71,6 @@ non-developers (law firms, institutions): paste text → pick a key → detect.
 The app lives in `src/ai_watermark_toolkit/ui/desktop/` (Qt-free
 `DesktopController` + PySide6 shell).
 
-**Features**
-
 - **Detect** — KGW Z-score + e-process (anytime-valid) against the selected
   key or all registered keys; JSON result in the panel
 - **Embed** — `mark_greenlist`: text is greenlist-marked (guaranteed
@@ -129,29 +123,95 @@ registry entry; without a KGW key with a secret the app reports that honestly
 instead of silently creating a registry. The installer does not install any
 keys — the registry stays an operator concern.
 
-## Why a lab edition
+## CLI Reference (v108)
 
-Recent taxonomies and surveys split text watermarking into multiple families with different assumptions, requirements and threat models. Existing-text methods, generation-time methods and model-level provenance do not collapse into one universal technique, so the product is structured as a lab with family plugins and capability axes rather than a single misleading detector.
+### Core commands
+
+| Command | Description |
+|---|---|
+| `detect` | Scan text for unicode stego + AI phrasing markers |
+| `clean` | Strip invisible-character layer |
+| `dilute` | Rewrite marker-heavy phrasing (3 intensities) |
+| `embed` | Impose a greenlist mark (keyed) |
+| `pipeline` | Full chain: detect → clean → dilute → rewrite → detect |
+| `remove` | Best-effort watermark removal: clean + dilute + structural rewrite |
+| `report` | Self-contained HTML forensics report (KGW), optional `--pdf` |
+
+### New commands (v108)
+
+| Command | Description |
+|---|---|
+| `delta-z` | ΔZ check: measure KGW watermark strength before vs after (removal with receipt) |
+| `finding` | KI-Erklärungs-Befund (C5): Evidenzklassen A-D, Prüfpriorität 0-5, signed |
+| `report-sign` | Sign a forensic findings payload (HMAC-SHA256 or ML-DSA FIPS 204) |
+| `report-verify` | Verify a signed forensic findings document |
+| `report-keygen` | Generate an ML-DSA keypair for signing |
+| `kgw-sample` | Generate synthetic KGW-bias text and detect it (experimental) |
+| `similarity` | MinHash comparison against YOUR OWN corpus (honest boundary) |
+| `llm` | Manage local model backend: `install`, `list`, `use`, `status` |
+| `batch` | Run a mode over every file in a directory (now with `--verify` for embed) |
+| `tui` | Launch the 25-action menu-driven terminal UI |
+
+### Global flags
+
+| Flag | Description |
+|---|---|
+| `--quiet`, `-q` | Suppress status messages on stderr (machine-readable output only) |
+
+### Batch mode
+
+```bash
+ai-wm batch INPUT_DIR OUTPUT_DIR [--mode detect|clean|dilute|pipeline|embed]
+              [--lang auto|de|en] [--intensity ...] [--key KEY]
+              [--verify]   # for --mode embed: run detection after embedding to confirm Z>4
+```
+
+### Removal command
+
+```bash
+ai-wm remove INPUT [-o OUTPUT] [--intensity standard] [--rewrite-mode structural]
+               [--use-llm] [--aggressive] [--json]
+```
+
+Chains clean → dilute → rewrite to degrade the watermark signal as far as possible. With `--use-llm` forces the local LLM backend for a stronger rewrite.
+
+### Delta-Z measurement
+
+```bash
+ai-wm delta-z BEFORE AFTER --key KEY [--level word|bpe] [--context N]
+ai-wm delta-z BEFORE --transform clean|truncate|shuffle|reformat --key KEY
+```
+
+Measures KGW watermark strength before/after an attack. The `--transform` mode applies a stdlib transform to a single file and measures its ΔZ. With `--sign`, the result is signed for auditability.
+
+### Signed forensic reports
+
+```bash
+ai-wm report-keygen --algorithm mldsa-44|65|87 --output-dir ./keys
+ai-wm report-sign finding.json --secret SECRET -o signed.json
+ai-wm report-sign finding.json --algorithm mldsa-44 --private-key keys/mldsa_private.pem
+ai-wm report-verify signed.json --secret SECRET
+```
+
+Default: HMAC-SHA256 (stdlib, zero deps). Optional: ML-DSA (FIPS 204, quantum-safe) with `cryptography` ≥ 50.
 
 ## Statistical watermark detection (KGW)
 
-The forensics layer now includes a real KGW-style statistical detector (`src/ai_watermark_toolkit/forensics/kgw.py`): per token, a pseudorandom hash over `(key, previous_token, token)` decides greenlist membership, and a one-sided Z-test over the whole text separates a watermarked green-rate (~100% for text generated with the matching key) from the expected ~25% of normal text. Multi-key detection tests every registered `kgw`-family key and reports per-key Z-scores with a Bonferroni-style adjustment.
+The forensics layer includes a real KGW-style statistical detector (`src/ai_watermark_toolkit/forensics/kgw.py`): per token, a pseudorandom hash over `(key, previous_token, token)` decides greenlist membership, and a one-sided Z-test over the whole text separates a watermarked green-rate (~100% for text generated with the matching key) from the expected ~25% of normal text.
 
-What it detects, honestly: texts generated **with this exact scheme and key**. It is not a universal detector for unknown vendor schemes — key and hash scheme must match. Word-level tokens approximate model tokenizers. Behavioral tests (`tests/test_v113_kgw_detector.py`) include a mini KGW generator that shares the detector's PRF: correct key → Z ≥ 4, wrong key → no signal.
+**Generation-time bias (experimental):** `src/ai_watermark_toolkit/generation/kgw_sampler.py` implements the real generation-time half of KGW — an additive greenlist logit bias applied during autoregressive sampling. At γ=0.5, bias=2.0 it reaches green_rate ≈ 0.88 and `detect_kgw` recovers it with z ≫ 4.
 
-**Generation-time bias (experimental):** `src/ai_watermark_toolkit/generation/kgw_sampler.py` now implements the *real* generation-time half of KGW — an additive greenlist logit bias applied during autoregressive sampling (the step that maps 1:1 onto a `logit_bias` table in llama.cpp / OpenAI-style decoders). It is a deterministic, dependency-free mechanics proof, not a production generator: it samples synthetic tokens from a plain token→logit table and round-trips through the same `detect_kgw` detector. Tests (`tests/test_v134_kgw_sampler.py`) show bias=2.0, γ=0.5 → green_rate ≈ 0.88 (control ≈ 0.5), z ≫ 4 with the right key and context window, no signal for the wrong key or a mismatched window. The post-hoc text rewrite remains the standard embed path; llama.cpp `logit_bias` over a GGUF model is the documented production route (needs a MSVC/CMake build on Windows and is intentionally not a hard dependency).
+**E-process detection (v108):** Anytime-valid e-process detection (`--e-value`) provides an alternative statistical test with early-stopping capability and Bonferroni correction for multi-key runs.
 
-## Signed forensic findings (auditability, quantum-safe optional)
-
-Every detect/report run can be turned into a **self-signed, auditable document**: `ai-wm report-sign` / `report-verify` / `report-keygen` (or `POST /api/forensics/report-sign` for registry-keyed HMAC). Default is **HMAC-SHA256 over canonical JSON — pure stdlib, zero dependencies**. When the optional `cryptography` library (≥ 50) is installed, the same pipeline signs with **ML-DSA (FIPS 204) — NIST-standardized, quantum-safe signatures**: `--algorithm mldsa-44` (default), `mldsa-65` or `mldsa-87`. ML-DSA signatures are non-deterministic (two signatures of the same payload differ, both verify), the private key is a seed-sized PEM (~128 B) whose public key is derived on load (stable round-trip), and verification is order-safe (`verify(signature, data)` — signature first, regression-tested). Measured signature sizes: **2420 B (44) / 3309 B (65) / 4627 B (87)**. The stdlib HMAC path stays the default and works everywhere; ML-DSA is the quantum-safe option for findings that must stay verifiable past the quantum transition. Tests: `tests/test_v140_signed_report.py` (C3 contract) + `tests/test_v143_mldsa_hardening.py` (PEM round-trip, non-determinism, verify-order trap, context=b"" pure mode, 65/87, label trust).
+**Signature filtering (v108):** Opt-in `--signature-filter` for FPR control on texts dominated by one repetitive token (arXiv 2606.18430v2).
 
 ## Included families
 
-- Unicode / zero-width — full bidi + zero-width family (ZWSP/ZWNJ/ZWJ, LRE/RLE/LRO/RLO/PDF, LRI/RLI/FSI/PDI, word joiner, BOM, Mongolian VS, deprecated format chars, tag block, variation selectors) **plus an opt-in aggressive mode** for script-specific fillers (Braille blank, Hangul fillers, object replacement) that standard mode deliberately leaves alone
+- Unicode / zero-width — full bidi + zero-width family + opt-in aggressive mode
 - Lexical choice
 - Syntactic pattern
 - Format / layout
-- Sampling / logit bias — post-hoc text-rewrite KGW (standard) **plus an experimental generation-time sampler** (`src/ai_watermark_toolkit/generation/kgw_sampler.py`): a deterministic, dependency-free sampler applies an additive logit bias to greenlist tokens during generation. At γ=0.5, bias=2.0 it reaches green_rate ≈ 0.88 and `detect_kgw` recovers it with z ≫ 4, while the unbiased control stays at ≈ γ and a wrong context window collapses the signal (measured 2026-08-13: the real Ollama generator itself shows no greenlist bias, so post-hoc rewrite remains the standard path)
+- Sampling / logit bias — post-hoc KGW + experimental generation-time sampler
 - Semantic / structure
 - Localized provenance
 - Training-time / ownership
@@ -167,13 +227,11 @@ greenlists and identical z-scores against the real MarkLLM implementation** —
 texts watermarked by the reference toolkit are detected by this detector with
 the same key, and vice versa. Optional extra: `pip install "text-watermark-studio[markllm]"`.
 
-## Important limit
-
-This edition includes demo implementations and architectural plugin slots, not universal real-world detectors or embedders for every family. Many families require decoder control, model access, parser stacks or secret key material outside a text-only local lab.
-
 ## MCP tools
 
-The lab now ships with an MCP tool manifest under `mcp/tools.json` and a Hermes-compatible plugin bundle under `hermes/`. The manifest exposes API-backed tools for health, readiness, pipeline runs, forensics, labs, ops status and streams.
+The lab ships with an MCP tool manifest under `mcp/tools.json` and a Hermes-compatible plugin bundle under `hermes/`. The manifest exposes API-backed tools for health, readiness, pipeline runs, forensics, labs, ops status, streams, documents, RAG, LLM, routing, prompts, optimization, multi-agent, graph, community, rewrite, export, cloud, and metadata.
+
+See [HERMES_MCP_INTEGRATION.md](HERMES_MCP_INTEGRATION.md) for setup and usage.
 
 ## Bundled Hermes skills
 
@@ -187,73 +245,61 @@ The lab now ships with an MCP tool manifest under `mcp/tools.json` and a Hermes-
 
 Install into Hermes with `hermes skill install <path>` or copy the folder under `~/AppData/Local/hermes/skills/`. Each SKILL.md is MIT-licensed like the repo.
 
+## API server
+
+```bash
+ai-wm serve --port 8000
+```
+
+FastAPI app with routes for text processing, metadata, forensics, labs, documents, RAG, LLM, routing, prompts, optimization, multi-agent, graph, community, rewrite, export, cloud, and ops. Swagger UI at `/docs`, ReDoc at `/redoc`.
+
+See [docs/API.md](docs/API.md) for the full API reference.
+
 ## Document formats
 
-The v1.0.0 edition adds a document layer for txt, markdown, rtf, docx, odt, pdf and epub workflows. Pandoc is widely used as a universal document converter for docx, rtf, odt, epub, markdown and pdf-oriented flows, while specialized libraries like pypdf, python-docx, odfpy, EbookLib and striprtf cover format-specific extraction and manipulation use cases. Current API support focuses on normalization and export pathways through `/api/documents/*`, with Hermes/MCP exposure for agent use.
+The document layer supports txt, markdown, rtf, docx, odt, pdf and epub workflows. API: `/api/documents/*`.
 
 ## File metadata cleaning (C2PA / EXIF / XMP)
 
-The metadata layer strips AI provenance marks from files — stdlib-only, no external tools required:
-
 | Format | What it removes |
 | --- | --- |
-| PNG | `eXIf` EXIF chunk, XMP hint chunks (`iTXt`/`zTXt`/`tEXt`), C2PA/JUMBF detection |
+| PNG | `eXIf` EXIF chunk, XMP hint chunks, C2PA/JUMBF detection |
 | JPEG | `APP1` EXIF + XMP segments, `APP11` XMP/AI metadata, C2PA/JUMBF detection |
 | WebP | EXIF / XMP metadata chunks from the RIFF container, C2PA/JUMBF detection |
 | AVIF / HEIC | ISOBMFF metadata boxes (`meta/`), EXIF / XMP, C2PA/JUMBF detection |
 | SVG | `<metadata>`/RDF blocks, `data-ai-*` provenance attributes |
-| PDF | XMP metadata streams (byte-level), Producer/Creator Info entries (best-effort; exiftool remains stronger) |
-| DOCX | `customXml/` parts, docProps scrub (creator, lastModifiedBy, revision) |
+| PDF | XMP metadata streams, Producer/Creator Info entries |
+| DOCX | `customXml/` parts, docProps scrub |
 | ODT | `meta.xml` generator entries |
-| HTML | AI `<meta>` tags, JSON-LD provenance blocks, `data-ai*` attributes |
-| Markdown | YAML frontmatter AI keys (generated_by, model_name, ...) |
+| HTML | AI `<meta>` tags, JSON-LD provenance blocks |
+| Markdown | YAML frontmatter AI keys |
 
-API: `POST /api/metadata/inspect` and `POST /api/metadata/clean` (multipart upload). CLI: `ai-wm file-inspect <file>` and `ai-wm file-clean <file> -o <out>`. Verifiable actions are reported per removal; C2PA *soft binding* (in-content marks re-linking a remote manifest) and pixel-domain marks remain out of scope.
+API: `POST /api/metadata/inspect` and `POST /api/metadata/clean` (multipart upload). CLI: `ai-wm file-inspect <file>` and `ai-wm file-clean <file> -o <out>`.
 
 ### Embed and detect your own file watermark
 
-The metadata layer also works in the other direction: `POST /api/metadata/embed` inserts a **signed provenance mark** (key_id + HMAC-SHA256 signature) into PNG/JPEG/SVG/PDF/DOCX/ODT/HTML/MD, using the same key registry as the KGW text detector. `POST /api/metadata/detect` (CLI: `ai-wm file-embed` / `ai-wm file-detect`) extracts the mark and verifies the signature against registered secrets:
-
-- Same key → `valid: true` (HMAC over the original content)
-- Tampered content → mark found, `valid: false`
-- Unknown key → found but invalid
-- Stream formats (png/jpeg/svg/html/md) bind the whole content; container formats (docx/odt) bind the main content part (documented)
-
-Round-trip tested for every format (`tests/test_v116_file_provenance.py`).
+The metadata layer also works in the other direction: `POST /api/metadata/embed` inserts a **signed provenance mark** (key_id + HMAC-SHA256 signature) into PNG/JPEG/SVG/PDF/DOCX/ODT/HTML/MD, using the same key registry as the KGW text detector. `POST /api/metadata/detect` (CLI: `ai-wm file-embed` / `ai-wm file-detect`) extracts the mark and verifies the signature against registered secrets.
 
 ### SynthID pixel scoring (external adapter)
 
-Real SynthID detection needs the upstream research codebook (~220 MB, non-commercial Research License) from `aloshdenny/reverse-SynthID`. The studio ships an **adapter**, not the codebook: with a local checkout (env `REVERSE_SYNTHID_DIR`), `POST /api/metadata/synthid-score` runs the upstream scorer and returns its verdict; without one it reports `available: false` honestly. Detection/scoring only — pixel-domain watermark removal is out of scope.
-
-**Bootstrap (one command):**
+Real SynthID detection needs the upstream research codebook (~220 MB, non-commercial Research License) from `aloshdenny/reverse-SynthID`. The studio ships an **adapter**, not the codebook: with a local checkout (env `REVERSE_SYNTHID_DIR`), `POST /api/metadata/synthid-score` runs the upstream scorer and returns its verdict; without one it reports `available: false` honestly.
 
 ```bash
-# Clones upstream, creates a venv, installs scorer-only deps.
-scripts/setup_synthid.sh
-
-# Score an image (or via the API endpoint).
+scripts/setup_synthid.sh --verify
 export REVERSE_SYNTHID_DIR=~/reverse-SynthID
 ai-wm image-score shot.png --synthid-dir ~/reverse-SynthID
 ```
 
-**Or run it in Docker (builds from upstream source, no redistribution):**
+Or run it in Docker (builds from upstream source, no redistribution):
 
 ```bash
 docker build -f Dockerfile.synthid -t text-watermark-studio-synthid .
 docker run --rm -v "$(pwd):/data" text-watermark-studio-synthid /data/shot.png
 ```
 
-`setup_synthid.sh` accepts `--dir PATH`, `--ref REF`, `--full` (installs the full upstream requirements, which adds torch/diffusers for the VAE bypass this project does not use), and `--verify`, which runs a real score on a generated test image after setup — so "it works" is proven rather than assumed. The upstream code remains under its own Research License and is never bundled.
-
 ### End-to-end proof against a real model
 
-The detector isn't just tested against its own mini-generator. `benchmarks/kgw_e2e_proof.py` runs the full round-trip against a **real local model** (Ollama EuroLLM-9B): the model generates fresh text, `mark_greenlist` imposes the KGW greenlist on the model's *actual* token choices, and the detector must recover it:
-
-- Unmarked model text → `no_signal` (z ≈ 0.6)
-- Marked + right key → `watermark_detected` (z ≈ 15.9)
-- Marked + wrong key → `no_signal` (z ≈ −0.2)
-
-The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectability but lifts the control baseline variance — documented, not hidden). The marker substitutes from a frequency vocabulary (`forensics/frequent_vocab.py`), not synonyms, and does not preserve word-for-word nuance — this is the honest signal-imposition approximation of token-sampling watermarks.
+The detector isn't just tested against its own mini-generator. `benchmarks/kgw_e2e_proof.py` runs the full round-trip against a **real local model** (Ollama EuroLLM-9B): the model generates fresh text, `mark_greenlist` imposes the KGW greenlist on the model's *actual* token choices, and the detector must recover it.
 
 ## v2.0.0: model-grade detection + measurement suite
 
@@ -268,34 +314,36 @@ The proof uses `gamma=0.5` (a free KGW parameter; higher gamma raises detectabil
 
 ## v2.3.0: trajectory, multi-bit payload, adversarial evaluation
 
-- **Z-score trajectory**: `ai-wm trace file.txt --key <key> [--window 500 --step 250 --threshold 4]`
-  — sliding-window KGW detection over a long document. The whole-doc Z-test
-  averages away local signals; the trajectory shows WHERE the watermark is
-  (marked chapter inside a clean manuscript), merging adjacent finding
-  windows into spans with word offsets and peak Z. Human report by default,
-  JSON via `--json`/`-o`.
-- **Multi-bit payload (invariant features)**: `ai-wm payload embed file.txt
-  --payload "user-42" -o wm.txt` and `ai-wm payload extract wm.txt
-  --reference file.txt` — embed a text payload (user id, timestamp, run id)
-  via the Yoo et al. (ACL 2023) invariant-feature codebook. Self-delimiting
-  UTF-8 encoding; extraction needs the ORIGINAL text as reference state
-  (both parties share the invariant anchors). Capacity = 1 bit per mask
-  position — short payloads, honest warning + exit 1 when the text is too
-  small.
-- **Adversarial evaluation**: `ai-wm evade file.txt --key <key>
-  [--target-z 3.9 --max-changes N --ollama-model <m>]` — white-box stress
-  test of the studio's OWN KGW scheme: greedily replaces greenlisted tokens
-  with non-green alternatives until Z drops below the target, measuring the
-  cost (changes, change ratio, word overlap, per-change Z trajectory).
-  Optional Ollama infill for natural candidates. Honest scope: known key,
-  own scheme — measures the robustness floor, not field resistance.
-
-> **Full inventory:** every additional module (RAG chunking, prompt registry + optimizer, graph memory, community detection, rewrite engine, exports, cloud upload, local-LLM routing, HTMX hardening) is documented in [docs/FEATURES.md](docs/FEATURES.md) with its honest status. Multi-agent loop is a **minimal demo scaffold** — do not rely on it in production.
+- **Z-score trajectory**: `ai-wm trace file.txt --key <key> [--window 500 --step 250 --threshold 4]` — sliding-window KGW detection over a long document
+- **Multi-bit payload (invariant features)**: `ai-wm payload embed file.txt --payload "user-42" -o wm.txt` and `ai-wm payload extract wm.txt --reference file.txt` — embed a text payload via the Yoo et al. (ACL 2023) invariant-feature codebook
+- **Adversarial evaluation**: `ai-wm evade file.txt --key <key> [--target-z 3.9 --max-changes N --ollama-model <m>]` — white-box stress test of the studio's OWN KGW scheme
 
 ## v2.4.0 / v2.4.1: ΔZ measurement, --verify, extended format support
 
-- **ΔZ (delta-z) transform**: `ai-wm delta-z file.txt --key <key> --transform clean|truncate|shuffle|reformat|rewrite`
-  — measure watermark strength before vs after a single-file transform. Same ΔZ receipt contract, now with a one-argument convenience path
+- **ΔZ (delta-z) transform**: `ai-wm delta-z file.txt --key <key> --transform clean|truncate|shuffle|reformat|rewrite` — measure watermark strength before vs after a single-file transform
 - **`--verify` flag**: `ai-wm file-clean file.png -o clean.png --verify` — re-inspects the cleaned file and reports `verified_clear | residual_hard_bound | no_c2pa_present`, proving the metadata strip actually worked rather than assuming
-- **Extended format support**: AVIF, HEIC, WebP metadata inspection and cleaning (C2PA / EXIF / XMP) alongside the existing PNG/JPEG pipeline — see the metadata table above
-- **Robustness and hardening**: deeper typing, expanded test coverage for edge cases in the metadata and ΔZ paths
+- **Extended format support**: AVIF, HEIC, WebP metadata inspection and cleaning (C2PA / EXIF / XMP) alongside the existing PNG/JPEG pipeline
+
+## Local LLM integration
+
+```bash
+ai-wm llm list                  # all models the local Ollama knows
+ai-wm llm install llama3.2:3b   # pull via the Ollama API + select
+ai-wm llm use qwen-coder        # switch to an installed model
+ai-wm llm status                # current backend config
+```
+
+Any OpenAI-compatible endpoint works via `LOCAL_LLM_BASE_URL` + `LOCAL_LLM_MODEL`.
+
+## Important limit
+
+This edition includes demo implementations and architectural plugin slots, not universal real-world detectors or embedders for every family. Many families require decoder control, model access, parser stacks or secret key material outside a text-only local lab.
+
+## What removing a text watermark costs (honest disclaimer)
+
+Text watermarks live in **the wording itself**: the signal is spread across token choices, so nearly every sentence carries a little of it. Removal means rewording, not restructuring. Rewording degrades the copy. The `remove` command is the honest path: it does what can be done locally and reports exactly what changed.
+
+## License
+
+MIT · Repository: <https://github.com/mrmixx-max/text-watermark-studio>
+PyPI: <https://pypi.org/project/text-watermark-studio>
