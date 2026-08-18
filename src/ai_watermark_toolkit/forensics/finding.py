@@ -49,7 +49,7 @@ CONTEXT_KEYS = ("institutional_rule", "origin_history", "rules", "history", "ins
 # next steps, verdict, schlussfolgerung_hinweis) to English. The structured
 # fields (evidence_class, category, priority, risk, beleg) stay language-
 # neutral by design.
-LANGS = ("de", "en")
+_TEXTS
 
 _TEXTS: dict[str, dict[str, str]] = {
     "de": {

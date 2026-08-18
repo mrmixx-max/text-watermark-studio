@@ -92,7 +92,7 @@ GATES: dict[str, dict] = {
 
 MAX_SCORE = 60
 FORENSIC_THRESHOLD = 40
-VERDICTS = ("FORENSIC_READY", "CONDITIONALLY_READY", "NOT_FORENSIC_READY")
+
 
 # Ehrliche Klammer: ohne Adversarial-Suite und ohne Korpus-Studie ist der
 # Score als „Gerichtstauglichkeits-Notenschnitt" irreführend.

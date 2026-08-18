@@ -55,29 +55,7 @@ from .kgw import DEFAULT_GAMMA, detect_multi_key
 # attack does to the KGW signal instead of leaving it undocumented.
 TRANSFORM_METHODS = ("clean", "truncate", "shuffle", "reformat", "rewrite")
 
-TRANSFORM_NOTES = {
-    "clean": "unicode/metadata hygiene (sanitize_unicode: strips ZWSP, bidi "
-    "controls, format/control chars). Does NOT touch KGW greenlist "
-    "tokens -> mark strength is preserved (removed:false).",
-    "truncate": "keep the first truncate_fraction of word tokens. Weakens the "
-    "mark (fewer scored tokens) but keeps the intact (prev, token) "
-    "chain of the kept part -> at 60% the mark usually SURVIVES "
-    "(removed:false). Honest finding, measured in test_v145.",
-    "shuffle": "word-shuffle with a fixed seed (42, like the attack matrix). "
-    "Breaks every (prev, token) greenlist pair -> z collapses to "
-    "~0. The provable removal demonstration.",
-    "reformat": "whitespace normalization + one sentence per line. Tokens are "
-    "unchanged -> mark strength preserved (removed:false).",
-    "rewrite": "paraphrase via RewriteService. Rule-based 'structural' mode "
-    "rotates sentences and varies openings without an LLM; with "
-    "--use-llm the local Ollama backend rewrites through a model "
-    "(or backtranslates DE->EN->DE). Paraphrase changes the token "
-    "surface -> the greenlist hash changes, so ΔZ measures the "
-    "real-world attack. Honest boundary: a strong rewrite can "
-    "collapse z (removed:true), but that is REGENERATION, not "
-    "'cleaning' — ΔZ proves signal change, never cleaner honesty. "
-    "Light structural edits typically keep removed:false.",
-}
+
 
 _TRANSFORM_META = {
     "clean": "unicode/metadata hygiene (sanitize_unicode, ZWSP/bidi/control removal)",

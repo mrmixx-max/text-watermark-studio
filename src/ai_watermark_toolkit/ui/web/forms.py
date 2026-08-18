@@ -21,7 +21,6 @@ from ...forensics.report import build_report
 from ...forensics.signed_report import sign_report
 from ...llm.service import LocalLLMService
 from ...prompts.service import PromptRegistryService
-from ...rewrite.service import RewriteService
 from ...routing.service import ModelRoutingService
 from ...services.text_service import TextService
 
@@ -30,7 +29,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboard/api", tags=["dashboard-forms"])
 
 text_svc = TextService()
-rewrite_svc = RewriteService()
 llm_svc = LocalLLMService()
 routing_svc = ModelRoutingService()
 prompt_svc = PromptRegistryService()

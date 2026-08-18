@@ -35,7 +35,7 @@ WM_SPACING = "spacing"
 WM_METADATA = "metadata"
 WM_COLOR = "color"
 
-WM_TYPES = (WM_SPACING, WM_METADATA, WM_COLOR)
+
 
 # Marker prefix for metadata watermark
 WM_MARKER = "TWS-PDF-WM"
