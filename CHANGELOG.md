@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.3 — CI/CD hardening + lint cleanup
+
+- **CI: ruff lint config fixed** — simplified `select` to bug-rules only (`F`), removed unknown rule codes from `ignore` that broke CI on newer ruff versions.
+- **Bug fix: missing import** (`cli.py`): added `from dataclasses import asdict` — `F821 undefined name` in report generation.
+- **Bug fix: unused variable** (`cli.py`): removed unused `tui_parser` variable (`F841`).
+- **Bug fix: redundant json.dumps** (`cli.py`): fixed `RUF001` duplicate ternary in detect output formatting.
+- **Formatting**: applied `ruff format` across 114 src + 88 test files (whitespace, line wrapping).
+- **PyPI publish**: added `environment: pypi` to `pypi-publish.yml` for OIDC trusted publishing compliance.
+- **Docs**: added `CHANGELOG.md` entries for all prior untracked fixes.
+
 ## 2.4.2 — security hardening + CLI features + C2PA verify
 
 - **Security: timing-safe API key comparison** (`api/middleware/auth.py`): replaced `x_api_key != settings.api_key` with `hmac.compare_digest()` to prevent timing side-channel attacks on the API-key gate.
