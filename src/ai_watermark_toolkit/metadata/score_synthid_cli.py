@@ -28,6 +28,7 @@ def _run(image_path: str) -> dict:
     # Upstream package layout varies; attempt the documented entry points.
     try:
         from reverse_synthid import score_image  # type: ignore
+
         result = score_image(str(Path(image_path)), str(codebook))
         return {"score": result} if not isinstance(result, dict) else result
     except ImportError:
@@ -35,15 +36,20 @@ def _run(image_path: str) -> dict:
     # Fallback: a module named after the scorer in src/
     try:
         import synthid_score as mod  # type: ignore
+
         fn = getattr(mod, "score", None) or getattr(mod, "score_image", None)
         if fn is None:
-            return {"error": "upstream_scorer_entrypoint_not_found",
-                    "hint": "inspect the reverse-SynthID src/ package for the scoring API"}
+            return {
+                "error": "upstream_scorer_entrypoint_not_found",
+                "hint": "inspect the reverse-SynthID src/ package for the scoring API",
+            }
         result = fn(str(Path(image_path)), str(codebook))
         return {"score": result} if not isinstance(result, dict) else result
     except ImportError:
-        return {"error": "upstream_scorer_import_failed",
-                "hint": "confirm the reverse-SynthID src/ package exposes a scoring entrypoint"}
+        return {
+            "error": "upstream_scorer_import_failed",
+            "hint": "confirm the reverse-SynthID src/ package exposes a scoring entrypoint",
+        }
 
 
 if __name__ == "__main__":

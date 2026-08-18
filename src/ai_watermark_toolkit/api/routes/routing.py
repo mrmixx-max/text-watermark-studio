@@ -6,35 +6,40 @@ from pydantic import BaseModel, Field, model_validator
 from ...routing.service import ModelRoutingService
 from ..response_utils import checkbox_to_bool, respond
 
-router = APIRouter(prefix='/api/routing', tags=['routing'])
+router = APIRouter(prefix="/api/routing", tags=["routing"])
 svc = ModelRoutingService()
 
+
 class DecideRequest(BaseModel):
-    task: str = 'general'
-    profile: str = 'default'
+    task: str = "general"
+    profile: str = "default"
     need_large_context: bool = False
     privacy_mode: bool = False
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def normalize(cls, data):
         if isinstance(data, dict):
-            data['need_large_context'] = checkbox_to_bool(data.get('need_large_context'))
-            data['privacy_mode'] = checkbox_to_bool(data.get('privacy_mode'))
+            data["need_large_context"] = checkbox_to_bool(data.get("need_large_context"))
+            data["privacy_mode"] = checkbox_to_bool(data.get("privacy_mode"))
         return data
 
+
 class ConfigureRequest(BaseModel):
-    profile: str = 'default'
+    profile: str = "default"
     config: dict[str, Any] = Field(default_factory=dict)
 
-@router.get('/status', operation_id='routing_status')
+
+@router.get("/status", operation_id="routing_status")
 def status(request: Request):
     return respond(request, svc.status())
 
-@router.post('/decide', operation_id='routing_decide')
+
+@router.post("/decide", operation_id="routing_decide")
 def decide(req: DecideRequest, request: Request):
     return respond(request, svc.decide(req.task, req.profile, req.need_large_context, req.privacy_mode))
 
-@router.post('/configure', operation_id='routing_configure')
+
+@router.post("/configure", operation_id="routing_configure")
 def configure(req: ConfigureRequest, request: Request):
     return respond(request, svc.configure(req.model_dump()))

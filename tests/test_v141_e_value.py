@@ -55,8 +55,115 @@ KEY_C = "test-secret-gamma-003"
 
 # Syllable-built vocabulary (same construction as test_v113_kgw_detector):
 # enough DISTINCT (prev, token) pairs that green rates stay well-behaved.
-_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
-_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
+_SIL1 = [
+    "ba",
+    "be",
+    "bi",
+    "bo",
+    "bu",
+    "ca",
+    "ce",
+    "ci",
+    "co",
+    "cu",
+    "da",
+    "de",
+    "di",
+    "do",
+    "du",
+    "fa",
+    "fe",
+    "fi",
+    "fo",
+    "fu",
+    "ga",
+    "ge",
+    "gi",
+    "go",
+    "gu",
+    "ka",
+    "ke",
+    "ki",
+    "ko",
+    "ku",
+    "la",
+    "le",
+    "li",
+    "lo",
+    "lu",
+    "ma",
+    "me",
+    "mi",
+    "mo",
+    "mu",
+    "na",
+    "ne",
+    "ni",
+    "no",
+    "nu",
+    "pa",
+    "pe",
+    "pi",
+    "po",
+    "pu",
+    "ra",
+    "re",
+    "ri",
+    "ro",
+    "ru",
+    "sa",
+    "se",
+    "si",
+    "so",
+    "su",
+    "ta",
+    "te",
+    "ti",
+    "to",
+    "tu",
+    "va",
+    "ve",
+    "vi",
+    "vo",
+    "vu",
+    "wa",
+    "we",
+    "wi",
+    "wo",
+    "wu",
+    "za",
+    "ze",
+    "zi",
+    "zo",
+    "zu",
+]
+_SIL2 = [
+    "an",
+    "en",
+    "in",
+    "on",
+    "un",
+    "ar",
+    "er",
+    "ir",
+    "or",
+    "ur",
+    "al",
+    "el",
+    "il",
+    "ol",
+    "ul",
+    "at",
+    "et",
+    "it",
+    "ot",
+    "ut",
+    "as",
+    "es",
+    "is",
+    "os",
+    "us",
+]
 VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 
 _POOL_CACHE = {}
@@ -85,8 +192,7 @@ def generate_watermarked(seed_token: str, key: str, n: int, seed: int = 7) -> st
     return " ".join(out)
 
 
-def generate_partial(seed_token: str, key: str, n: int,
-                     green_prob: float, seed: int) -> str:
+def generate_partial(seed_token: str, key: str, n: int, green_prob: float, seed: int) -> str:
     """KGW generator with a controlled green probability (weak signal)."""
     rng = random.Random(seed)
     out = [seed_token]
@@ -233,8 +339,7 @@ class TestNumerics:
 
     def test_e_process_matches_e_detect(self):
         text = generate_watermarked("start", KEY_A, 200)
-        assert math.isclose(e_process(text, KEY_A),
-                            e_detect(text, KEY_A)["e_value"], rel_tol=1e-9)
+        assert math.isclose(e_process(text, KEY_A), e_detect(text, KEY_A)["e_value"], rel_tol=1e-9)
 
 
 class TestEarlyStop:
@@ -285,9 +390,11 @@ class TestTokenizationConsistency:
         assert e["green_count"] == z["green_count"]
 
     def test_prose_text_matches_detect_kgw(self):
-        text = ("Hello, world! It's a test-case for the e-process. "
-                "Several analysts reviewed the data and compared it with "
-                "earlier results; nothing was watermarked here.") * 4
+        text = (
+            "Hello, world! It's a test-case for the e-process. "
+            "Several analysts reviewed the data and compared it with "
+            "earlier results; nothing was watermarked here."
+        ) * 4
         e = e_detect(text, KEY_A)
         z = detect_kgw(text, KEY_A)
         assert e["n_tokens"] == z["n_tokens"]
@@ -298,8 +405,7 @@ class TestTokenizationConsistency:
 class TestCliEFlag:
     def _run(self, args, text):
         cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "detect", *args]
-        return subprocess.run(cmd, input=text, capture_output=True, text=True,
-                              cwd=str(REPO_ROOT), timeout=180)
+        return subprocess.run(cmd, input=text, capture_output=True, text=True, cwd=str(REPO_ROOT), timeout=180)
 
     def test_cli_e_value_detected_exit1(self):
         text = generate_watermarked("start", KEY_A, 200)

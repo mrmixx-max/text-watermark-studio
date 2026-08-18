@@ -14,6 +14,7 @@ Honest limits:
   - Obfuscated/minified AI code scores low (markers are stripped).
   - embed() is not applicable (we detect, we don't generate AI code).
 """
+
 from __future__ import annotations
 
 import re
@@ -23,7 +24,10 @@ from .base import DetectorPlugin
 # Patterns that correlate with AI-generated code.
 _AI_COMMENT_PATTERNS = [
     # "This function/method/class does X"
-    re.compile(r"(This|Here(?:'s|s)|The)\s+(function|method|class|module|code)\s+(will|does|is|returns|handles|performs|creates|initializes|processes|calculates|implements)", re.IGNORECASE),
+    re.compile(
+        r"(This|Here(?:'s|s)|The)\s+(function|method|class|module|code)\s+(will|does|is|returns|handles|performs|creates|initializes|processes|calculates|implements)",
+        re.IGNORECASE,
+    ),
     # "# Returns" / "# Args" / "# Raises" doc-comment sections
     re.compile(r"#\s*(Returns|Args|Raises|Yields|Note(?:s)?|Example(?:s)?)\s*[:\-]", re.IGNORECASE),
     # Step-by-step numbered comments
@@ -31,23 +35,31 @@ _AI_COMMENT_PATTERNS = [
     # "TODO: Implement" / "TODO: Add"
     re.compile(r"#\s*TODO\s*:\s*(implement|add|fix|update|complete|refactor)", re.IGNORECASE),
     # "Initialize" / "Set up" / "Configure" comments
-    re.compile(r"#\s*(Initialize|Set up|Configure|Create|Define|Declare|Import|Validate|Check|Handle|Parse|Format|Convert|Extract)\s", re.IGNORECASE),
+    re.compile(
+        r"#\s*(Initialize|Set up|Configure|Create|Define|Declare|Import|Validate|Check|Handle|Parse|Format|Convert|Extract)\s",
+        re.IGNORECASE,
+    ),
     # "# type:" inline annotations (often AI-suggested)
     re.compile(r"#\s*type:\s*\w", re.IGNORECASE),
 ]
 
 # Boilerplate comment markers that suggest templated generation
 _BOILERPLATE_PATTERNS = [
-    re.compile(r"#\s*(Your|Insert|Add|Write|Define)\s+(code|logic|implementation|function|method|class)\s+(here|below|above)", re.IGNORECASE),
+    re.compile(
+        r"#\s*(Your|Insert|Add|Write|Define)\s+(code|logic|implementation|function|method|class)\s+(here|below|above)",
+        re.IGNORECASE,
+    ),
     re.compile(r"#\s*\.\.\..*(implement|todo|fixme)", re.IGNORECASE),
     re.compile(r"#\s*PLEASE\s+(NOTE|SEE|IMPLEMENT|ADD)", re.IGNORECASE),
     re.compile(r"#\s*REPLACE\s+(THIS|ME)", re.IGNORECASE),
 ]
 
 # Function-above-comment density: AI tends to comment EVERY function
-_FN_DEF_RE = re.compile(r"^\s*(def\s+\w+|class\s+\w+|function\s+\w+|public\s+|private\s+|protected\s+|static\s+)", re.MULTILINE)
+_FN_DEF_RE = re.compile(
+    r"^\s*(def\s+\w+|class\s+\w+|function\s+\w+|public\s+|private\s+|protected\s+|static\s+)", re.MULTILINE
+)
 _COMMENT_LINE_RE = re.compile(r"^\s*(#|//|/\*|\*|<!--)", re.MULTILINE)
-_DOCSTRING_RE = re.compile(r'(\"\"\"|\'\'\')')
+_DOCSTRING_RE = re.compile(r"(\"\"\"|\'\'\')")
 
 
 class CodeWatermarkPlugin(DetectorPlugin):
@@ -129,7 +141,9 @@ class CodeWatermarkPlugin(DetectorPlugin):
         else:
             notes.append("low_ai_markers")
 
-        notes.append(f"stats:lines={total_lines},comments={comment_lines},functions={fn_count},ai_hits={ai_hits},boilerplate={boilerplate_hits}")
+        notes.append(
+            f"stats:lines={total_lines},comments={comment_lines},functions={fn_count},ai_hits={ai_hits},boilerplate={boilerplate_hits}"
+        )
 
         return {
             "score": round(score, 4),

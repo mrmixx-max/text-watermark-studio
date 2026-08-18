@@ -98,9 +98,10 @@ def test_cli_evade_reports_measurement(tmp_path):
     src = tmp_path / "marked.txt"
     src.write_text(_marked_text(), encoding="utf-8")
     proc = subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "evade",
-         str(src), "--key", KEY],
-        capture_output=True, text=True, cwd=".",
+        [sys.executable, "-m", "ai_watermark_toolkit.cli", "evade", str(src), "--key", KEY],
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     assert proc.returncode == 0, f"evade CLI failed: {proc.stderr}"
     assert "Z before" in proc.stdout
@@ -112,9 +113,10 @@ def test_cli_evade_json_output(tmp_path):
     src = tmp_path / "marked.txt"
     src.write_text(_marked_text(), encoding="utf-8")
     proc = subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "evade",
-         str(src), "--key", KEY, "--json"],
-        capture_output=True, text=True, cwd=".",
+        [sys.executable, "-m", "ai_watermark_toolkit.cli", "evade", str(src), "--key", KEY, "--json"],
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     assert proc.returncode == 0, f"evade CLI failed: {proc.stderr}"
     assert '"z_before"' in proc.stdout

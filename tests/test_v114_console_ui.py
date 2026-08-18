@@ -70,20 +70,28 @@ class TestCliUiContract:
     def test_splash_plain_exits_zero(self):
         proc = subprocess.run(
             [sys.executable, "-m", "ai_watermark_toolkit.cli", "splash", "--plain"],
-            capture_output=True, text=True, cwd=None, timeout=60,
+            capture_output=True,
+            text=True,
+            cwd=None,
+            timeout=60,
         )
         assert proc.returncode == 0, proc.stderr
         assert "TEXT WATERMARK STUDIO" in proc.stdout
 
     def test_detect_default_stays_json(self):
         import os
+
         fixture = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "tests", "fixtures", "stego_zwsp.txt",
+            "tests",
+            "fixtures",
+            "stego_zwsp.txt",
         )
         proc = subprocess.run(
             [sys.executable, "-m", "ai_watermark_toolkit.cli", "detect", fixture],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True,
+            text=True,
+            timeout=60,
         )
         # JSON contract: output parses as JSON even on signal exit code 1
         data = json.loads(proc.stdout)
@@ -91,13 +99,18 @@ class TestCliUiContract:
 
     def test_detect_pretty_shows_box(self):
         import os
+
         fixture = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "tests", "fixtures", "stego_zwsp.txt",
+            "tests",
+            "fixtures",
+            "stego_zwsp.txt",
         )
         proc = subprocess.run(
             [sys.executable, "-m", "ai_watermark_toolkit.cli", "detect", fixture, "--pretty"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True,
+            text=True,
+            timeout=60,
         )
         assert "DETECT" in proc.stdout
         assert "U+200B" in proc.stdout

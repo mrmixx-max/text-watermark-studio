@@ -36,11 +36,17 @@ def score_synthid(image_path: str, synthid_dir: str | None = None) -> dict:
     venv_py = d / ".venv" / ("Scripts" if os.name == "nt" else "bin") / "python"
     codebook = d / CODEBOOK_REL
     if not venv_py.exists():
-        return {"available": False, "reason": "reverse_synthid_checkout_not_found",
-                "hint": "run scripts/setup_synthid.sh or set REVERSE_SYNTHID_DIR"}
+        return {
+            "available": False,
+            "reason": "reverse_synthid_checkout_not_found",
+            "hint": "run scripts/setup_synthid.sh or set REVERSE_SYNTHID_DIR",
+        }
     if not codebook.exists():
-        return {"available": True, "error": "codebook_missing",
-                "hint": f"expected at {codebook}; re-run setup_synthid.sh"}
+        return {
+            "available": True,
+            "error": "codebook_missing",
+            "hint": f"expected at {codebook}; re-run setup_synthid.sh",
+        }
     img = Path(image_path)
     if not img.exists():
         return {"available": True, "error": "image_not_found"}
@@ -55,11 +61,17 @@ def score_synthid(image_path: str, synthid_dir: str | None = None) -> dict:
     env["REVERSE_SYNTHID_DIR"] = str(d)
     try:
         proc = subprocess.run(  # nosec B603 — list args, no shell=True, paths from internal resolution
-            capture_output=True, text=True, timeout=300, env=env,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env=env,
         )
-        return {"available": True, "exit_code": proc.returncode,
-                "stdout": proc.stdout.strip()[:2000],
-                "stderr": proc.stderr.strip()[:500]}
+        return {
+            "available": True,
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout.strip()[:2000],
+            "stderr": proc.stderr.strip()[:500],
+        }
     except subprocess.TimeoutExpired:
         return {"available": True, "error": "scorer_timeout"}
     except Exception as e:

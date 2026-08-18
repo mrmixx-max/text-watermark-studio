@@ -3,6 +3,7 @@
 Tests the metadata service (inspect/clean) and document service (load/export)
 with actual file content for each supported format.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -71,8 +72,7 @@ class TestMarkdownFormat:
     def test_export_markdown(self):
         """DocumentService should export to markdown format."""
         svc = DocumentService()
-        result = svc.export("Test Title", "Test body content", fmt="md",
-                            metadata={"author": "E2E Test"})
+        result = svc.export("Test Title", "Test body content", fmt="md", metadata={"author": "E2E Test"})
         assert result["format"] == "md"
         assert result["media_type"] == "text/markdown"
         assert "Test Title" in result["content"]
@@ -120,33 +120,46 @@ class TestDocxFormat:
     def _make_docx(self, tmp_dir: Path, filename: str = "test.docx") -> Path:
         """Create a minimal valid .docx file (ZIP with XML inside)."""
         import zipfile
+
         f = tmp_dir / filename
         with zipfile.ZipFile(f, "w") as zf:
             # [Content_Types].xml
-            zf.writestr("[Content_Types].xml", """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            zf.writestr(
+                "[Content_Types].xml",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/odpackage/2006/content-types">
   <Default Extension="xml" ContentType="application/xml"/>
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-</Types>""")
+</Types>""",
+            )
             # docProps/core.xml with AI generator metadata
-            zf.writestr("docProps/core.xml", """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            zf.writestr(
+                "docProps/core.xml",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <dc:title>Test Doc</dc:title>
   <dc:creator>E2E Test</dc:creator>
   <cp:generator>ChatGPT</cp:generator>
   <cp:description>AI-generated content</cp:description>
-</cp:coreProperties>""")
+</cp:coreProperties>""",
+            )
             # word/document.xml
-            zf.writestr("word/document.xml", """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            zf.writestr(
+                "word/document.xml",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body><w:p><w:r><w:t>Hello World</w:t></w:r></w:p></w:body>
-</w:document>""")
+</w:document>""",
+            )
             # _rels/.rels
-            zf.writestr("_rels/.rels", """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            zf.writestr(
+                "_rels/.rels",
+                """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>""")
+</Relationships>""",
+            )
         return f
 
     def test_inspect_docx(self, tmp_dir):
@@ -253,8 +266,7 @@ class TestDocumentServiceFormats:
     def test_export_markdown_with_metadata(self):
         """Export as markdown with metadata should include YAML frontmatter."""
         svc = DocumentService()
-        result = svc.export("Title", "Body", fmt="md",
-                            metadata={"version": "1.0"})
+        result = svc.export("Title", "Body", fmt="md", metadata={"version": "1.0"})
         assert "version: 1.0" in result["content"]
         assert "# Title" in result["content"]
 

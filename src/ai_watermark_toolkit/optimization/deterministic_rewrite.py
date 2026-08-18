@@ -71,8 +71,7 @@ def apply_constraints(system_prompt: str, text: str) -> str:
     (that is the baseline behaviour, and it is intentional).
     """
     out = text
-    if "short, concrete sentences" in system_prompt or \
-       "Prefer active voice" in system_prompt:
+    if "short, concrete sentences" in system_prompt or "Prefer active voice" in system_prompt:
         out = shorten_sentences(out)
         out = active_voice(out)
     if "Return only the rewritten text" in system_prompt:

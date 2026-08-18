@@ -29,6 +29,7 @@ TEXT = (
 # _protect
 # ---------------------------------------------------------------------------
 
+
 class TestProtect:
     def test_urls_protected(self):
         svc = RewriteService()
@@ -84,8 +85,7 @@ class TestProtect:
 
     def test_multiple_urls(self):
         svc = RewriteService()
-        text = ("Visit https://site1.com and https://site2.org/path "
-                "and http://site3.net.")
+        text = "Visit https://site1.com and https://site2.org/path and http://site3.net."
         protected_text, _protected = svc._protect(text)
         assert "https://site1.com" not in protected_text
         assert "https://site2.org/path" not in protected_text
@@ -101,6 +101,7 @@ class TestProtect:
 # ---------------------------------------------------------------------------
 # _restore
 # ---------------------------------------------------------------------------
+
 
 class TestRestore:
     def test_single_restore(self):
@@ -135,6 +136,7 @@ class TestRestore:
 # ---------------------------------------------------------------------------
 # _grammar_light
 # ---------------------------------------------------------------------------
+
 
 class TestGrammarLight:
     def test_whitespace_normalization(self):
@@ -175,12 +177,12 @@ class TestGrammarLight:
 # _clarify
 # ---------------------------------------------------------------------------
 
+
 class TestClarify:
     def test_removes_filler_words(self):
         svc = RewriteService()
         # Must be > 8 words for fillers to be removed
-        text = ("This is very important and really necessary "
-                "for the overall process of the project.")
+        text = "This is very important and really necessary for the overall process of the project."
         result = svc._clarify(text)
         assert "very" not in result.split()
         assert "really" not in result.split()
@@ -220,6 +222,7 @@ class TestClarify:
 # ---------------------------------------------------------------------------
 # _tone
 # ---------------------------------------------------------------------------
+
 
 class TestTone:
     def test_formal_contractions(self):
@@ -265,6 +268,7 @@ class TestTone:
 # ---------------------------------------------------------------------------
 # _structural
 # ---------------------------------------------------------------------------
+
 
 class TestStructural:
     def test_single_sentence(self):
@@ -328,6 +332,7 @@ class TestStructural:
 # rewrite() — preserve=False and edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestRewriteEdgeCases:
     def test_rewrite_preserve_false(self):
         """With preserve=False, protection is skipped."""
@@ -378,9 +383,11 @@ class TestRewriteEdgeCases:
         """use_llm=True explicitly picks the LLM path, even without backend."""
         svc = RewriteService(llm_backend=False)
         calls = []
+
         def fake_llm(text, mode="clarity"):
             calls.append(mode)
             return "LLM output"
+
         monkeypatch.setattr(svc, "_llm_rewrite", fake_llm)
         result = svc.rewrite("test text", mode="clarity", use_llm=True)
         assert result["backend"] == "local-llm"
@@ -399,6 +406,7 @@ class TestRewriteEdgeCases:
 # _llm_rewrite — error when httpx unavailable
 # ---------------------------------------------------------------------------
 
+
 class TestLlmRewriteErrors:
     def test_llm_rewrite_no_httpx(self, monkeypatch):
         """_llm_rewrite raises RuntimeError when httpx is None."""
@@ -406,6 +414,7 @@ class TestLlmRewriteErrors:
         monkeypatch.setattr(svc, "_llm_rewrite", None)
         # Temporarily set httpx to None
         import ai_watermark_toolkit.rewrite.service as rs
+
         monkeypatch.setattr(rs, "httpx", None)
         svc2 = RewriteService(llm_backend=True)
         with pytest.raises(RuntimeError, match="httpx not installed"):
@@ -414,6 +423,7 @@ class TestLlmRewriteErrors:
     def test_backtranslate_no_httpx(self, monkeypatch):
         """_llm_backtranslate raises RuntimeError when httpx is None."""
         import ai_watermark_toolkit.rewrite.service as rs
+
         monkeypatch.setattr(rs, "httpx", None)
         svc = RewriteService(llm_backend=True)
         with pytest.raises(RuntimeError, match="httpx not installed"):
@@ -431,6 +441,7 @@ class TestLlmRewriteErrors:
 # ---------------------------------------------------------------------------
 # _grammar_light edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestGrammarLightEdgeCases:
     def test_single_character(self):

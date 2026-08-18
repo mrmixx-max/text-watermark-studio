@@ -10,7 +10,6 @@ Contract under test:
 - Honest boundaries: metadata removed on regen, spacing survives rendering.
 """
 
-
 import pytest
 
 from ai_watermark_toolkit.metadata.pdf_watermark import (
@@ -30,13 +29,14 @@ from ai_watermark_toolkit.metadata.pdf_watermark import (
 # Has 100+ Td operators to support multi-bit watermarks
 _pdf_stream = b"BT\n/F1 12 Tf\n"
 for i in range(100):
-    _pdf_stream += f"{100 + i*5} {700 - i*30} Td\n(Word {i}) Tj\n".encode()
+    _pdf_stream += f"{100 + i * 5} {700 - i * 30} Td\n(Word {i}) Tj\n".encode()
 _pdf_stream += b"0 0 0 rg\n"
 for i in range(100):
     _pdf_stream += b"0 0 0 rg\n"
 _pdf_stream += b"ET"
 
-SAMPLE_PDF = b"""%PDF-1.4
+SAMPLE_PDF = (
+    b"""%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
 endobj
@@ -50,7 +50,9 @@ endobj
 4 0 obj
 << /Length 100 >>
 stream
-""" + _pdf_stream + b"""
+"""
+    + _pdf_stream
+    + b"""
 endstream
 endobj
 xref
@@ -62,6 +64,7 @@ startxref
 0
 %%EOF
 """
+)
 
 SECRET = "test-secret-001"
 KEY_ID = "test-key-001"

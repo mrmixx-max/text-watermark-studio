@@ -18,8 +18,9 @@ class CleanResult:
         return asdict(self)
 
 
-def clean_text(text: str, *, nfkc: bool = False, fold_confusables: bool = False,
-               aggressive: bool = False) -> CleanResult:
+def clean_text(
+    text: str, *, nfkc: bool = False, fold_confusables: bool = False, aggressive: bool = False
+) -> CleanResult:
     markup = strip_markup(text)
     uni = sanitize(markup.text, nfkc=nfkc, fold_confusables=fold_confusables, aggressive=aggressive)
     return CleanResult(

@@ -105,8 +105,15 @@ def test_detect_returns_consistent_shape():
     text = "The quick brown fox jumps over the lazy dog near the river bank at dawn."
     res = detect_markllm(text)
     assert set(res) >= {
-        "z_score", "p_value", "green_count", "n_tokens",
-        "green_rate", "verdict", "signal", "scheme", "parameters",
+        "z_score",
+        "p_value",
+        "green_count",
+        "n_tokens",
+        "green_rate",
+        "verdict",
+        "signal",
+        "scheme",
+        "parameters",
     }
     assert res["scheme"] == "markllm_kgw"
     # Plain text, non-watermarked with the reference scheme -> no_signal expected

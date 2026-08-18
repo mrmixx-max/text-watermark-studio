@@ -10,6 +10,5 @@ def test_all_python_compiles(tmp_path):
     shared .pyc files (Windows PermissionError under load).
     """
     root = Path(__file__).resolve().parents[1]
-    for i, p in enumerate((root / 'src').rglob('*.py')):
-        py_compile.compile(str(p), doraise=True,
-                           cfile=str(tmp_path / f"v105-{i}.pyc"))
+    for i, p in enumerate((root / "src").rglob("*.py")):
+        py_compile.compile(str(p), doraise=True, cfile=str(tmp_path / f"v105-{i}.pyc"))

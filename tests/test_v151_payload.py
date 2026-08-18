@@ -19,23 +19,59 @@ from ai_watermark_toolkit.forensics.invariant import (
 )
 
 _BANK_WORDS = [
-    'schnell', 'schnelle', 'wichtig', 'wichtige', 'groß', 'große', 'klein',
-    'kleine', 'gut', 'gute', 'schlecht', 'schlechte', 'klar', 'klare', 'neu',
-    'neue', 'alt', 'alte', 'einfach', 'einfache', 'schwer', 'schwere',
-    'möglich', 'mögliche', 'stark', 'starke', 'besser', 'viele', 'robust',
-    'robuste', 'einzige', 'fast', 'important', 'big', 'small', 'good', 'bad',
-    'clear', 'new', 'old', 'simple', 'hard', 'possible', 'strong', 'better',
-    'many',
+    "schnell",
+    "schnelle",
+    "wichtig",
+    "wichtige",
+    "groß",
+    "große",
+    "klein",
+    "kleine",
+    "gut",
+    "gute",
+    "schlecht",
+    "schlechte",
+    "klar",
+    "klare",
+    "neu",
+    "neue",
+    "alt",
+    "alte",
+    "einfach",
+    "einfache",
+    "schwer",
+    "schwere",
+    "möglich",
+    "mögliche",
+    "stark",
+    "starke",
+    "besser",
+    "viele",
+    "robust",
+    "robuste",
+    "einzige",
+    "fast",
+    "important",
+    "big",
+    "small",
+    "good",
+    "bad",
+    "clear",
+    "new",
+    "old",
+    "simple",
+    "hard",
+    "possible",
+    "strong",
+    "better",
+    "many",
 ]
 
 
 def _capacity_text() -> str:
     """Text with high synonym-bank density -> enough mask positions for a
     short payload (capacity = 1 bit per usable mask position)."""
-    return ' '.join(
-        f'Die {w} Methode bleibt eine wichtige Wahl für das Team und die Arbeit.'
-        for w in _BANK_WORDS
-    )
+    return " ".join(f"Die {w} Methode bleibt eine wichtige Wahl für das Team und die Arbeit." for w in _BANK_WORDS)
 
 
 def test_payload_roundtrip():
@@ -114,16 +150,29 @@ def test_cli_payload_embed_extract(tmp_path):
     wm = tmp_path / "watermarked.txt"
     src.write_text(_capacity_text(), encoding="utf-8")
     emb = subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "payload", "embed",
-         str(src), "--payload", "u99", "-o", str(wm)],
-        capture_output=True, text=True, cwd=".",
+        [
+            sys.executable,
+            "-m",
+            "ai_watermark_toolkit.cli",
+            "payload",
+            "embed",
+            str(src),
+            "--payload",
+            "u99",
+            "-o",
+            str(wm),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     assert emb.returncode == 0, f"embed failed: {emb.stderr}"
     assert "embedded" in emb.stdout
     ext = subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "payload", "extract",
-         str(wm), "--reference", str(src)],
-        capture_output=True, text=True, cwd=".",
+        [sys.executable, "-m", "ai_watermark_toolkit.cli", "payload", "extract", str(wm), "--reference", str(src)],
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     assert ext.returncode == 0, f"extract failed: {ext.stderr}"
     assert "u99" in ext.stdout
@@ -135,14 +184,37 @@ def test_cli_payload_extract_json(tmp_path):
     wm = tmp_path / "watermarked.txt"
     src.write_text(_capacity_text(), encoding="utf-8")
     subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "payload", "embed",
-         str(src), "--payload", "r26", "-o", str(wm)],
-        capture_output=True, text=True, cwd=".",
+        [
+            sys.executable,
+            "-m",
+            "ai_watermark_toolkit.cli",
+            "payload",
+            "embed",
+            str(src),
+            "--payload",
+            "r26",
+            "-o",
+            str(wm),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     ext = subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "payload", "extract",
-         str(wm), "--reference", str(src), "--json"],
-        capture_output=True, text=True, cwd=".",
+        [
+            sys.executable,
+            "-m",
+            "ai_watermark_toolkit.cli",
+            "payload",
+            "extract",
+            str(wm),
+            "--reference",
+            str(src),
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     assert ext.returncode == 0, f"extract failed: {ext.stderr}"
     data = json.loads(ext.stdout)

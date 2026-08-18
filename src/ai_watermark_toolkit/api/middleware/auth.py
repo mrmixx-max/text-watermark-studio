@@ -21,13 +21,12 @@ def require_api_key(x_api_key: str | None = Header(default=None)):
       convenience, documented; the dev server binds 127.0.0.1 by default).
     """
     if settings.api_key:
-        if not hmac.compare_digest(x_api_key or '', settings.api_key):
-            raise HTTPException(status_code=401, detail='invalid_api_key')
+        if not hmac.compare_digest(x_api_key or "", settings.api_key):
+            raise HTTPException(status_code=401, detail="invalid_api_key")
         return
-    env = getattr(settings, 'app_env', 'development')
-    if env != 'development':
+    env = getattr(settings, "app_env", "development")
+    if env != "development":
         raise HTTPException(
             status_code=401,
-            detail=('api_key_not_configured: set AI_WM_API_KEY '
-                    '(API is fail-closed outside development)'),
+            detail=("api_key_not_configured: set AI_WM_API_KEY (API is fail-closed outside development)"),
         )

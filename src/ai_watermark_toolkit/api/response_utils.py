@@ -7,12 +7,16 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 
 def wants_hx_html(request: Request) -> bool:
-    return request.headers.get('HX-Request', '').lower() == 'true'
+    return request.headers.get("HX-Request", "").lower() == "true"
 
 
 def render_payload(payload):
     safe = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
-    return '<pre class="overflow-x-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-emerald-200">' + safe + '</pre>'
+    return (
+        '<pre class="overflow-x-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-emerald-200">'
+        + safe
+        + "</pre>"
+    )
 
 
 def respond(request: Request, payload):
@@ -26,14 +30,14 @@ def respond(request: Request, payload):
 
 
 def parse_metadata_field(metadata):
-    if metadata in (None, '', {}):
+    if metadata in (None, "", {}):
         return {}
     if isinstance(metadata, dict):
         return metadata
     try:
         return json.loads(metadata)
     except Exception:
-        return {'raw_metadata': str(metadata)}
+        return {"raw_metadata": str(metadata)}
 
 
 def get_redis(request: Request):
@@ -43,10 +47,11 @@ def get_redis(request: Request):
     configured Redis service these endpoints have no backend; a bare
     AttributeError would surface as a 500, which is misleading.
     """
-    redis = getattr(request.app.state, 'redis', None)
+    redis = getattr(request.app.state, "redis", None)
     if redis is None:
         from fastapi import HTTPException
-        raise HTTPException(status_code=503, detail='Redis backend unavailable')
+
+        raise HTTPException(status_code=503, detail="Redis backend unavailable")
     return redis
 
 
@@ -55,4 +60,4 @@ def checkbox_to_bool(value):
         return value
     if value is None:
         return False
-    return str(value).lower() in {'true', '1', 'yes', 'on'}
+    return str(value).lower() in {"true", "1", "yes", "on"}

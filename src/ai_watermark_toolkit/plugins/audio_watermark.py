@@ -21,6 +21,7 @@ Honest limits:
   - For true inaudible watermark detection, use the reverse-SynthID codebook
     via the metadata/synthid.py adapter.
 """
+
 from __future__ import annotations
 
 import re
@@ -159,7 +160,7 @@ class AudioWatermarkPlugin(DetectorPlugin):
             try:
                 # ID3v2.3 uses plain 32-bit size; ID3v2.4 uses synchsafe.
                 # Try synchsafe first (7-bit groups), fall back to plain.
-                raw_size_bytes = data[start + 4:start + 8]
+                raw_size_bytes = data[start + 4 : start + 8]
                 if all(b <= 0x7F for b in raw_size_bytes):
                     # Synchsafe integer
                     frame_size = (
@@ -170,7 +171,7 @@ class AudioWatermarkPlugin(DetectorPlugin):
                     )
                 else:
                     frame_size = struct.unpack(">I", raw_size_bytes)[0]
-                payload = data[start + 10:start + 10 + frame_size]
+                payload = data[start + 10 : start + 10 + frame_size]
                 if _WM_FIELD_HINTS_BYTES.search(payload) or _WM_VALUE_HINTS_BYTES.search(payload):
                     score = 0.85
                     notes.append(f"id3_txxx_watermark_field_at_{start}")
@@ -192,11 +193,11 @@ class AudioWatermarkPlugin(DetectorPlugin):
 
         i = 12  # skip RIFF header + size + WAVE
         while i + 8 <= len(data):
-            chunk_id = data[i:i + 4]
-            chunk_size = int.from_bytes(data[i + 4:i + 8], "little")
+            chunk_id = data[i : i + 4]
+            chunk_size = int.from_bytes(data[i + 4 : i + 8], "little")
             if i + 8 + chunk_size > len(data):
                 break
-            chunk_data = data[i + 8:i + 8 + chunk_size]
+            chunk_data = data[i + 8 : i + 8 + chunk_size]
 
             if chunk_id == b"iXML" or _IXML_SIGNATURE.search(chunk_data[:64]):
                 if _WM_FIELD_HINTS_BYTES.search(chunk_data) or _WM_VALUE_HINTS_BYTES.search(chunk_data):
@@ -206,14 +207,16 @@ class AudioWatermarkPlugin(DetectorPlugin):
                 score = max(score, 0.3)
                 notes.append("ixml_chunk_present")
 
-            if chunk_id == b"bext" and (_WM_FIELD_HINTS_BYTES.search(chunk_data) or _WM_VALUE_HINTS_BYTES.search(chunk_data)):
-                    score = max(score, 0.7)
-                    notes.append("bext_watermark_field")
+            if chunk_id == b"bext" and (
+                _WM_FIELD_HINTS_BYTES.search(chunk_data) or _WM_VALUE_HINTS_BYTES.search(chunk_data)
+            ):
+                score = max(score, 0.7)
+                notes.append("bext_watermark_field")
 
             # INFO list chunks
             if chunk_id == b"INFO" and _WM_FIELD_HINTS_BYTES.search(chunk_data):
-                    score = max(score, 0.6)
-                    notes.append("info_watermark_field")
+                score = max(score, 0.6)
+                notes.append("info_watermark_field")
 
             i += 8 + chunk_size
             # Align to word boundary
@@ -233,15 +236,15 @@ class AudioWatermarkPlugin(DetectorPlugin):
         XMP_UUID = b"\xbe\x7a\xcf\xcb\x97\xa9\x42\xe8\x9c\x71\x99\x94\x91\xe3\xaf\xac"
         i = 0
         while i + 8 <= len(data):
-            size = int.from_bytes(data[i:i + 4], "big")
-            box_type = data[i + 4:i + 8]
+            size = int.from_bytes(data[i : i + 4], "big")
+            box_type = data[i + 4 : i + 8]
             if size < 8:
                 break
             if i + size > len(data):
                 break
 
             if box_type == b"uuid":
-                payload = data[i + 8:i + size]
+                payload = data[i + 8 : i + size]
                 if payload.startswith(XMP_UUID):
                     xmp_data = payload[16:]
                     if _WM_FIELD_HINTS.search(xmp_data) or _WM_VALUE_HINTS.search(xmp_data):
@@ -256,7 +259,7 @@ class AudioWatermarkPlugin(DetectorPlugin):
 
             if box_type in (b"meta",):
                 # Scan sub-boxes for provenance
-                sub = data[i + 12:i + size]  # skip version/flags
+                sub = data[i + 12 : i + size]  # skip version/flags
                 if _WM_FIELD_HINTS.search(sub) or _WM_VALUE_HINTS.search(sub):
                     score = max(score, 0.6)
                     notes.append("meta_box_watermark_hint")
@@ -277,15 +280,15 @@ class AudioWatermarkPlugin(DetectorPlugin):
             header = data[i]
             is_last = header & 0x80
             block_type = header & 0x7F
-            block_size = int.from_bytes(data[i + 1:i + 4], "big")
+            block_size = int.from_bytes(data[i + 1 : i + 4], "big")
             if i + 4 + block_size > len(data):
                 break
-            block_data = data[i + 4:i + 4 + block_size]
+            block_data = data[i + 4 : i + 4 + block_size]
 
             # Type 4 = VORBIS_COMMENT
             if block_type == 4 and (_WM_FIELD_HINTS.search(block_data) or _WM_VALUE_HINTS.search(block_data)):
-                    notes.append("flac_vorbis_watermark_comment")
-                    return 0.85, notes
+                notes.append("flac_vorbis_watermark_comment")
+                return 0.85, notes
 
             # Type 2 = APPLICATION block
             if block_type == 2 and _WM_FIELD_HINTS.search(block_data):
@@ -336,6 +339,7 @@ class AudioWatermarkPlugin(DetectorPlugin):
         Delegates to the metadata service for container-specific cleaning.
         """
         from ai_watermark_toolkit.metadata.service import clean as meta_clean
+
         cleaned, _ = meta_clean(raw, filename)
         return cleaned
 

@@ -70,6 +70,7 @@ def _resolve_routes(app_or_router):
 
 # ---- FUND 5: lab no-op -----------------------------------------------------
 
+
 class TestLabEmbedNoLongerNoOp:
     def test_service_embed_with_registered_key_is_real(self, tmp_path):
         svc = WatermarkLabService(registry=_tmp_registry(tmp_path))
@@ -141,6 +142,7 @@ class TestLabDemoEndpoint:
 
 # ---- FUND 6: MCP manifest completeness ------------------------------------
 
+
 class TestMCPManifestCoreRoutes:
     def test_manifest_covers_all_live_api_routes(self):
         manifest = json.loads((REPO / "mcp" / "tools.json").read_text(encoding="utf-8"))
@@ -148,7 +150,8 @@ class TestMCPManifestCoreRoutes:
         man = {(t["method"], t["path"]) for t in manifest["tools"]}
         # system/doc routes + the self-referential manifest export are excluded
         missing = sorted(
-            (m, p) for (m, p) in real
+            (m, p)
+            for (m, p) in real
             if p not in ("/", "/health", "/ready", "/api/lab/mcp/tools")
             and not p.startswith(("/docs", "/redoc", "/openapi.json"))
             and (m, p) not in man
@@ -158,19 +161,29 @@ class TestMCPManifestCoreRoutes:
     def test_every_manifest_tool_resolves_to_a_live_route(self):
         manifest = json.loads((REPO / "mcp" / "tools.json").read_text(encoding="utf-8"))
         real = _resolve_routes(fastapi_app.app)
-        bad = [t["name"] for t in manifest["tools"]
-               if not t.get("optional") and (t["method"], t["path"]) not in real]
+        bad = [t["name"] for t in manifest["tools"] if not t.get("optional") and (t["method"], t["path"]) not in real]
         assert bad == [], bad
 
     def test_core_watermark_tools_present(self):
         manifest = json.loads((REPO / "mcp" / "tools.json").read_text(encoding="utf-8"))
         names = {t["name"] for t in manifest["tools"]}
         for required in (
-            "text_detect", "text_clean", "text_dilute", "forensics_embed",
-            "metadata_formats", "metadata_inspect", "metadata_clean",
-            "metadata_embed", "metadata_detect", "metadata_synthid_score",
-            "pdf_extract", "queue_enqueue", "jobs_create", "streams_get_job",
-            "studio_diff", "lab_demo",
+            "text_detect",
+            "text_clean",
+            "text_dilute",
+            "forensics_embed",
+            "metadata_formats",
+            "metadata_inspect",
+            "metadata_clean",
+            "metadata_embed",
+            "metadata_detect",
+            "metadata_synthid_score",
+            "pdf_extract",
+            "queue_enqueue",
+            "jobs_create",
+            "streams_get_job",
+            "studio_diff",
+            "lab_demo",
         ):
             assert required in names, f"missing tool {required}"
 

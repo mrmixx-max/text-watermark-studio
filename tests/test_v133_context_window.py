@@ -49,8 +49,7 @@ TEXT = (
 class TestContextWindowRoundTrip:
     def test_correct_context_detects_wrong_context_collapses(self, tmp_path):
         c_mark = 4
-        emb = mark_greenlist(TEXT, KEY, GAMMA, vocab=FREQUENT_VOCAB, seed=3,
-                             context=c_mark)
+        emb = mark_greenlist(TEXT, KEY, GAMMA, vocab=FREQUENT_VOCAB, seed=3, context=c_mark)
         assert emb["replacements"] > 0, emb
 
         # correct context: strong green signal
@@ -75,8 +74,7 @@ class TestContextWindowRoundTrip:
 
     def test_mark_context2_roundtrips_at_2(self):
         c_mark = 2
-        emb = mark_greenlist(TEXT, KEY, GAMMA, vocab=FREQUENT_VOCAB, seed=3,
-                             context=c_mark)
+        emb = mark_greenlist(TEXT, KEY, GAMMA, vocab=FREQUENT_VOCAB, seed=3, context=c_mark)
         r = detect_kgw(emb["text"], KEY, GAMMA, context=c_mark)
         assert r["verdict"] == "watermark_detected", r
         assert r["z_score"] >= 4.0, r
@@ -100,9 +98,7 @@ class TestContextOneByteIdentity:
             # historical hash
             assert hashlib.sha256(f"{key}:{prev}:{token}".encode()).hexdigest() == old_digest
             # new list-based signature must hash to the same digest
-            new_digest = hashlib.sha256(
-                (f"{key}:" + ":".join([prev]) + f":{token}").encode("utf-8")
-            ).hexdigest()
+            new_digest = hashlib.sha256((f"{key}:" + ":".join([prev]) + f":{token}").encode("utf-8")).hexdigest()
             assert new_digest == old_digest, (token, prev)
             # and green_token must return the fixed historical verdict,
             # regardless of whether context is passed as str, list or tuple

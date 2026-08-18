@@ -35,7 +35,85 @@ from collections.abc import Sequence
 # ---------------------------------------------------------------------------
 
 _STOPWORDS = frozenset(
-    ["a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "have", "he", "her", "his", "i", "in", "is", "it", "its", "of", "on", "or", "that", "the", "their", "them", "they", "this", "to", "was", "we", "were", "will", "with", "you", "your", "auch", "auf", "aus", "bei", "das", "dem", "den", "der", "die", "ein", "eine", "einem", "einen", "einer", "es", "für", "hat", "ich", "im", "in", "ist", "mit", "nach", "nicht", "nur", "sein", "sich", "sie", "so", "und", "vom", "von", "vor", "war", "werden", "wie", "zu", "zum", "zur", "über"]
+    [
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "has",
+        "have",
+        "he",
+        "her",
+        "his",
+        "i",
+        "in",
+        "is",
+        "it",
+        "its",
+        "of",
+        "on",
+        "or",
+        "that",
+        "the",
+        "their",
+        "them",
+        "they",
+        "this",
+        "to",
+        "was",
+        "we",
+        "were",
+        "will",
+        "with",
+        "you",
+        "your",
+        "auch",
+        "auf",
+        "aus",
+        "bei",
+        "das",
+        "dem",
+        "den",
+        "der",
+        "die",
+        "ein",
+        "eine",
+        "einem",
+        "einen",
+        "einer",
+        "es",
+        "für",
+        "hat",
+        "ich",
+        "im",
+        "in",
+        "ist",
+        "mit",
+        "nach",
+        "nicht",
+        "nur",
+        "sein",
+        "sich",
+        "sie",
+        "so",
+        "und",
+        "vom",
+        "von",
+        "vor",
+        "war",
+        "werden",
+        "wie",
+        "zu",
+        "zum",
+        "zur",
+        "über",
+    ]
 )
 
 
@@ -84,6 +162,7 @@ def detect_anchors(tokens: Sequence[str]) -> list[int]:
 # ---------------------------------------------------------------------------
 # Phase 1: state S = mask positions adjacent to anchors
 # ---------------------------------------------------------------------------
+
 
 def select_mask_positions(
     tokens: Sequence[str],
@@ -202,21 +281,22 @@ def _ollama_infill(
     never enters the codebook.
     """
     tokens = sentence.split()
-    prompt_sentence = " ".join(
-        w if i != mask_index else "[MASK]" for i, w in enumerate(tokens)
-    )
-    payload = json.dumps({
-        "model": model,
-        "prompt": (
-            "List 3 different natural words that fit the [MASK] in this "
-            "sentence. Reply with ONLY the words, comma-separated, no "
-            f"explanation.\nText: {prompt_sentence}\nWords:"
-        ),
-        "stream": False,
-        "options": {"num_predict": 24, "temperature": 0.0},
-    }).encode("utf-8")
+    prompt_sentence = " ".join(w if i != mask_index else "[MASK]" for i, w in enumerate(tokens))
+    payload = json.dumps(
+        {
+            "model": model,
+            "prompt": (
+                "List 3 different natural words that fit the [MASK] in this "
+                "sentence. Reply with ONLY the words, comma-separated, no "
+                f"explanation.\nText: {prompt_sentence}\nWords:"
+            ),
+            "stream": False,
+            "options": {"num_predict": 24, "temperature": 0.0},
+        }
+    ).encode("utf-8")
     req = urllib.request.Request(
-        "http://localhost:11434/api/generate", data=payload,  # nosec B310  # hardcoded localhost URL, not user-controlled
+        "http://localhost:11434/api/generate",
+        data=payload,  # nosec B310  # hardcoded localhost URL, not user-controlled
         headers={"Content-Type": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
@@ -302,6 +382,7 @@ def candidate_sets(
 # the sequence of choices — the combination IS the payload. Deterministic and
 # injective by construction, so extraction is a pure table lookup (no hash
 # guessing). Payload = 1 bit per usable mask position.
+
 
 def embed(
     text: str,
@@ -397,6 +478,7 @@ def extract(
 # Corruption robustness helpers (paper §2.2)
 # ---------------------------------------------------------------------------
 
+
 def corrupt(text: str, ratio: float = 0.05, seed: int = 0, mode: str = "substitute") -> str:
     """Apply D/I/S corruption to non-anchor tokens (for robustness tests).
 
@@ -405,6 +487,7 @@ def corrupt(text: str, ratio: float = 0.05, seed: int = 0, mode: str = "substitu
     corruption that preserves utility hits the replaceable parts.
     """
     import random
+
     rng = random.Random(seed)  # nosec B311 — deterministic seeded RNG for forensics sampling, not crypto
     tokens = text.split()
     anchors = set(detect_anchors(tokens))
@@ -479,7 +562,7 @@ def decode_payload(bits: str, strict: bool = False) -> tuple[str, int]:
             raise ValueError("truncated payload body")
         return "", total
     body = bits[_PAYLOAD_PREFIX_BITS:total]
-    raw = bytes(int(body[i:i + 8], 2) for i in range(0, len(body), 8))
+    raw = bytes(int(body[i : i + 8], 2) for i in range(0, len(body), 8))
     try:
         return raw.decode("utf-8"), total
     except UnicodeDecodeError:
@@ -535,7 +618,7 @@ def extract_payload(
         res["payload_reason"] = "mask_position_unknown"
         return res
     n_bits = int(prefix, 2)
-    body = bits[_PAYLOAD_PREFIX_BITS:_PAYLOAD_PREFIX_BITS + n_bits]
+    body = bits[_PAYLOAD_PREFIX_BITS : _PAYLOAD_PREFIX_BITS + n_bits]
     if "?" in body:
         payload, _ = decode_payload(bits.replace("?", "0"))
         res["payload"] = payload

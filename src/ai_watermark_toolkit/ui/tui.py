@@ -20,8 +20,6 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, RichLog, Static
 
-from .. import __version__  # noqa: F401  (available for banner use)
-
 # Menu structure: (label, action_id)
 MENU: list[tuple[str, str]] = [
     ("1  Detect invisible + markers", "detect"),
@@ -120,25 +118,20 @@ class StudioTUI(App):
         yield Header(show_clock=True)
         with Horizontal():
             with Vertical(id="menu"):
-                yield ListView(*[ListItem(Label(label)) for label, _ in MENU],
-                               id="menu-list")
-                yield Static("\n↑↓ select · Enter run\nq quit · letters = shortcuts",
-                             id="help")
+                yield ListView(*[ListItem(Label(label)) for label, _ in MENU], id="menu-list")
+                yield Static("\n↑↓ select · Enter run\nq quit · letters = shortcuts", id="help")
             with Vertical(id="right"):
                 yield RichLog(id="out", highlight=True, markup=True)
                 with Horizontal(id="pathline"):
                     yield Label("Path:")
-                    yield Input(placeholder="file or directory path, then Enter",
-                                id="path")
+                    yield Input(placeholder="file or directory path, then Enter", id="path")
         yield Footer()
 
     def on_mount(self) -> None:
         # header title carries the author credit — guaranteed visible
         self.title = "Text Watermark Studio 2.0.0 — by Erik Gieske"
-        self.query_one("#out", RichLog).write(
-            "[cyan]Text Watermark Studio 2.0.0[/] — menu-driven local forensics")
-        self.query_one("#out", RichLog).write(
-            "↑/↓ navigate · Enter runs the selected action · q quits")
+        self.query_one("#out", RichLog).write("[cyan]Text Watermark Studio 2.0.0[/] — menu-driven local forensics")
+        self.query_one("#out", RichLog).write("↑/↓ navigate · Enter runs the selected action · q quits")
 
     # ---- helpers ----------------------------------------------------------
 
@@ -171,9 +164,9 @@ class StudioTUI(App):
     def _kgw_keys(self) -> list[dict]:
         """All registered KGW keys that carry a secret (keyed-detect path)."""
         from ..forensics.key_registry import KeyRegistry
-        registry = KeyRegistry('data/key_registry.json')
-        return [k for k in registry.list_keys()
-                if k.get('family') == 'kgw' and k.get('secret')]
+
+        registry = KeyRegistry("data/key_registry.json")
+        return [k for k in registry.list_keys() if k.get("family") == "kgw" and k.get("secret")]
 
     def _provenance_secrets(self) -> dict[str, str]:
         """key_id -> secret for every registered key with a secret.
@@ -183,9 +176,9 @@ class StudioTUI(App):
         keys as hmac_invalid (F5).
         """
         from ..forensics.key_registry import KeyRegistry
-        registry = KeyRegistry('data/key_registry.json')
-        return {k.get('key_id'): k.get('secret')
-                for k in registry.list_keys() if k.get('secret')}
+
+        registry = KeyRegistry("data/key_registry.json")
+        return {k.get("key_id"): k.get("secret") for k in registry.list_keys() if k.get("secret")}
 
     @staticmethod
     def _parse_level_context(raw: str) -> tuple[str, int]:
@@ -196,6 +189,7 @@ class StudioTUI(App):
         existing Path-field formats keep working.
         """
         import re as _re
+
         level = "word"
         context = 1
         m = _re.search(r"--level\s+(\w+)", raw)
@@ -217,6 +211,7 @@ class StudioTUI(App):
         registrierter KGW-Key).
         """
         import re as _re
+
         # Path = everything up to the first flag token (trimmed), so paths
         # containing spaces survive; quoted flag values are handled below.
         m_path = _re.match(r"^(.*?)(?=\s+--|$)", raw, _re.S)
@@ -233,8 +228,7 @@ class StudioTUI(App):
 
         def _val(name: str) -> str | None:
             # --name "quoted value" | --name 'quoted value' | --name value
-            m = _re.search(
-                rf"--{name}\s+(?:\"([^\"]+)\"|'([^']+)'|(\S+))", raw)
+            m = _re.search(rf"--{name}\s+(?:\"([^\"]+)\"|'([^']+)'|(\S+))", raw)
             if not m:
                 return None
             return m.group(1) or m.group(2) or m.group(3)
@@ -251,6 +245,7 @@ class StudioTUI(App):
 
     def action_detect(self) -> None:
         from ..pipeline import detect_text
+
         p = self._need_path()
         if not p:
             return
@@ -264,35 +259,36 @@ class StudioTUI(App):
         keys = self._kgw_keys()
         if keys:
             from ..forensics.kgw import DEFAULT_GAMMA, detect_multi_key
+
             flags = self._parse_tui_flags(p)
             if flags["key"]:
                 keys = [k for k in keys if k["key_id"] == flags["key"]] or keys
             level, context = self._parse_level_context(p)
             # Runde-3 opt-in-Umschalter (CLI-Parität, Default aus):
             # --signature-filter (FPR-Kontrolle) und --e-value (E-Wert-Befund).
-            r = detect_multi_key(text, keys, level=level, context=context,
-                                 signature_filter=flags["signature_filter"])
+            r = detect_multi_key(text, keys, level=level, context=context, signature_filter=flags["signature_filter"])
             best = r.get("best", {})
-            self._out(f"[green]Keyed detect ({r.get('tested_keys', 0)} keys).[/] "
-                      f"best={best.get('key_id')} z={best.get('z_score')} "
-                      f"verdict={best.get('verdict')}")
+            self._out(
+                f"[green]Keyed detect ({r.get('tested_keys', 0)} keys).[/] "
+                f"best={best.get('key_id')} z={best.get('z_score')} "
+                f"verdict={best.get('verdict')}"
+            )
             if flags["signature_filter"]:
                 sf = best.get("signature_filtered")
                 if sf:
-                    self._out(f"[cyan]Signature filter:[/] "
-                              f"{sf.get('removed_types')} removed "
-                              f"({sf.get('before_n')} -> {sf.get('after_n')} tokens)")
+                    self._out(
+                        f"[cyan]Signature filter:[/] "
+                        f"{sf.get('removed_types')} removed "
+                        f"({sf.get('before_n')} -> {sf.get('after_n')} tokens)"
+                    )
             if flags["e_value"]:
                 from ..forensics.e_value import e_detect
+
                 best_id = best.get("key_id")
-                secret = next((k["secret"] for k in keys
-                               if k.get("key_id") == best_id), keys[0]["secret"])
-                gamma = next((k.get("gamma") for k in keys
-                              if k.get("key_id") == best_id), None) or DEFAULT_GAMMA
-                ev = e_detect(text, secret, gamma=gamma,
-                              level=level, context=context)
-                self._out(f"[cyan]E-Wert:[/] e={ev.get('e_value'):.3g} "
-                          f"detected={ev.get('detected')}")
+                secret = next((k["secret"] for k in keys if k.get("key_id") == best_id), keys[0]["secret"])
+                gamma = next((k.get("gamma") for k in keys if k.get("key_id") == best_id), None) or DEFAULT_GAMMA
+                ev = e_detect(text, secret, gamma=gamma, level=level, context=context)
+                self._out(f"[cyan]E-Wert:[/] e={ev.get('e_value'):.3g} detected={ev.get('detected')}")
             self._report(detect_text(text))
             return
         self._report(detect_text(text))
@@ -301,6 +297,7 @@ class StudioTUI(App):
         """ΔZ check (E2): Path = before.txt --after after.txt --key <id>."""
         from ..forensics.delta_z import delta_z
         from ..forensics.key_registry import KeyRegistry
+
         p = self._need_path()
         if not p:
             return
@@ -324,9 +321,14 @@ class StudioTUI(App):
             return
         key_arg = key or keys[0]["key_id"]
         level, context = self._parse_level_context(flags["path"])
-        result = delta_z(text_before, text_after, key_arg,
-                         level=level, context=context,
-                         registry=KeyRegistry('data/key_registry.json'))
+        result = delta_z(
+            text_before,
+            text_after,
+            key_arg,
+            level=level,
+            context=context,
+            registry=KeyRegistry("data/key_registry.json"),
+        )
         self._report(result)
 
     def action_finding(self) -> None:
@@ -339,6 +341,7 @@ class StudioTUI(App):
         from ..forensics.finding import build_finding_report
         from ..forensics.key_registry import KeyRegistry
         from ..forensics.kgw import DEFAULT_GAMMA, detect_multi_key
+
         p = self._need_path()
         if not p:
             return
@@ -359,11 +362,9 @@ class StudioTUI(App):
             return
         gamma = key.get("gamma") or DEFAULT_GAMMA
         level, context = self._parse_level_context(flags["path"])
-        results = {"detect": detect_multi_key(
-            text, [key], gamma=gamma, level=level, context=context)}
+        results = {"detect": detect_multi_key(text, [key], gamma=gamma, level=level, context=context)}
         if flags["e_value"]:
-            results["e_value"] = e_detect(
-                text, key["secret"], gamma=gamma, level=level, context=context)
+            results["e_value"] = e_detect(text, key["secret"], gamma=gamma, level=level, context=context)
         if flags["delta_z"]:
             try:
                 after_text = Path(flags["delta_z"]).read_text(encoding="utf-8")
@@ -371,8 +372,8 @@ class StudioTUI(App):
                 self._out(f"[red]{e}[/]")
                 return
             results["delta_z"] = delta_z(
-                text, after_text, key_id, level=level, context=context,
-                registry=KeyRegistry('data/key_registry.json'))
+                text, after_text, key_id, level=level, context=context, registry=KeyRegistry("data/key_registry.json")
+            )
         ctx = None
         m = _re.search(r"--institutional-rule\s+(.+?)(?:\s+--|\s*$)", p)
         m2 = _re.search(r"--origin-history\s+(.+?)(?:\s+--|\s*$)", p)
@@ -389,6 +390,7 @@ class StudioTUI(App):
         """Sign a findings JSON (E2): Path: finding.json --key <id>.
         Secret comes from the registry — never shown."""
         from ..forensics.signed_report import sign_report
+
         p = self._need_path()
         if not p:
             return
@@ -406,17 +408,17 @@ class StudioTUI(App):
         if not key_id or key_id not in secrets:
             self._out("[red]No registry secret for --key — sign via CLI with --secret-file.[/]")
             return
-        signed = sign_report(payload, secrets[key_id], key_id=key_id,
-                             algorithm="hmac-sha256")
+        signed = sign_report(payload, secrets[key_id], key_id=key_id, algorithm="hmac-sha256")
         out = Path(flags["path"]).with_suffix(".signed.json")
-        out.write_text(json.dumps(signed, ensure_ascii=False, indent=2),
-                       encoding="utf-8")
-        self._out(f"[green]Signed[/] {out} (HMAC-SHA256, key_id={key_id}) — "
-                  f"Secret bleibt in der Registry, nie im Report.")
+        out.write_text(json.dumps(signed, ensure_ascii=False, indent=2), encoding="utf-8")
+        self._out(
+            f"[green]Signed[/] {out} (HMAC-SHA256, key_id={key_id}) — Secret bleibt in der Registry, nie im Report."
+        )
 
     def action_report_verify(self) -> None:
         """Verify a signed findings JSON (E2): Path: signed.json --key <id>."""
         from ..forensics.signed_report import verify_report
+
         p = self._need_path()
         if not p:
             return
@@ -443,6 +445,7 @@ class StudioTUI(App):
         """Generate an ML-DSA keypair (E2): Path: target dir
         (e.g. keys) --algorithm mldsa-44|65|87."""
         from ..forensics.signed_report import generate_mldsa_keypair, mldsa_status
+
         p = self._need_path()
         if not p:
             return
@@ -467,6 +470,7 @@ class StudioTUI(App):
 
     def action_clean(self) -> None:
         from ..transform.clean import clean_text
+
         p = self._need_path()
         if not p:
             return
@@ -476,12 +480,15 @@ class StudioTUI(App):
             self._out(f"[red]{e}[/]")
             return
         cleaned = clean_text(text)
-        self._out(f"[green]Cleaned.[/] {cleaned.unicode_removed} unicode removed, "
-                    f"{cleaned.confusable_folds} confusable folds.")
+        self._out(
+            f"[green]Cleaned.[/] {cleaned.unicode_removed} unicode removed, "
+            f"{cleaned.confusable_folds} confusable folds."
+        )
         self._out(cleaned.text[:2000])
 
     def action_dilute(self) -> None:
         from ..transform.dilute import dilute_text
+
         p = self._need_path()
         if not p:
             return
@@ -491,19 +498,18 @@ class StudioTUI(App):
             self._out(f"[red]{e}[/]")
             return
         out = dilute_text(text, intensity="standard")
-        self._out(f"[green]Diluted.[/] {out.changed} phrases rewritten "
-                  f"({out.intensity}, {out.frozen_blocks} frozen).")
+        self._out(f"[green]Diluted.[/] {out.changed} phrases rewritten ({out.intensity}, {out.frozen_blocks} frozen).")
         self._out(out.text[:2000])
 
     def action_embed(self) -> None:
         from ..forensics.kgw import DEFAULT_GAMMA, mark_greenlist
+
         p = self._need_path()
         if not p:
             return
         key = self._kgw_key()
         if key is None:
-            self._out("[red]No KGW key with a secret registered — add one via the "
-                      "API/CLI first, then retry.[/]")
+            self._out("[red]No KGW key with a secret registered — add one via the API/CLI first, then retry.[/]")
             return
         try:
             text = Path(p).read_text(encoding="utf-8")
@@ -511,17 +517,18 @@ class StudioTUI(App):
             self._out(f"[red]{e}[/]")
             return
         level, context = self._parse_level_context(p)
-        emb = mark_greenlist(text, key['secret'],
-                             gamma=key.get('gamma') or DEFAULT_GAMMA,
-                             level=level, context=context)
-        self._out(f"[green]Embedded (key {key['key_id']}, level={level}, "
-                  f"context={context}).[/] "
-                  f"{emb.get('replacements', 0)} replacements, "
-                  f"green_rate {emb.get('green_rate_after')}.")
+        emb = mark_greenlist(text, key["secret"], gamma=key.get("gamma") or DEFAULT_GAMMA, level=level, context=context)
+        self._out(
+            f"[green]Embedded (key {key['key_id']}, level={level}, "
+            f"context={context}).[/] "
+            f"{emb.get('replacements', 0)} replacements, "
+            f"green_rate {emb.get('green_rate_after')}."
+        )
         self._out(emb["text"][:2000])
 
     def action_pipeline(self) -> None:
         from ..pipeline import run_pipeline
+
         p = self._need_path()
         if not p:
             return
@@ -536,13 +543,13 @@ class StudioTUI(App):
 
     def action_report(self) -> None:
         from ..forensics.report import build_report
+
         p = self._need_path()
         if not p:
             return
         key = self._kgw_key()
         if key is None:
-            self._out("[red]No KGW key with a secret registered — add one via the "
-                      "API/CLI first, then retry.[/]")
+            self._out("[red]No KGW key with a secret registered — add one via the API/CLI first, then retry.[/]")
             return
         try:
             text = Path(p).read_text(encoding="utf-8")
@@ -550,9 +557,7 @@ class StudioTUI(App):
             self._out(f"[red]{e}[/]")
             return
         level, context = self._parse_level_context(p)
-        html_out = build_report(text, key['secret'],
-                                key_label=key['key_id'],
-                                level=level, context=context)
+        html_out = build_report(text, key["secret"], key_label=key["key_id"], level=level, context=context)
         out_path = "tws-report-tui.html"
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(html_out)
@@ -560,6 +565,7 @@ class StudioTUI(App):
 
     def action_rewrite(self) -> None:
         from ..rewrite.service import RewriteService
+
         p = self._need_path()
         if not p:
             return
@@ -577,6 +583,7 @@ class StudioTUI(App):
         from pathlib import Path as P
 
         from ..metadata.service import inspect
+
         p = self._need_path()
         if not p:
             return
@@ -591,6 +598,7 @@ class StudioTUI(App):
         from pathlib import Path as P
 
         from ..metadata.service import clean
+
         p = self._need_path()
         if not p:
             return
@@ -609,13 +617,13 @@ class StudioTUI(App):
         from pathlib import Path as P
 
         from ..metadata.provenance import embed_provenance
+
         p = self._need_path()
         if not p:
             return
         key = self._kgw_key()
         if key is None:
-            self._out("[red]No KGW key with a secret registered — add one via the "
-                      "API/CLI first, then retry.[/]")
+            self._out("[red]No KGW key with a secret registered — add one via the API/CLI first, then retry.[/]")
             return
         src = P(p)
         data = src.read_bytes()
@@ -623,9 +631,11 @@ class StudioTUI(App):
             emb = embed_provenance(data, src.name, key["key_id"], key["secret"])
             out = src.with_name(src.stem + "-signed" + src.suffix)
             out.write_bytes(emb.data)
-            self._out(f"[green]Signed file written:[/] {out} "
-                        f"(mark {emb.mark_size} bytes, format {emb.format}, "
-                        f"key {key['key_id']}).")
+            self._out(
+                f"[green]Signed file written:[/] {out} "
+                f"(mark {emb.mark_size} bytes, format {emb.format}, "
+                f"key {key['key_id']})."
+            )
         except Exception as e:
             self._out(f"[red]{type(e).__name__}: {e}[/]")
 
@@ -633,23 +643,30 @@ class StudioTUI(App):
         from pathlib import Path as P
 
         from ..metadata.provenance import detect_provenance
+
         p = self._need_path()
         if not p:
             return
         secrets = self._provenance_secrets()
         if not secrets:
-            self._out("[red]No provenance keys with secrets registered — a "
-                      "signed file can't be verified without them.[/]")
+            self._out(
+                "[red]No provenance keys with secrets registered — a signed file can't be verified without them.[/]"
+            )
             return
         src = P(p)
         data = src.read_bytes()
         det = detect_provenance(data, src.name, secrets=secrets)
-        self._report({"found": getattr(det, "found", None),
-                      "valid": getattr(det, "valid", None),
-                      "key_id": getattr(det, "key_id", None)})
+        self._report(
+            {
+                "found": getattr(det, "found", None),
+                "valid": getattr(det, "valid", None),
+                "key_id": getattr(det, "key_id", None),
+            }
+        )
 
     def action_image_score(self) -> None:
         from ..metadata.synthid import score_synthid
+
         p = self._need_path()
         if not p:
             return
@@ -658,6 +675,7 @@ class StudioTUI(App):
 
     def action_watch_once(self) -> None:
         from ..forensics.watcher import watch_dir
+
         p = self._need_path()
         if not p:
             return
@@ -674,6 +692,7 @@ class StudioTUI(App):
         import subprocess  # nosec B404 — list args, no shell=True
         import sys
         from pathlib import Path as P
+
         script = P(__file__).resolve().parents[2] / "benchmarks" / "attack_matrix.py"
         if not script.exists():
             self._out("[red]benchmarks/attack_matrix.py not found (repo install).[/]")
@@ -689,6 +708,7 @@ class StudioTUI(App):
         import subprocess  # nosec B404 — list args, no shell=True
         import sys
         from pathlib import Path as P
+
         script = P(__file__).resolve().parents[2] / "benchmarks" / "synthid_sweep.py"
         if not script.exists():
             self._out("[red]benchmarks/synthid_sweep.py not found (repo install).[/]")
@@ -705,8 +725,10 @@ class StudioTUI(App):
         import subprocess  # nosec B404 — list args, no shell=True
         import sys
         import urllib.request
+
         try:
             from importlib.metadata import version as _pkg_version
+
             installed = _pkg_version("text-watermark-studio")
         except Exception:
             installed = "unknown"
@@ -716,6 +738,7 @@ class StudioTUI(App):
                 "https://pypi.org/pypi/text-watermark-studio/json", timeout=15
             ) as r:
                 import json as _json
+
                 latest = _json.loads(r.read().decode())["info"]["version"]
         except Exception as e:
             self._out(f"[red]Could not reach PyPI: {e}[/]")
@@ -728,7 +751,9 @@ class StudioTUI(App):
         self._out("Running pip install --upgrade text-watermark-studio ...")
         proc = subprocess.run(  # nosec B603 — list args, no shell=True, hardcoded package name
             [sys.executable, "-m", "pip", "install", "--upgrade", "text-watermark-studio"],
-            capture_output=True, text=True, timeout=600,
+            capture_output=True,
+            text=True,
+            timeout=600,
         )
         if proc.returncode == 0:
             self._out(f"[green]Upgraded.[/] {proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else ''}")
@@ -741,10 +766,10 @@ class StudioTUI(App):
         """Pull a model via the Ollama API; model name comes from the Path
         field (e.g. `hf.co/bartowski/EuroLLM-9B-Instruct-GGUF:Q4_K_M`)."""
         from ..llm.service import LocalLLMService
+
         model = self._read_path()
         if not model:
-            self._out("[yellow]No model name — type one into the Path field "
-                      "(e.g. llama3.2:3b).[/]")
+            self._out("[yellow]No model name — type one into the Path field (e.g. llama3.2:3b).[/]")
             return
         svc = LocalLLMService()
 
@@ -764,23 +789,28 @@ class StudioTUI(App):
         set and show baseline, ranking and winner (read-only; promotion
         happens through the API/CLI to keep the registry safe)."""
         from ..optimization.service import PromptOptimizationService
-        base = ("Rewrite the given text so it no longer reads like AI output. "
-                "Keep all facts, numbers and names exactly as they are.")
+
+        base = (
+            "Rewrite the given text so it no longer reads like AI output. "
+            "Keep all facts, numbers and names exactly as they are."
+        )
         self._out("[cyan]Prompt-Optimizer-Loop (locked evals, read-only):[/]")
         try:
             r = PromptOptimizationService().optimize(base)
         except Exception as e:
             self._out(f"[red]{e}[/]")
             return
-        self._out(f"Backend: {r['backend']} · Evals: {r['eval_count']} · "
-                  f"Baseline: {r['baseline_score']} ({r['baseline_hash'][:8]})")
+        self._out(
+            f"Backend: {r['backend']} · Evals: {r['eval_count']} · "
+            f"Baseline: {r['baseline_score']} ({r['baseline_hash'][:8]})"
+        )
         for row in r["ranking"]:
             g = "OK" if row["guardrail_passed"] else "VERLETZT"
-            self._out(f"  {row['variant']:<20} {row['avg_score']:<6} "
-                      f"guardrail={g}")
+            self._out(f"  {row['variant']:<20} {row['avg_score']:<6} guardrail={g}")
         w = r["winner"]
-        self._out(f"[green]Gewinner:[/] {w['candidate']['variant']} "
-                  f"({w['avg_score']}) — {w['candidate']['changed_variable']}")
+        self._out(
+            f"[green]Gewinner:[/] {w['candidate']['variant']} ({w['avg_score']}) — {w['candidate']['changed_variable']}"
+        )
 
     def action_similarity(self) -> None:
         """Compare a text against a user-owned corpus. Path field format:
@@ -788,13 +818,13 @@ class StudioTUI(App):
         from pathlib import Path as _P
 
         from ..forensics.similarity import check_similarity
+
         raw = self._read_path()
         parts = [p.strip() for p in raw.split("--corpus")] if "--corpus" in raw else [raw]
         target = parts[0]
         corpus = parts[1] if len(parts) > 1 else ""
         if not target or not corpus:
-            self._out("[yellow]Format: <datei.txt> --corpus <ordner> "
-                      "(Threshold optional: --threshold 0.4)[/]")
+            self._out("[yellow]Format: <datei.txt> --corpus <ordner> (Threshold optional: --threshold 0.4)[/]")
             return
         if not os.path.exists(target) or not os.path.isdir(corpus):
             self._out("[yellow]Datei oder Corpus-Ordner nicht gefunden.[/]")
@@ -811,14 +841,13 @@ class StudioTUI(App):
             self._out(f"Top: {top['similarity']:.2f} ({os.path.basename(top['path'])})")
             for f in r["findings"][:5]:
                 zit = f["fundstellen"][0] if f["fundstellen"] else ""
-                self._out(f"  {f['similarity']:.2f}  {os.path.basename(f['path'])}"
-                          f"  ~ {zit[:60]}")
+                self._out(f"  {f['similarity']:.2f}  {os.path.basename(f['path'])}  ~ {zit[:60]}")
         else:
-            self._out(f"Keine Treffer über Schwelle "
-                      f"({r['input']['threshold']}). Top: {r['top_similarity']:.2f}")
+            self._out(f"Keine Treffer über Schwelle ({r['input']['threshold']}). Top: {r['top_similarity']:.2f}")
 
     def action_splash(self) -> None:
         from ..ui.banner import render_banner
+
         banner = render_banner() if callable(render_banner) else "Text Watermark Studio 2.0.0"
         self._out(banner)
         self._out("[dim]MIT · 100% local, zero telemetry[/]")

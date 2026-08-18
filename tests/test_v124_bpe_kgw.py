@@ -6,12 +6,10 @@ wrong key stays clean, and unmarked text stays clean. Word level remains the
 backward-compatible default and keeps its own round-trip.
 """
 
-import pytest
 
 from ai_watermark_toolkit.forensics.kgw import (
     bpe_tokenize,
     detect_kgw,
-    green_token,
     mark_greenlist,
     tokenize,
 )

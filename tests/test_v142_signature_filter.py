@@ -60,16 +60,122 @@ KEY_B = "test-secret-beta-002"
 
 # Syllable-built vocabulary (same construction as test_v113_kgw_detector):
 # enough DISTINCT (prev, token) pairs that green rates stay well-behaved.
-_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
-_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
+_SIL1 = [
+    "ba",
+    "be",
+    "bi",
+    "bo",
+    "bu",
+    "ca",
+    "ce",
+    "ci",
+    "co",
+    "cu",
+    "da",
+    "de",
+    "di",
+    "do",
+    "du",
+    "fa",
+    "fe",
+    "fi",
+    "fo",
+    "fu",
+    "ga",
+    "ge",
+    "gi",
+    "go",
+    "gu",
+    "ka",
+    "ke",
+    "ki",
+    "ko",
+    "ku",
+    "la",
+    "le",
+    "li",
+    "lo",
+    "lu",
+    "ma",
+    "me",
+    "mi",
+    "mo",
+    "mu",
+    "na",
+    "ne",
+    "ni",
+    "no",
+    "nu",
+    "pa",
+    "pe",
+    "pi",
+    "po",
+    "pu",
+    "ra",
+    "re",
+    "ri",
+    "ro",
+    "ru",
+    "sa",
+    "se",
+    "si",
+    "so",
+    "su",
+    "ta",
+    "te",
+    "ti",
+    "to",
+    "tu",
+    "va",
+    "ve",
+    "vi",
+    "vo",
+    "vu",
+    "wa",
+    "we",
+    "wi",
+    "wo",
+    "wu",
+    "za",
+    "ze",
+    "zi",
+    "zo",
+    "zu",
+]
+_SIL2 = [
+    "an",
+    "en",
+    "in",
+    "on",
+    "un",
+    "ar",
+    "er",
+    "ir",
+    "or",
+    "ur",
+    "al",
+    "el",
+    "il",
+    "ol",
+    "ul",
+    "at",
+    "et",
+    "it",
+    "ot",
+    "ut",
+    "as",
+    "es",
+    "is",
+    "os",
+    "us",
+]
 VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 
 # "baban" dominates the FPR texts; (baban, baban) hashes RED for KEY_A.
 DOMINANT = "baban"
 
 
-def generate_watermarked(seed_token: str, key: str, n: int = 400,
-                         gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
+def generate_watermarked(seed_token: str, key: str, n: int = 400, gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
     """KGW generator (test_v113): random token from the greenlist at every
     position -> ~100% green rate -> huge positive Z-score."""
     rng = random.Random(seed)
@@ -158,11 +264,10 @@ class TestSignatureTokenStats:
     def test_stats_matches_manual_green_token(self):
         """z_contribution matches the direct per-type Z formula."""
         tokens = ["alpha", "beta", "alpha", "gamma", "alpha"]
-        ctx_pairs = [(tokens[i], tokens[max(0, i - 1):i]) for i in range(1, len(tokens))]
+        ctx_pairs = [(tokens[i], tokens[max(0, i - 1) : i]) for i in range(1, len(tokens))]
         green_a = sum(1 for tok, ctx in ctx_pairs if tok == "alpha" and green_token(tok, ctx, KEY_A))
         count_a = sum(1 for tok, _ in ctx_pairs if tok == "alpha")
-        expected = (green_a - count_a * DEFAULT_GAMMA) / (
-            (count_a * DEFAULT_GAMMA * (1 - DEFAULT_GAMMA)) ** 0.5)
+        expected = (green_a - count_a * DEFAULT_GAMMA) / ((count_a * DEFAULT_GAMMA * (1 - DEFAULT_GAMMA)) ** 0.5)
         st = signature_token_stats(tokens, 1, KEY_A)
         by_token = {t["token"]: t for t in st["types"]}
         assert abs(by_token["alpha"]["z_contribution"] - round(expected, 4)) < 1e-9
@@ -212,10 +317,14 @@ class TestDetectKgwSignatureFilter:
         assert on["n_tokens"] == 15
         sf = on["signature_filtered"]
         assert sf["n_before"] == 99 and sf["n_after"] == 15 and sf["n_removed"] == 84
-        assert sf["removed"] == [{
-            "token": DOMINANT, "count": 84, "share": 0.8485,
-            "z_contribution": -5.2915,
-        }], sf["removed"]
+        assert sf["removed"] == [
+            {
+                "token": DOMINANT,
+                "count": 84,
+                "share": 0.8485,
+                "z_contribution": -5.2915,
+            }
+        ], sf["removed"]
 
     def test_fpr_control_seed_loop(self):
         """Paper-style FPR class: ~all seeds alarm without the filter, none
@@ -275,8 +384,13 @@ class TestParity:
         assert r["verdict"] == "watermark_detected"
         assert r["green_rate"] == 1.0
         assert set(r.keys()) == {
-            "z_score", "p_value", "green_count", "n_tokens",
-            "green_rate", "verdict", "signal",
+            "z_score",
+            "p_value",
+            "green_count",
+            "n_tokens",
+            "green_rate",
+            "verdict",
+            "signal",
         }, r.keys()  # no signature_filtered when the flag is off
 
     def test_default_prose_parity(self):
@@ -308,15 +422,17 @@ class TestParity:
         rs = detect_kgw("one two three", KEY_A, signature_filter=True)
         assert rs["verdict"] == "too_short"
         assert rs["signature_filtered"] == {
-            "removed": [], "n_removed": 0, "n_after": 2, "n_before": 2,
+            "removed": [],
+            "n_removed": 0,
+            "n_after": 2,
+            "n_before": 2,
         }
 
 
 class TestCliSignatureFilter:
     def _run(self, args, text):
         cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "detect", *args]
-        return subprocess.run(cmd, input=text, capture_output=True, text=True,
-                              cwd=str(REPO_ROOT), timeout=180)
+        return subprocess.run(cmd, input=text, capture_output=True, text=True, cwd=str(REPO_ROOT), timeout=180)
 
     def test_cli_flag_is_opt_in(self):
         """Without --signature-filter the output has no such field."""

@@ -14,8 +14,7 @@ import pytest
 from ai_watermark_toolkit.llm.service import LocalLLMService
 
 # mock Ollama state
-KNOWN_MODELS = [{"name": "eurollm-9b:latest", "size": 9_000_000_000},
-                {"name": "llama3.2:3b", "size": 3_200_000_000}]
+KNOWN_MODELS = [{"name": "eurollm-9b:latest", "size": 9_000_000_000}, {"name": "llama3.2:3b", "size": 3_200_000_000}]
 
 
 class MockOllamaHandler(BaseHTTPRequestHandler):
@@ -46,8 +45,7 @@ class MockOllamaHandler(BaseHTTPRequestHandler):
             self._json(404, {"error": "not found"})
 
     def _json(self, code, payload):
-        data = payload if isinstance(payload, bytes) else \
-            json.dumps(payload).encode("utf-8")
+        data = payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
@@ -75,13 +73,19 @@ def mock_ollama():
 def svc(tmp_path, mock_ollama, monkeypatch):
     monkeypatch.setenv("OLLAMA_BASE_URL", mock_ollama)
     cfg = tmp_path / "local_llm.json"
-    cfg.write_text(json.dumps({
-        "provider": "llama.cpp-openai-compatible",
-        "model_family": "mradermacher/EuroLLM-9B-Instruct-2512-GGUF",
-        "model_variant": "eurollm-9b",
-        "server_base_url": "http://127.0.0.1:8080/v1",
-        "installed": False, "updated_at": None,
-    }), encoding="utf-8")
+    cfg.write_text(
+        json.dumps(
+            {
+                "provider": "llama.cpp-openai-compatible",
+                "model_family": "mradermacher/EuroLLM-9B-Instruct-2512-GGUF",
+                "model_variant": "eurollm-9b",
+                "server_base_url": "http://127.0.0.1:8080/v1",
+                "installed": False,
+                "updated_at": None,
+            }
+        ),
+        encoding="utf-8",
+    )
     return LocalLLMService(path=cfg)
 
 

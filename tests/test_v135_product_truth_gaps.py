@@ -41,8 +41,115 @@ REPO = Path(__file__).resolve().parents[1]
 
 # Syllable-generated pseudo-vocab (mirrors test_v113/v132): enough DISTINCT
 # (prev, token) pairs so the Z-test's independence assumption holds.
-_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
-_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
+_SIL1 = [
+    "ba",
+    "be",
+    "bi",
+    "bo",
+    "bu",
+    "ca",
+    "ce",
+    "ci",
+    "co",
+    "cu",
+    "da",
+    "de",
+    "di",
+    "do",
+    "du",
+    "fa",
+    "fe",
+    "fi",
+    "fo",
+    "fu",
+    "ga",
+    "ge",
+    "gi",
+    "go",
+    "gu",
+    "ka",
+    "ke",
+    "ki",
+    "ko",
+    "ku",
+    "la",
+    "le",
+    "li",
+    "lo",
+    "lu",
+    "ma",
+    "me",
+    "mi",
+    "mo",
+    "mu",
+    "na",
+    "ne",
+    "ni",
+    "no",
+    "nu",
+    "pa",
+    "pe",
+    "pi",
+    "po",
+    "pu",
+    "ra",
+    "re",
+    "ri",
+    "ro",
+    "ru",
+    "sa",
+    "se",
+    "si",
+    "so",
+    "su",
+    "ta",
+    "te",
+    "ti",
+    "to",
+    "tu",
+    "va",
+    "ve",
+    "vi",
+    "vo",
+    "vu",
+    "wa",
+    "we",
+    "wi",
+    "wo",
+    "wu",
+    "za",
+    "ze",
+    "zi",
+    "zo",
+    "zu",
+]
+_SIL2 = [
+    "an",
+    "en",
+    "in",
+    "on",
+    "un",
+    "ar",
+    "er",
+    "ir",
+    "or",
+    "ur",
+    "al",
+    "el",
+    "il",
+    "ol",
+    "ul",
+    "at",
+    "et",
+    "it",
+    "ot",
+    "ut",
+    "as",
+    "es",
+    "is",
+    "os",
+    "us",
+]
 VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 
 KEY_A = "test-secret-alpha-001"
@@ -64,8 +171,7 @@ EMBED_TEXT = (
 )
 
 
-def generate_redlist(seed_token: str, key: str, n: int = 400,
-                     gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
+def generate_redlist(seed_token: str, key: str, n: int = 400, gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
     """KGW redlist generator: pick from the COMPLEMENT of the greenlist."""
     rng = random.Random(seed)
     out = [seed_token]
@@ -78,8 +184,7 @@ def generate_redlist(seed_token: str, key: str, n: int = 400,
     return " ".join(out)
 
 
-def generate_greenlist(seed_token: str, key: str, n: int = 400,
-                       gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
+def generate_greenlist(seed_token: str, key: str, n: int = 400, gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
     """KGW greenlist generator: greedy pick from the greenlist."""
     rng = random.Random(seed)
     out = [seed_token]
@@ -116,19 +221,22 @@ def _run_cli(args, cwd):
     env["PYTHONPATH"] = str(REPO / "src")
     return subprocess.run(
         [sys.executable, "-m", "ai_watermark_toolkit.cli", *args],
-        capture_output=True, text=True, env=env, cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(cwd),
     )
 
 
 def _cli_registry(tmp_path: Path, entries: list[dict]) -> Path:
     data_dir = tmp_path / "data"
     data_dir.mkdir(exist_ok=True)
-    (data_dir / "key_registry.json").write_text(
-        json.dumps({"keys": entries}), encoding="utf-8")
+    (data_dir / "key_registry.json").write_text(json.dumps({"keys": entries}), encoding="utf-8")
     return tmp_path
 
 
 # ---- FUND 1: redlist sign + Bonferroni in the product path -----------------
+
 
 class TestRedlistProductPath:
     def test_detect_multi_key_redlist_signed_best(self):
@@ -154,8 +262,7 @@ class TestRedlistProductPath:
         assert r["per_key"][0]["avg_score"] < 0.0, r
 
     def test_api_detect_redlist_top_level_verdict(self, tmp_path, monkeypatch):
-        c = _api_client(tmp_path, monkeypatch,
-                        [{"key_id": "a", "family": "kgw", "secret": KEY_A}])
+        c = _api_client(tmp_path, monkeypatch, [{"key_id": "a", "family": "kgw", "secret": KEY_A}])
         text = generate_redlist("start", KEY_A)
         r = c.post("/api/forensics/detect", json={"text": text})
         assert r.status_code == 200, r.text
@@ -166,8 +273,7 @@ class TestRedlistProductPath:
         assert body["kgw"]["best_p_adjusted"] is not None, body
 
     def test_cli_detect_key_redlist_verdict(self, tmp_path):
-        cwd = _cli_registry(tmp_path,
-                            [{"key_id": "a", "family": "kgw", "secret": KEY_A}])
+        cwd = _cli_registry(tmp_path, [{"key_id": "a", "family": "kgw", "secret": KEY_A}])
         f = tmp_path / "red.txt"
         f.write_text(generate_redlist("start", KEY_A), encoding="utf-8")
         r = _run_cli(["detect", str(f), "--key", "a"], cwd)
@@ -178,8 +284,7 @@ class TestRedlistProductPath:
         assert data["z_score"] < -4.0, data
 
     def test_cli_detect_key_greenlist_verdict(self, tmp_path):
-        cwd = _cli_registry(tmp_path,
-                            [{"key_id": "a", "family": "kgw", "secret": KEY_A}])
+        cwd = _cli_registry(tmp_path, [{"key_id": "a", "family": "kgw", "secret": KEY_A}])
         f = tmp_path / "green.txt"
         f.write_text(generate_greenlist("start", KEY_A), encoding="utf-8")
         r = _run_cli(["detect", str(f), "--key", "a"], cwd)
@@ -191,14 +296,11 @@ class TestRedlistProductPath:
 
 # ---- FUND 2: deterministic embedding wired into CLI/API --------------------
 
+
 class TestDeterministicEmbed:
     def test_api_embed_deterministic_mark_z_gt_4(self, tmp_path, monkeypatch):
-        c = _api_client(tmp_path, monkeypatch,
-                        [{"key_id": "k", "family": "kgw", "secret": KEY_A,
-                          "gamma": 0.25}])
-        r = c.post("/api/forensics/embed",
-                   json={"text": EMBED_TEXT, "key_id": "k",
-                         "level": "word", "context": 1})
+        c = _api_client(tmp_path, monkeypatch, [{"key_id": "k", "family": "kgw", "secret": KEY_A, "gamma": 0.25}])
+        r = c.post("/api/forensics/embed", json={"text": EMBED_TEXT, "key_id": "k", "level": "word", "context": 1})
         assert r.status_code == 200, r.text
         body = r.json()
         assert body["key_id"] == "k"
@@ -208,9 +310,7 @@ class TestDeterministicEmbed:
         assert det["z_score"] >= 4.0, det
 
     def test_cli_embed_deterministic_mark_z_gt_4(self, tmp_path):
-        cwd = _cli_registry(tmp_path,
-                            [{"key_id": "k", "family": "kgw", "secret": KEY_A,
-                              "gamma": 0.25}])
+        cwd = _cli_registry(tmp_path, [{"key_id": "k", "family": "kgw", "secret": KEY_A, "gamma": 0.25}])
         f = tmp_path / "in.txt"
         f.write_text(EMBED_TEXT, encoding="utf-8")
         r = _run_cli(["embed", str(f), "--key", "k", "--seed", "42"], cwd)
@@ -224,13 +324,11 @@ class TestDeterministicEmbed:
 
 # ---- FUND 3: context + level exposed ---------------------------------------
 
+
 class TestContextLevelExposure:
     def test_api_embed_context_roundtrip(self, tmp_path, monkeypatch):
-        c = _api_client(tmp_path, monkeypatch,
-                        [{"key_id": "k", "family": "kgw", "secret": KEY_A,
-                          "gamma": 0.5}])
-        r = c.post("/api/forensics/embed",
-                   json={"text": EMBED_TEXT, "key_id": "k", "context": 4})
+        c = _api_client(tmp_path, monkeypatch, [{"key_id": "k", "family": "kgw", "secret": KEY_A, "gamma": 0.5}])
+        r = c.post("/api/forensics/embed", json={"text": EMBED_TEXT, "key_id": "k", "context": 4})
         assert r.status_code == 200, r.text
         body = r.json()
         d4 = detect_kgw(body["text"], KEY_A, 0.5, context=4)
@@ -239,13 +337,10 @@ class TestContextLevelExposure:
         assert d1["verdict"] != "watermark_detected", d1
 
     def test_cli_embed_context_flag_accepted(self, tmp_path):
-        cwd = _cli_registry(tmp_path,
-                            [{"key_id": "k", "family": "kgw", "secret": KEY_A,
-                              "gamma": 0.5}])
+        cwd = _cli_registry(tmp_path, [{"key_id": "k", "family": "kgw", "secret": KEY_A, "gamma": 0.5}])
         f = tmp_path / "in.txt"
         f.write_text(EMBED_TEXT, encoding="utf-8")
-        r = _run_cli(["embed", str(f), "--key", "k", "--context", "4",
-                      "--level", "word", "--seed", "3"], cwd)
+        r = _run_cli(["embed", str(f), "--key", "k", "--context", "4", "--level", "word", "--seed", "3"], cwd)
         assert r.returncode == 0, r.stderr
         emb = r.stdout.strip()
         d4 = detect_kgw(emb, KEY_A, 0.5, context=4)
@@ -253,6 +348,7 @@ class TestContextLevelExposure:
 
 
 # ---- FUND 4: report.py redlist verdict + two-sided label -------------------
+
 
 class TestReportRedlist:
     def test_report_redlist_badge_and_recommendation(self):

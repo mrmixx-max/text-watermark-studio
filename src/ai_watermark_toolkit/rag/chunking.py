@@ -31,7 +31,4 @@ class TextChunker:
 
     def split_with_metadata(self, text: str, chunk_size: int = 600, overlap: int = 80) -> list[dict[str, Any]]:
         chunks = self.split_text(text, chunk_size=chunk_size, overlap=overlap)
-        return [
-            {'chunk_id': f'chunk-{i+1}', 'text': chunk, 'chars': len(chunk)}
-            for i, chunk in enumerate(chunks)
-        ]
+        return [{"chunk_id": f"chunk-{i + 1}", "text": chunk, "chars": len(chunk)} for i, chunk in enumerate(chunks)]

@@ -57,26 +57,26 @@ TRANSFORM_METHODS = ("clean", "truncate", "shuffle", "reformat", "rewrite")
 
 TRANSFORM_NOTES = {
     "clean": "unicode/metadata hygiene (sanitize_unicode: strips ZWSP, bidi "
-             "controls, format/control chars). Does NOT touch KGW greenlist "
-             "tokens -> mark strength is preserved (removed:false).",
+    "controls, format/control chars). Does NOT touch KGW greenlist "
+    "tokens -> mark strength is preserved (removed:false).",
     "truncate": "keep the first truncate_fraction of word tokens. Weakens the "
-                "mark (fewer scored tokens) but keeps the intact (prev, token) "
-                "chain of the kept part -> at 60% the mark usually SURVIVES "
-                "(removed:false). Honest finding, measured in test_v145.",
+    "mark (fewer scored tokens) but keeps the intact (prev, token) "
+    "chain of the kept part -> at 60% the mark usually SURVIVES "
+    "(removed:false). Honest finding, measured in test_v145.",
     "shuffle": "word-shuffle with a fixed seed (42, like the attack matrix). "
-               "Breaks every (prev, token) greenlist pair -> z collapses to "
-               "~0. The provable removal demonstration.",
+    "Breaks every (prev, token) greenlist pair -> z collapses to "
+    "~0. The provable removal demonstration.",
     "reformat": "whitespace normalization + one sentence per line. Tokens are "
-                "unchanged -> mark strength preserved (removed:false).",
+    "unchanged -> mark strength preserved (removed:false).",
     "rewrite": "paraphrase via RewriteService. Rule-based 'structural' mode "
-               "rotates sentences and varies openings without an LLM; with "
-               "--use-llm the local Ollama backend rewrites through a model "
-               "(or backtranslates DE->EN->DE). Paraphrase changes the token "
-               "surface -> the greenlist hash changes, so ΔZ measures the "
-               "real-world attack. Honest boundary: a strong rewrite can "
-               "collapse z (removed:true), but that is REGENERATION, not "
-               "'cleaning' — ΔZ proves signal change, never cleaner honesty. "
-               "Light structural edits typically keep removed:false.",
+    "rotates sentences and varies openings without an LLM; with "
+    "--use-llm the local Ollama backend rewrites through a model "
+    "(or backtranslates DE->EN->DE). Paraphrase changes the token "
+    "surface -> the greenlist hash changes, so ΔZ measures the "
+    "real-world attack. Honest boundary: a strong rewrite can "
+    "collapse z (removed:true), but that is REGENERATION, not "
+    "'cleaning' — ΔZ proves signal change, never cleaner honesty. "
+    "Light structural edits typically keep removed:false.",
 }
 
 _TRANSFORM_META = {
@@ -91,12 +91,14 @@ _TRANSFORM_META = {
 def _transform_clean(text: str) -> str:
     """Unicode/metadata hygiene: strip invisible/control characters (ZWSP, bidi)."""
     from ..sanitize_unicode import sanitize
+
     return sanitize(text).text
 
 
 def _transform_truncate(text: str, fraction: float = 0.6) -> str:
     """First ``fraction`` of word tokens (attack_matrix truncate_first)."""
     from .kgw import tokenize
+
     toks = tokenize(text, level="word")
     return " ".join(toks[: max(1, int(len(toks) * fraction))])
 
@@ -133,9 +135,7 @@ def _transform_rewrite(text: str, mode: str = "structural", use_llm: bool = Fals
     """
     _VALID_MODES = {"clarity", "concise", "plain", "formal", "structural", "backtranslate"}
     if mode not in _VALID_MODES:
-        raise ValueError(
-            f"unknown rewrite mode: {mode} (supported: {sorted(_VALID_MODES)})"
-        )
+        raise ValueError(f"unknown rewrite mode: {mode} (supported: {sorted(_VALID_MODES)})")
     from ..rewrite.service import RewriteService
 
     svc = RewriteService(llm_backend=use_llm)
@@ -151,10 +151,15 @@ def _transform_rewrite(text: str, mode: str = "structural", use_llm: bool = Fals
     return res["rewritten"], meta
 
 
-def _apply_transform(text: str, method: str, *, seed: int = 42,
-                     truncate_fraction: float = 0.6,
-                     rewrite_mode: str = "structural",
-                     use_llm: bool = False) -> tuple[str, dict]:
+def _apply_transform(
+    text: str,
+    method: str,
+    *,
+    seed: int = 42,
+    truncate_fraction: float = 0.6,
+    rewrite_mode: str = "structural",
+    use_llm: bool = False,
+) -> tuple[str, dict]:
     """Apply a transform; returns (transformed_text, transform_meta).
 
     ``method`` must be one of TRANSFORM_METHODS. The meta dict records the
@@ -165,29 +170,29 @@ def _apply_transform(text: str, method: str, *, seed: int = 42,
     if method == "clean":
         before = len(text)
         out = _transform_clean(text)
-        return out, {"method": method, "removed_chars": before - len(out),
-                     "note": _TRANSFORM_META[method]}
+        return out, {"method": method, "removed_chars": before - len(out), "note": _TRANSFORM_META[method]}
     if method == "truncate":
         from .kgw import tokenize
+
         toks = tokenize(text, level="word")
         out = _transform_truncate(text, truncate_fraction)
-        return out, {"method": method, "fraction": truncate_fraction,
-                     "n_tokens_before": len(toks),
-                     "n_tokens_after": len(tokenize(out, level="word")),
-                     "note": _TRANSFORM_META[method]}
+        return out, {
+            "method": method,
+            "fraction": truncate_fraction,
+            "n_tokens_before": len(toks),
+            "n_tokens_after": len(tokenize(out, level="word")),
+            "note": _TRANSFORM_META[method],
+        }
     if method == "shuffle":
         out = _transform_shuffle(text, seed)
-        return out, {"method": method, "seed": seed,
-                     "note": _TRANSFORM_META[method]}
+        return out, {"method": method, "seed": seed, "note": _TRANSFORM_META[method]}
     if method == "reformat":
         out = _transform_reformat(text)
         return out, {"method": method, "note": _TRANSFORM_META[method]}
     if method == "rewrite":
         out, meta = _transform_rewrite(text, mode=rewrite_mode, use_llm=use_llm)
         return out, meta
-    raise ValueError(
-        f"unknown transform method: {method} (supported: {sorted(TRANSFORM_METHODS)})"
-    )
+    raise ValueError(f"unknown transform method: {method} (supported: {sorted(TRANSFORM_METHODS)})")
 
 
 # ------------------------------------------------------------------ key handling
@@ -222,8 +227,11 @@ def _resolve_key(registry: KeyRegistry, key_arg: str) -> dict:
 def _measure(text: str, key: dict, level: str, context: int) -> dict:
     """Single-key KGW detection via detect_multi_key (Registry resolution path)."""
     result = detect_multi_key(
-        text, [key], gamma=key.get("gamma") or DEFAULT_GAMMA,
-        level=level, context=context,
+        text,
+        [key],
+        gamma=key.get("gamma") or DEFAULT_GAMMA,
+        level=level,
+        context=context,
     )
     best = result.get("best") or {}
     return {
@@ -236,9 +244,15 @@ def _measure(text: str, key: dict, level: str, context: int) -> dict:
 
 
 # ------------------------------------------------------------------ core API
-def delta_z(text_before: str, text_after: str, key_id_or_secret: str, *,
-            level: str = "word", context: int = 1,
-            registry: KeyRegistry | None = None) -> dict:
+def delta_z(
+    text_before: str,
+    text_after: str,
+    key_id_or_secret: str,
+    *,
+    level: str = "word",
+    context: int = 1,
+    registry: KeyRegistry | None = None,
+) -> dict:
     """Measure KGW mark strength before vs after (ΔZ check).
 
     Resolves ``key_id_or_secret`` through the registry (key_id -> registered
@@ -281,10 +295,7 @@ def delta_z(text_before: str, text_after: str, key_id_or_secret: str, *,
     z_before = before["z_score"]
     z_after = after["z_score"]
     delta = round(z_before - z_after, 4) if z_before is not None and z_after is not None else None
-    removed = bool(
-        before["verdict"] == "watermark_detected"
-        and after["verdict"] != "watermark_detected"
-    )
+    removed = bool(before["verdict"] == "watermark_detected" and after["verdict"] != "watermark_detected")
     return {
         "key_id": key.get("key_id", "unknown"),
         "key_source": key.get("key_source", "registry"),
@@ -302,15 +313,20 @@ def delta_z(text_before: str, text_after: str, key_id_or_secret: str, *,
     }
 
 
-def delta_z_transform(text: str, key_id_or_secret: str,
-                      method: str = "clean", *,
-                      level: str = "word", context: int = 1,
-                      registry: KeyRegistry | None = None,
-                      seed: int = 42,
-                      truncate_fraction: float = 0.6,
-                      rewrite_mode: str = "structural",
-                      use_llm: bool = False,
-                      max_transformed_chars: int = 1000) -> dict:
+def delta_z_transform(
+    text: str,
+    key_id_or_secret: str,
+    method: str = "clean",
+    *,
+    level: str = "word",
+    context: int = 1,
+    registry: KeyRegistry | None = None,
+    seed: int = 42,
+    truncate_fraction: float = 0.6,
+    rewrite_mode: str = "structural",
+    use_llm: bool = False,
+    max_transformed_chars: int = 1000,
+) -> dict:
     """Apply a transform, then measure the ΔZ it causes.
 
     ``method`` in TRANSFORM_METHODS (clean/truncate/shuffle/reformat/rewrite —
@@ -336,11 +352,14 @@ def delta_z_transform(text: str, key_id_or_secret: str,
     if not isinstance(text, str):
         raise TypeError("text must be a string")
     transformed, meta = _apply_transform(
-        text, method, seed=seed, truncate_fraction=truncate_fraction,
-        rewrite_mode=rewrite_mode, use_llm=use_llm,
+        text,
+        method,
+        seed=seed,
+        truncate_fraction=truncate_fraction,
+        rewrite_mode=rewrite_mode,
+        use_llm=use_llm,
     )
-    result = delta_z(text, transformed, key_id_or_secret,
-                     level=level, context=context, registry=registry)
+    result = delta_z(text, transformed, key_id_or_secret, level=level, context=context, registry=registry)
     result["method"] = method
     result["transform_meta"] = meta
     if len(transformed) <= max_transformed_chars:
@@ -351,8 +370,7 @@ def delta_z_transform(text: str, key_id_or_secret: str,
     return result
 
 
-def delta_z_report(delta_result: dict, sign_secret: str | None = None, *,
-                   key_id: str | None = None) -> dict:
+def delta_z_report(delta_result: dict, sign_secret: str | None = None, *, key_id: str | None = None) -> dict:
     """Attach a signed_report signature block to a ΔZ result (HMAC-SHA256).
 
     When ``sign_secret`` is None the result is returned unchanged (no
@@ -365,8 +383,10 @@ def delta_z_report(delta_result: dict, sign_secret: str | None = None, *,
     if sign_secret is None:
         return dict(delta_result)
     from .signed_report import sign_report
+
     return sign_report(
-        dict(delta_result), sign_secret,
+        dict(delta_result),
+        sign_secret,
         key_id=key_id or delta_result.get("key_id") or "default",
         algorithm="hmac-sha256",
     )

@@ -75,12 +75,15 @@ def bias_logits(logits: dict[str, float], green_flags, bias_strength: float = 0.
     A negative delta implements the mirror-image redlist (avoid green).
     """
     if callable(green_flags):
+
         def _is_green(t: str) -> bool:
             return bool(green_flags(t))
     elif isinstance(green_flags, set):
+
         def _is_green(t: str) -> bool:
             return t in green_flags
     else:
+
         def _is_green(t: str) -> bool:
             return bool(green_flags.get(t, False))
 
@@ -105,9 +108,14 @@ def _softmax_sample(rng: random.Random, logits: dict[str, float]) -> str:
     return tokens[-1]
 
 
-def sample_with_kgw_bias(rng: random.Random, logits: dict[str, float], key: str,
-                         context, gamma: float = SAMPLER_GAMMA,
-                         bias_strength: float = 2.0) -> str:
+def sample_with_kgw_bias(
+    rng: random.Random,
+    logits: dict[str, float],
+    key: str,
+    context,
+    gamma: float = SAMPLER_GAMMA,
+    bias_strength: float = 2.0,
+) -> str:
     """Sample one token under greenlist bias for a given context.
 
     Green membership is decided by the SAME PRF the detector uses
@@ -127,14 +135,21 @@ def default_vocab() -> dict[str, float]:
     words and break the word-level round-trip with ``detect_kgw``.
     """
     from ..forensics.frequent_vocab import FREQUENT_VOCAB
+
     words = sorted({w for ws in FREQUENT_VOCAB.values() for w in ws if " " not in w})
     return dict.fromkeys(words, 0.0)
 
 
-def generate_marked_text(prefix: str | list[str] = "", vocab: dict[str, float] | None = None,
-                         key: str = "demo-sampling-bias-key", gamma: float = SAMPLER_GAMMA,
-                         bias_strength: float = 2.0, n_tokens: int = 200, seed: int = 0,
-                         context: int = 1) -> dict:
+def generate_marked_text(
+    prefix: str | list[str] = "",
+    vocab: dict[str, float] | None = None,
+    key: str = "demo-sampling-bias-key",
+    gamma: float = SAMPLER_GAMMA,
+    bias_strength: float = 2.0,
+    n_tokens: int = 200,
+    seed: int = 0,
+    context: int = 1,
+) -> dict:
     """Autoregressively generate a synthetic greenlist-marked text.
 
     Applies the generation-time KGW bias: every token AFTER the first is
@@ -158,7 +173,7 @@ def generate_marked_text(prefix: str | list[str] = "", vocab: dict[str, float] |
     generated: list[str] = []
     for _ in range(n_tokens):
         if history:
-            ctx = history[max(0, len(history) - context):]
+            ctx = history[max(0, len(history) - context) :]
             tok = sample_with_kgw_bias(rng, vocab, key, ctx, gamma, bias_strength)
         else:
             # No predecessor -> detector will not score this token.
@@ -168,10 +183,11 @@ def generate_marked_text(prefix: str | list[str] = "", vocab: dict[str, float] |
 
     text = " ".join(history)
     n = len(history) - 1
-    green = sum(
-        1 for i in range(1, len(history))
-        if green_token(history[i], history[max(0, i - context):i], key, gamma)
-    ) if n > 0 else 0
+    green = (
+        sum(1 for i in range(1, len(history)) if green_token(history[i], history[max(0, i - context) : i], key, gamma))
+        if n > 0
+        else 0
+    )
     return {
         "text": text,
         "tokens": history,

@@ -3,6 +3,7 @@
 Exercises the complete watermarking pipeline end-to-end with real module calls,
 verifying each stage produces correct, consistent output.
 """
+
 from __future__ import annotations
 
 from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
@@ -26,9 +27,12 @@ class TestFullPipelineEmbedDetectClean:
         key = kgw_keys[0]
         # Embed
         embed_result = mark_greenlist(
-            sample_text, key["secret"],
+            sample_text,
+            key["secret"],
             gamma=key.get("gamma") or DEFAULT_GAMMA,
-            level="word", context=1, seed=42,
+            level="word",
+            context=1,
+            seed=42,
         )
         watermarked = embed_result["text"]
         assert watermarked != sample_text, "embed should modify text"
@@ -37,9 +41,11 @@ class TestFullPipelineEmbedDetectClean:
 
         # Detect
         detect_result = detect_multi_key(
-            watermarked, [key],
+            watermarked,
+            [key],
             gamma=key.get("gamma") or DEFAULT_GAMMA,
-            level="word", context=1,
+            level="word",
+            context=1,
         )
         assert detect_result["tested_keys"] >= 1
         best = detect_result["best"]
@@ -149,15 +155,22 @@ class TestFullPipelineEmbedDetectClean:
         key = keys[0]
 
         embed_result = mark_greenlist(
-            sample_text, key["secret"],
-            gamma=0.25, level="bpe", context=1, seed=42,
+            sample_text,
+            key["secret"],
+            gamma=0.25,
+            level="bpe",
+            context=1,
+            seed=42,
         )
         watermarked = embed_result["text"]
         assert embed_result["replacements"] > 0
 
         detect_result = detect_multi_key(
-            watermarked, [key],
-            gamma=0.25, level="bpe", context=1,
+            watermarked,
+            [key],
+            gamma=0.25,
+            level="bpe",
+            context=1,
         )
         best = detect_result["best"]
         assert best is not None

@@ -105,9 +105,7 @@ def _field_hashes(payload: dict) -> dict:
     p = dict(payload)
     p.pop("signature", None)
     return {
-        str(k): hashlib.sha256(
-            json.dumps(v, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        ).hexdigest()
+        str(k): hashlib.sha256(json.dumps(v, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
         for k, v in p.items()
     }
 
@@ -139,9 +137,9 @@ def _der_of_pem(pem: str) -> bytes | None:
     """
     try:
         from cryptography.hazmat.primitives import serialization as _ser
+
         key = _ser.load_pem_public_key(pem.encode("utf-8"))
-        return key.public_bytes(
-            _ser.Encoding.DER, _ser.PublicFormat.SubjectPublicKeyInfo)
+        return key.public_bytes(_ser.Encoding.DER, _ser.PublicFormat.SubjectPublicKeyInfo)
     except Exception:
         return None
 
@@ -178,10 +176,14 @@ def _mldsa_verify(public_key, signature: bytes, data: bytes) -> None:
 # ---------------------------------------------------------------- key management
 def public_pem_of(private_key) -> str:
     """Derive the PEM SubjectPublicKeyInfo of a private key."""
-    return private_key.public_key().public_bytes(
-        serialization.Encoding.PEM,
-        serialization.PublicFormat.SubjectPublicKeyInfo,
-    ).decode("utf-8")
+    return (
+        private_key.public_key()
+        .public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode("utf-8")
+    )
 
 
 def _generate_mldsa_key(algorithm: str = "mldsa-44"):
@@ -213,10 +215,7 @@ def generate_mldsa_keypair(algorithm: str = "mldsa-44") -> dict:
     if not _MLDSA_AVAILABLE:
         raise _mldsa_import_error()
     if algorithm not in MLDSA_ALGORITHMS:
-        raise ValueError(
-            f"unsupported ML-DSA parameter set: {algorithm} "
-            f"(supported: {sorted(MLDSA_ALGORITHMS)})"
-        )
+        raise ValueError(f"unsupported ML-DSA parameter set: {algorithm} (supported: {sorted(MLDSA_ALGORITHMS)})")
     private_key = _generate_mldsa_key(algorithm)
     private_pem = private_key.private_bytes(
         serialization.Encoding.PEM,
@@ -231,11 +230,15 @@ def generate_mldsa_keypair(algorithm: str = "mldsa-44") -> dict:
 
 
 # ---------------------------------------------------------------- sign / verify
-def sign_report(report_payload: dict, secret: str, *,
-                key_id: str | None = None,
-                algorithm: str = DEFAULT_ALGORITHM,
-                private_key_pem: str | None = None,
-                trust: str | None = None) -> dict:
+def sign_report(
+    report_payload: dict,
+    secret: str,
+    *,
+    key_id: str | None = None,
+    algorithm: str = DEFAULT_ALGORITHM,
+    private_key_pem: str | None = None,
+    trust: str | None = None,
+) -> dict:
     """Sign a findings payload; returns the payload plus a ``signature`` block.
 
     - algorithm='hmac-sha256': ``signature.digest`` = hex HMAC-SHA256 over the
@@ -255,9 +258,7 @@ def sign_report(report_payload: dict, secret: str, *,
     if not isinstance(report_payload, dict):
         raise ValueError("report_payload must be a dict")
     if algorithm not in SUPPORTED_ALGORITHMS:
-        raise ValueError(
-            f"unsupported algorithm: {algorithm} (supported: {SUPPORTED_ALGORITHMS})"
-        )
+        raise ValueError(f"unsupported algorithm: {algorithm} (supported: {SUPPORTED_ALGORITHMS})")
     resolved_key_id = key_id or "default"
     canonical = canonical_json(report_payload)
     if trust is None:
@@ -283,21 +284,21 @@ def sign_report(report_payload: dict, secret: str, *,
                 f"{algorithm} requires private_key_pem (generate a keypair "
                 "with ai-wm report-keygen --algorithm mldsa-44|65|87)"
             )
-        private_key = serialization.load_pem_private_key(
-            private_key_pem.encode("utf-8"), password=None
-        )
-        sig["signature_b64"] = base64.b64encode(
-            _mldsa_sign(private_key, canonical)
-        ).decode("ascii")
+        private_key = serialization.load_pem_private_key(private_key_pem.encode("utf-8"), password=None)
+        sig["signature_b64"] = base64.b64encode(_mldsa_sign(private_key, canonical)).decode("ascii")
         sig["public_key_pem"] = public_pem_of(private_key)
     out = dict(report_payload)
     out["signature"] = sig
     return out
 
 
-def verify_report(signed: dict, secret: str | None = None, *,
-                  public_key_pem: str | None = None,
-                  trusted_public_keys: list[str] | None = None) -> dict:
+def verify_report(
+    signed: dict,
+    secret: str | None = None,
+    *,
+    public_key_pem: str | None = None,
+    trusted_public_keys: list[str] | None = None,
+) -> dict:
     """Verify a signed document; returns {valid, algorithm, key_id, reason, ...}.
 
     P0-2 — Root-of-Trust: ``trusted_public_keys`` (PEM-Liste) ist der
@@ -323,8 +324,8 @@ def verify_report(signed: dict, secret: str | None = None, *,
     - 'unsupported_algorithm' / 'mldsa_unavailable' / 'missing_secret'
                               — environment or usage problem
     """
-    def _vr(valid: bool, reason: str, algorithm: str | None,
-            key_id: str | None, sig_date: str | None, **extra) -> dict:
+
+    def _vr(valid: bool, reason: str, algorithm: str | None, key_id: str | None, sig_date: str | None, **extra) -> dict:
         base: dict = {
             "valid": valid,
             "algorithm": algorithm,
@@ -353,20 +354,16 @@ def verify_report(signed: dict, secret: str | None = None, *,
     if algorithm == "hmac-sha256":
         stored_digest = sig.get("digest")
         if not secret:
-            return _vr(False, "missing_secret", algorithm, key_id, sig_date,
-                       stored_digest=stored_digest)
+            return _vr(False, "missing_secret", algorithm, key_id, sig_date, stored_digest=stored_digest)
         if not stored_digest:
             return _vr(False, "missing_digest", algorithm, key_id, sig_date)
         recomputed = _hmac_digest(secret, canonical)
-        ok = hmac.compare_digest(
-            recomputed.encode("ascii"), stored_digest.encode("ascii")
-        )
+        ok = hmac.compare_digest(recomputed.encode("ascii"), stored_digest.encode("ascii"))
         extra = {"recomputed_digest": recomputed, "stored_digest": stored_digest}
         if ok:
             return _vr(True, "ok", algorithm, key_id, sig_date, **extra)
         if tampered:
-            return _vr(False, "payload_tampered", algorithm, key_id, sig_date,
-                       tampered_fields=tampered, **extra)
+            return _vr(False, "payload_tampered", algorithm, key_id, sig_date, tampered_fields=tampered, **extra)
         return _vr(False, "digest_mismatch", algorithm, key_id, sig_date, **extra)
 
     # mldsa-44
@@ -386,14 +383,17 @@ def verify_report(signed: dict, secret: str | None = None, *,
     pinned = bool(pin_list)
     if pinned:
         embedded_der = _der_of_pem(embedded_pem) if embedded_pem else None
-        match = any(
-            _der_of_pem(p) == embedded_der for p in pin_list
-            if p and embedded_der
-        )
+        match = any(_der_of_pem(p) == embedded_der for p in pin_list if p and embedded_der)
         if not match:
-            return _vr(False, "key_not_pinned", algorithm, key_id, sig_date,
-                       trust="pinned_key",
-                       public_key_embedded=bool(embedded_pem))
+            return _vr(
+                False,
+                "key_not_pinned",
+                algorithm,
+                key_id,
+                sig_date,
+                trust="pinned_key",
+                public_key_embedded=bool(embedded_pem),
+            )
     pub_pem = public_key_pem or embedded_pem
     if not pub_pem:
         return _vr(False, "missing_public_key", algorithm, key_id, sig_date)
@@ -406,9 +406,16 @@ def verify_report(signed: dict, secret: str | None = None, *,
         expected = MLDSA_ALGORITHMS.get(algorithm)
         actual = type(public_key).__name__  # e.g. 'MLDSA44PublicKey'
         if expected is not None and not actual.startswith(expected):
-            return _vr(False, "algorithm_mismatch", algorithm, key_id, sig_date,
-                       public_key_embedded=bool(embedded_pem),
-                       expected=f"{expected}PublicKey", actual=actual)
+            return _vr(
+                False,
+                "algorithm_mismatch",
+                algorithm,
+                key_id,
+                sig_date,
+                public_key_embedded=bool(embedded_pem),
+                expected=f"{expected}PublicKey",
+                actual=actual,
+            )
         _mldsa_verify(public_key, base64.b64decode(signature_b64), canonical)
         ok = True
     except Exception:
@@ -420,6 +427,5 @@ def verify_report(signed: dict, secret: str | None = None, *,
     if ok:
         return _vr(True, "ok", algorithm, key_id, sig_date, **extra)
     if tampered:
-        return _vr(False, "payload_tampered", algorithm, key_id, sig_date,
-                   tampered_fields=tampered, **extra)
+        return _vr(False, "payload_tampered", algorithm, key_id, sig_date, tampered_fields=tampered, **extra)
     return _vr(False, "signature_invalid", algorithm, key_id, sig_date, **extra)

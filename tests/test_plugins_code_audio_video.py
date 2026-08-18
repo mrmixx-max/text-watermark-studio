@@ -5,6 +5,7 @@ Covers the three Sixth Pass plugins:
 - AudioWatermarkPlugin: SynthID-style audio watermark metadata detection
 - VideoWatermarkPlugin: C2PA/MP4 metadata detection
 """
+
 import struct
 import sys
 from pathlib import Path
@@ -85,7 +86,7 @@ class DataProcessor:
 '''
 
 # Human-written style code (minimal comments, idiomatic)
-HUMAN_CODE_SAMPLE = '''\
+HUMAN_CODE_SAMPLE = """\
 def fib(n):
     a, b = 0, 1
     out = []
@@ -111,7 +112,7 @@ class Proc:
 
     def _f(self, d):
         return str(d)
-'''
+"""
 
 
 class TestCodeWatermarkPlugin:
@@ -173,13 +174,13 @@ class TestCodeWatermarkPlugin:
 
     def test_clean_preserves_functional_comments(self):
         p = CodeWatermarkPlugin()
-        code_with_meaningful_comment = '''\
+        code_with_meaningful_comment = """\
 def foo(x):
     # Check for None to avoid TypeError
     if x is None:
         return 0
     return x + 1
-'''
+"""
         cleaned = p.clean(code_with_meaningful_comment)
         # The "Check for None" comment doesn't match AI patterns strictly,
         # but it does contain "Check" which is an AI pattern.
@@ -193,18 +194,19 @@ def foo(x):
     def test_embed_raises(self):
         p = CodeWatermarkPlugin()
         import pytest
+
         with pytest.raises(NotImplementedError):
             p.embed("x", "wm")
 
     def test_boilerplate_detection(self):
         p = CodeWatermarkPlugin()
-        boilerplate_code = '''\
+        boilerplate_code = """\
 def placeholder():
     # Your code here
     # TODO: Implement this function
     # Add logic below
     pass
-'''
+"""
         r = p.detect(boilerplate_code, {})
         # Boilerplate should boost score
         assert r["score"] > 0.0
@@ -220,6 +222,7 @@ def placeholder():
 # AudioWatermarkPlugin
 # ---------------------------------------------------------------------------
 
+
 def _make_id3_mp3_with_watermark() -> bytes:
     """Build a minimal MP3-like file with ID3v2 + watermark TXXX frame."""
     # ID3v2 header
@@ -233,22 +236,26 @@ def _make_id3_mp3_with_watermark() -> bytes:
     payload = b"\x03" + description + b"\x00" + value  # encoding=03 (UTF-8)
     frame_size = len(payload)
     # ID3v2.4 uses synchsafe integer for frame size
-    ss_size = bytes([
-        (frame_size >> 21) & 0x7F,
-        (frame_size >> 14) & 0x7F,
-        (frame_size >> 7) & 0x7F,
-        frame_size & 0x7F,
-    ])
+    ss_size = bytes(
+        [
+            (frame_size >> 21) & 0x7F,
+            (frame_size >> 14) & 0x7F,
+            (frame_size >> 7) & 0x7F,
+            frame_size & 0x7F,
+        ]
+    )
     txxx_frame = b"TXXX" + ss_size + b"\x00\x00" + payload
 
     # Tag size (synchsafe) = len(txxx_frame)
     tag_size = len(txxx_frame)
-    ss_tag = bytes([
-        (tag_size >> 21) & 0x7F,
-        (tag_size >> 14) & 0x7F,
-        (tag_size >> 7) & 0x7F,
-        tag_size & 0x7F,
-    ])
+    ss_tag = bytes(
+        [
+            (tag_size >> 21) & 0x7F,
+            (tag_size >> 14) & 0x7F,
+            (tag_size >> 7) & 0x7F,
+            tag_size & 0x7F,
+        ]
+    )
     return header + version + flags + ss_tag + txxx_frame
 
 
@@ -343,6 +350,7 @@ class TestAudioWatermarkPlugin:
     def test_embed_raises(self):
         p = AudioWatermarkPlugin()
         import pytest
+
         with pytest.raises(NotImplementedError):
             p.embed(b"data", "wm")
 
@@ -362,6 +370,7 @@ class TestAudioWatermarkPlugin:
 # ---------------------------------------------------------------------------
 # VideoWatermarkPlugin
 # ---------------------------------------------------------------------------
+
 
 def _make_mp4_with_c2pa() -> bytes:
     """Build a minimal MP4-like file with C2PA box."""
@@ -466,6 +475,7 @@ class TestVideoWatermarkPlugin:
     def test_embed_raises(self):
         p = VideoWatermarkPlugin()
         import pytest
+
         with pytest.raises(NotImplementedError):
             p.embed(b"data", "wm")
 
@@ -491,6 +501,7 @@ class TestVideoWatermarkPlugin:
 # ---------------------------------------------------------------------------
 # Registry tests
 # ---------------------------------------------------------------------------
+
 
 class TestPluginRegistry:
     def test_get_plugins_returns_all(self):

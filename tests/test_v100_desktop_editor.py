@@ -34,14 +34,14 @@ REG_KEY = {
     "gamma": 0.25,
 }
 
-_PLAIN = ("This important change shows a new way to use the tool and "
-          "helps people find the right result in time. ") * 6
+_PLAIN = ("This important change shows a new way to use the tool and helps people find the right result in time. ") * 6
 
 
 @pytest.fixture()
 def controller(tmp_path):
     from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
     from ai_watermark_toolkit.ui.desktop import DesktopController
+
     registry = tmp_path / "registry.json"
     KeyRegistry(registry).add_key(dict(REG_KEY))
     return DesktopController(registry_path=registry)
@@ -62,29 +62,27 @@ def test_mark_greenlist_returns_substitutions():
     # Offsets point into the FINAL text and slice the replacement word.
     final = result["text"]
     for s in subs:
-        assert final[s["start"]:s["end"]] == s["replacement"]
+        assert final[s["start"] : s["end"]] == s["replacement"]
 
 
 def test_mark_greenlist_substitution_offsets_match_final_text():
     """Offsets must be post-substitution (length changes shift them)."""
     result = mark_greenlist(_PLAIN, REG_KEY["secret"], REG_KEY["gamma"])
     for s in result["substitutions"]:
-        assert result["text"][s["start"]:s["end"]] == s["replacement"]
+        assert result["text"][s["start"] : s["end"]] == s["replacement"]
         assert s["original"] != s["replacement"]
 
 
 def test_mark_greenlist_substitutions_abwärtskompatibel():
     """Existing return keys unchanged; new key is additive."""
     result = mark_greenlist(_PLAIN, REG_KEY["secret"], REG_KEY["gamma"])
-    assert set(result) >= {"text", "replacements", "total_tokens",
-                           "green_rate_after", "substitutions"}
+    assert set(result) >= {"text", "replacements", "total_tokens", "green_rate_after", "substitutions"}
 
 
 def test_mark_greenlist_short_text_may_have_empty_substitutions():
     """Tiny inputs can hit the no-window bootstrap — substitutions may be
     empty but the call must still succeed with all keys present."""
-    result = mark_greenlist("The quick brown fox", REG_KEY["secret"],
-                            REG_KEY["gamma"])
+    result = mark_greenlist("The quick brown fox", REG_KEY["secret"], REG_KEY["gamma"])
     assert "substitutions" in result
     assert result["text"]
 
@@ -95,7 +93,7 @@ def test_embed_text_forwards_substitutions(controller):
     assert result["replacements"] > 0
     assert len(result["substitutions"]) == result["replacements"]
     for s in result["substitutions"]:
-        assert result["text"][s["start"]:s["end"]] == s["replacement"]
+        assert result["text"][s["start"] : s["end"]] == s["replacement"]
 
 
 # ------------------------------------------------------------------ UI
@@ -127,7 +125,7 @@ def test_editor_pane_offscreen(monkeypatch):
     assert len(ed._markings) == len(subs)
     text = ed.toPlainText()
     for m in ed._markings:
-        assert text[m["start"]:m["end"]] == m["replacement"]
+        assert text[m["start"] : m["end"]] == m["replacement"]
     ed.clear_markings()
     assert ed._markings == []
 
@@ -143,10 +141,12 @@ def test_editor_pane_offscreen(monkeypatch):
     ed.fileDropped.connect(dropped.append)
     from PySide6.QtCore import QMimeData, QPointF, Qt, QUrl
     from PySide6.QtGui import QDropEvent
+
     mime = QMimeData()
     mime.setUrls([QUrl.fromLocalFile("C:/tmp/sample.txt")])
-    ev = QDropEvent(QPointF(10, 10), Qt.DropAction.CopyAction, mime,
-                    Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+    ev = QDropEvent(
+        QPointF(10, 10), Qt.DropAction.CopyAction, mime, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier
+    )
     ed.dropEvent(ev)
     assert dropped == ["C:/tmp/sample.txt"]
 
@@ -156,6 +156,7 @@ def test_editor_pane_controller_module_still_qt_free(controller):
     import inspect
 
     from ai_watermark_toolkit.ui.desktop import controller as cmod
+
     src = inspect.getsource(cmod)
     assert not re.search(r"^\s*(import|from)\s+(PySide6|PyQt)", src, re.M)
 
@@ -178,7 +179,7 @@ def test_main_window_embed_paints_markings(monkeypatch):
     assert len(win.editor._markings) == data["replacements"]
     text = win.editor.toPlainText()
     for m in win.editor._markings:
-        assert text[m["start"]:m["end"]] == m["replacement"]
+        assert text[m["start"] : m["end"]] == m["replacement"]
     # Statusbar zeigt die Greenlist-Meldung in der aktuellen UI-Sprache (de)
     assert "grün markiert" in win.statusBar().currentMessage()
 
@@ -236,12 +237,8 @@ def test_paste_shortcut_not_hijacked(monkeypatch):
     assert hijacked == [], f"Paste-Shortcut (Ctrl+V) durch Aktionen belegt: {hijacked}"
 
     # Verify bleibt erreichbar (jetzt Ctrl+Shift+V)
-    verify = [a for a in win.findChildren(QAction)
-              if a.text() == "&Verifizieren"]  # deutscher UI-Default
-    assert verify and any(
-        s.matches(QKeySequence("Ctrl+Shift+V")) != 0
-        for s in verify[0].shortcuts()
-    )
+    verify = [a for a in win.findChildren(QAction) if a.text() == "&Verifizieren"]  # deutscher UI-Default
+    assert verify and any(s.matches(QKeySequence("Ctrl+Shift+V")) != 0 for s in verify[0].shortcuts())
 
 
 def test_llm_widget_lists_models_and_activates(monkeypatch):
@@ -251,14 +248,14 @@ def test_llm_widget_lists_models_and_activates(monkeypatch):
     from ai_watermark_toolkit.ui.desktop import app as appmod
 
     activated = []
-    monkeypatch.setattr(appmod.LocalLLMService, "list_models", lambda self: [
-        {"name": "gemma-4-E4B"}, {"name": "qwen3-30b-a3b"}])
-    monkeypatch.setattr(appmod.LocalLLMService, "use_model",
-                        lambda self, name: activated.append(name) or {})
-    monkeypatch.setattr(appmod.LocalLLMService, "status",
-                        lambda self: {"model_variant": ""})
+    monkeypatch.setattr(
+        appmod.LocalLLMService, "list_models", lambda self: [{"name": "gemma-4-E4B"}, {"name": "qwen3-30b-a3b"}]
+    )
+    monkeypatch.setattr(appmod.LocalLLMService, "use_model", lambda self, name: activated.append(name) or {})
+    monkeypatch.setattr(appmod.LocalLLMService, "status", lambda self: {"model_variant": ""})
 
     from PySide6.QtWidgets import QApplication
+
     QApplication.instance() or QApplication([])
     win = appmod.MainWindow()
 
@@ -276,12 +273,13 @@ def test_llm_widget_graceful_without_ollama(monkeypatch):
 
     def _boom(self):
         raise RuntimeError("ollama_unreachable: connection refused")
+
     monkeypatch.setattr(appmod.LocalLLMService, "list_models", _boom)
 
     from PySide6.QtWidgets import QApplication
+
     QApplication.instance() or QApplication([])
     win = appmod.MainWindow()
 
     assert not win.llm_combo.isEnabled()
     assert win.llm_combo.currentText() == "(Ollama unreachable)"
-

@@ -17,6 +17,7 @@ bleiben:
 Alt-Snapshot (gemessen mit HEAD eb05b9c, vor dem Refactor) ist als
 Konstanten eingefroren — die neue Implementierung muss sie reproduzieren.
 """
+
 from pathlib import Path
 
 from ai_watermark_toolkit.forensics.similarity import (
@@ -74,53 +75,100 @@ TEXT_LONG = "\n\n".join(_SENTENCES) * 3
 # Alt-Snapshot (128x-SHA256-Implementierung, vor dem F4-Refactor gemessen).
 OLD_SNAPSHOT = {
     "text_a": {
-        "order": ["a_original.txt", "b_edited.txt", "e_long.txt",
-                  "c_unrelated.txt", "d_paraphrase.txt"],
-        "verdicts": {"a_original.txt": "high", "b_edited.txt": "high",
-                     "e_long.txt": "low", "c_unrelated.txt": "none",
-                     "d_paraphrase.txt": "none"},
-        "overlaps": {"a_original.txt": 3, "b_edited.txt": 3, "e_long.txt": 3,
-                     "c_unrelated.txt": 0, "d_paraphrase.txt": 0},
-        "scores": {"a_original.txt": 1.0, "b_edited.txt": 0.7578,
-                   "e_long.txt": 0.0312, "c_unrelated.txt": 0.0,
-                   "d_paraphrase.txt": 0.0},
+        "order": ["a_original.txt", "b_edited.txt", "e_long.txt", "c_unrelated.txt", "d_paraphrase.txt"],
+        "verdicts": {
+            "a_original.txt": "high",
+            "b_edited.txt": "high",
+            "e_long.txt": "low",
+            "c_unrelated.txt": "none",
+            "d_paraphrase.txt": "none",
+        },
+        "overlaps": {
+            "a_original.txt": 3,
+            "b_edited.txt": 3,
+            "e_long.txt": 3,
+            "c_unrelated.txt": 0,
+            "d_paraphrase.txt": 0,
+        },
+        "scores": {
+            "a_original.txt": 1.0,
+            "b_edited.txt": 0.7578,
+            "e_long.txt": 0.0312,
+            "c_unrelated.txt": 0.0,
+            "d_paraphrase.txt": 0.0,
+        },
     },
     "text_a_edited": {
-        "order": ["b_edited.txt", "a_original.txt", "e_long.txt",
-                  "c_unrelated.txt", "d_paraphrase.txt"],
-        "verdicts": {"b_edited.txt": "high", "a_original.txt": "high",
-                     "e_long.txt": "low", "c_unrelated.txt": "none",
-                     "d_paraphrase.txt": "none"},
-        "overlaps": {"b_edited.txt": 3, "a_original.txt": 3, "e_long.txt": 3,
-                     "c_unrelated.txt": 0, "d_paraphrase.txt": 0},
-        "scores": {"b_edited.txt": 1.0, "a_original.txt": 0.7578,
-                   "e_long.txt": 0.0312, "c_unrelated.txt": 0.0,
-                   "d_paraphrase.txt": 0.0},
+        "order": ["b_edited.txt", "a_original.txt", "e_long.txt", "c_unrelated.txt", "d_paraphrase.txt"],
+        "verdicts": {
+            "b_edited.txt": "high",
+            "a_original.txt": "high",
+            "e_long.txt": "low",
+            "c_unrelated.txt": "none",
+            "d_paraphrase.txt": "none",
+        },
+        "overlaps": {
+            "b_edited.txt": 3,
+            "a_original.txt": 3,
+            "e_long.txt": 3,
+            "c_unrelated.txt": 0,
+            "d_paraphrase.txt": 0,
+        },
+        "scores": {
+            "b_edited.txt": 1.0,
+            "a_original.txt": 0.7578,
+            "e_long.txt": 0.0312,
+            "c_unrelated.txt": 0.0,
+            "d_paraphrase.txt": 0.0,
+        },
     },
     "paraphrase": {
-        "order": ["d_paraphrase.txt", "a_original.txt", "b_edited.txt",
-                  "c_unrelated.txt", "e_long.txt"],
-        "verdicts": {"d_paraphrase.txt": "high", "a_original.txt": "none",
-                     "b_edited.txt": "none", "c_unrelated.txt": "none",
-                     "e_long.txt": "none"},
-        "overlaps": {"d_paraphrase.txt": 3, "a_original.txt": 0,
-                     "b_edited.txt": 0, "c_unrelated.txt": 0, "e_long.txt": 0},
-        "scores": {"d_paraphrase.txt": 1.0, "a_original.txt": 0.0,
-                   "b_edited.txt": 0.0, "c_unrelated.txt": 0.0,
-                   "e_long.txt": 0.0},
+        "order": ["d_paraphrase.txt", "a_original.txt", "b_edited.txt", "c_unrelated.txt", "e_long.txt"],
+        "verdicts": {
+            "d_paraphrase.txt": "high",
+            "a_original.txt": "none",
+            "b_edited.txt": "none",
+            "c_unrelated.txt": "none",
+            "e_long.txt": "none",
+        },
+        "overlaps": {
+            "d_paraphrase.txt": 3,
+            "a_original.txt": 0,
+            "b_edited.txt": 0,
+            "c_unrelated.txt": 0,
+            "e_long.txt": 0,
+        },
+        "scores": {
+            "d_paraphrase.txt": 1.0,
+            "a_original.txt": 0.0,
+            "b_edited.txt": 0.0,
+            "c_unrelated.txt": 0.0,
+            "e_long.txt": 0.0,
+        },
     },
     "unrelated": {
-        "order": ["c_unrelated.txt", "e_long.txt", "a_original.txt",
-                  "b_edited.txt", "d_paraphrase.txt"],
-        "verdicts": {"c_unrelated.txt": "high", "e_long.txt": "low",
-                     "a_original.txt": "none", "b_edited.txt": "none",
-                     "d_paraphrase.txt": "none"},
-        "overlaps": {"c_unrelated.txt": 3, "e_long.txt": 3,
-                     "a_original.txt": 0, "b_edited.txt": 0,
-                     "d_paraphrase.txt": 0},
-        "scores": {"c_unrelated.txt": 1.0, "e_long.txt": 0.0156,
-                   "a_original.txt": 0.0, "b_edited.txt": 0.0,
-                   "d_paraphrase.txt": 0.0},
+        "order": ["c_unrelated.txt", "e_long.txt", "a_original.txt", "b_edited.txt", "d_paraphrase.txt"],
+        "verdicts": {
+            "c_unrelated.txt": "high",
+            "e_long.txt": "low",
+            "a_original.txt": "none",
+            "b_edited.txt": "none",
+            "d_paraphrase.txt": "none",
+        },
+        "overlaps": {
+            "c_unrelated.txt": 3,
+            "e_long.txt": 3,
+            "a_original.txt": 0,
+            "b_edited.txt": 0,
+            "d_paraphrase.txt": 0,
+        },
+        "scores": {
+            "c_unrelated.txt": 1.0,
+            "e_long.txt": 0.0156,
+            "a_original.txt": 0.0,
+            "b_edited.txt": 0.0,
+            "d_paraphrase.txt": 0.0,
+        },
     },
 }
 
@@ -148,12 +196,14 @@ def _full_rows(report: dict) -> dict[str, dict]:
     out = {}
     for f in report["findings"]:
         name = Path(f["path"]).name
-        out[name] = {"similarity": f["similarity"],
-                     # Verdict immer mit dem Produkt-Threshold 0.4 (der Report
-                     # wurde hier mit threshold=0.0 erzeugt, um ALLE Dateien zu
-                     # sehen — dessen Verdicts wären dadurch verzerrt).
-                     "verdict": _verdict(f["similarity"], 0.4),
-                     "overlaps": len(f["fundstellen"])}
+        out[name] = {
+            "similarity": f["similarity"],
+            # Verdict immer mit dem Produkt-Threshold 0.4 (der Report
+            # wurde hier mit threshold=0.0 erzeugt, um ALLE Dateien zu
+            # sehen — dessen Verdicts wären dadurch verzerrt).
+            "verdict": _verdict(f["similarity"], 0.4),
+            "overlaps": len(f["fundstellen"]),
+        }
     return out
 
 
@@ -162,9 +212,12 @@ class TestMinHashParity:
 
     def test_identical_input_exact_parity(self, tmp_path):
         d = _corpus(tmp_path)
-        cases = {TEXT_A: "a_original.txt", TEXT_A_EDITED: "b_edited.txt",
-                 TEXT_PARAPHRASED: "d_paraphrase.txt",
-                 TEXT_UNRELATED: "c_unrelated.txt"}
+        cases = {
+            TEXT_A: "a_original.txt",
+            TEXT_A_EDITED: "b_edited.txt",
+            TEXT_PARAPHRASED: "d_paraphrase.txt",
+            TEXT_UNRELATED: "c_unrelated.txt",
+        }
         for text, fname in cases.items():
             r = check_similarity(text, [d], threshold=0.0, top=20)
             rows = _full_rows(r)
@@ -175,8 +228,12 @@ class TestMinHashParity:
 
     def test_snapshot_order_and_verdicts_identical(self, tmp_path):
         d = _corpus(tmp_path)
-        inputs = {"text_a": TEXT_A, "text_a_edited": TEXT_A_EDITED,
-                  "paraphrase": TEXT_PARAPHRASED, "unrelated": TEXT_UNRELATED}
+        inputs = {
+            "text_a": TEXT_A,
+            "text_a_edited": TEXT_A_EDITED,
+            "paraphrase": TEXT_PARAPHRASED,
+            "unrelated": TEXT_UNRELATED,
+        }
         for name, text in inputs.items():
             r = check_similarity(text, [d], threshold=0.0, top=20)
             rows = _full_rows(r)
@@ -184,8 +241,9 @@ class TestMinHashParity:
             exp_order = OLD_SNAPSHOT[name]["order"]
             # Reihenfolge exakt wie im Alt-Snapshot (bei 0.0-Bindungen
             # original-Reihenfolge: Pfad-Sortierung wie check_similarity)
-            assert [n for n in exp_order if rows[n]["similarity"] > 0] == \
-                [n for n in got_order if rows[n]["similarity"] > 0], (name, got_order)
+            assert [n for n in exp_order if rows[n]["similarity"] > 0] == [
+                n for n in got_order if rows[n]["similarity"] > 0
+            ], (name, got_order)
             for fname, exp_v in OLD_SNAPSHOT[name]["verdicts"].items():
                 assert rows[fname]["verdict"] == exp_v, (name, fname, rows[fname])
             for fname, exp_o in OLD_SNAPSHOT[name]["overlaps"].items():
@@ -193,16 +251,20 @@ class TestMinHashParity:
 
     def test_snapshot_scores_within_estimator_tolerance(self, tmp_path):
         d = _corpus(tmp_path)
-        inputs = {"text_a": TEXT_A, "text_a_edited": TEXT_A_EDITED,
-                  "paraphrase": TEXT_PARAPHRASED, "unrelated": TEXT_UNRELATED}
+        inputs = {
+            "text_a": TEXT_A,
+            "text_a_edited": TEXT_A_EDITED,
+            "paraphrase": TEXT_PARAPHRASED,
+            "unrelated": TEXT_UNRELATED,
+        }
         for name, text in inputs.items():
             r = check_similarity(text, [d], threshold=0.0, top=20)
             rows = _full_rows(r)
             for fname, exp_score in OLD_SNAPSHOT[name]["scores"].items():
                 diff = abs(rows[fname]["similarity"] - exp_score)
                 assert diff <= SCORE_TOLERANCE, (
-                    f"{name}/{fname}: old={exp_score} new={rows[fname]['similarity']} "
-                    f"diff={diff} > {SCORE_TOLERANCE}")
+                    f"{name}/{fname}: old={exp_score} new={rows[fname]['similarity']} diff={diff} > {SCORE_TOLERANCE}"
+                )
 
     def test_exact_zero_for_unrelated_files(self, tmp_path):
         d = _corpus(tmp_path)

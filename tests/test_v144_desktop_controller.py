@@ -38,6 +38,7 @@ def controller(tmp_path) -> DesktopController:
     """Controller bound to a tmp registry seeded with one KGW key."""
     registry = tmp_path / "registry.json"
     from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+
     KeyRegistry(registry).add_key(dict(REG_KEY))
     return DesktopController(registry_path=registry)
 
@@ -50,8 +51,8 @@ def empty_controller(tmp_path) -> DesktopController:
 def _marked_text() -> str:
     """Sampler text generated with the REG_KEY secret (mark→detect roundtrip)."""
     from ai_watermark_toolkit.generation.kgw_sampler import generate_marked_text
-    return generate_marked_text(key=REG_KEY["secret"], gamma=0.25,
-                                bias_strength=2.0, n_tokens=250, seed=42)["text"]
+
+    return generate_marked_text(key=REG_KEY["secret"], gamma=0.25, bias_strength=2.0, n_tokens=250, seed=42)["text"]
 
 
 # ------------------------------------------------------------ registry / keys
@@ -84,6 +85,7 @@ def test_unknown_key_id_is_raw_secret_fallback(controller):
     result = controller.detect_text("some plain text", "raw-secret-value")
     # P0-4: the raw secret is masked in the reported key_id
     from ai_watermark_toolkit.forensics.key_registry import mask_secret_key_id
+
     assert result["key_id"] == mask_secret_key_id("raw-secret-value")
     assert result["key_id"] != "raw-secret-value"
     assert result["tested_keys"] == 1
@@ -112,8 +114,7 @@ def test_detect_file_raw_secret(controller, tmp_path):
 
 
 def test_detect_clean_text_no_signal(controller):
-    result = controller.detect_text("The quick brown fox jumps over the lazy "
-                                    "dog while the sun sets behind the hills.")
+    result = controller.detect_text("The quick brown fox jumps over the lazy dog while the sun sets behind the hills.")
     # The honest guarantee is "no strong signal": clean text must never
     # produce a watermark/redlist verdict with a random key.
     assert result["verdict"] not in ("watermark_detected", "redlist_detected")
@@ -122,10 +123,15 @@ def test_detect_clean_text_no_signal(controller):
 def test_detect_all_keys_multi(controller):
     # Two keys: only the real one matches -> multi-key path must pick it.
     from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
-    KeyRegistry(controller.registry_path).add_key({
-        "key_id": "desktop-test-2", "family": "kgw",
-        "secret": "completely-different-secret", "gamma": 0.25,
-    })
+
+    KeyRegistry(controller.registry_path).add_key(
+        {
+            "key_id": "desktop-test-2",
+            "family": "kgw",
+            "secret": "completely-different-secret",
+            "gamma": 0.25,
+        }
+    )
     result = controller.detect_text(_marked_text())
     assert result["tested_keys"] == 2
     assert result["key_id"] == REG_KEY["key_id"]
@@ -134,8 +140,9 @@ def test_detect_all_keys_multi(controller):
 
 # ------------------------------------------------------------------- embed
 def test_embed_text_marks_and_roundtrips(controller):
-    plain = ("This important change shows a new way to use the tool and "
-             "helps people find the right result in time. ") * 6
+    plain = (
+        "This important change shows a new way to use the tool and helps people find the right result in time. "
+    ) * 6
     result = controller.embed_text(plain, REG_KEY["key_id"])
     assert result["key_id"] == REG_KEY["key_id"]
     assert result["replacements"] > 0
@@ -155,8 +162,7 @@ def test_embed_unknown_key_is_error(controller):
 # ------------------------------------------------------------------ report
 def test_build_report_writes_html(controller, tmp_path):
     out_dir = tmp_path / "reports"
-    result = controller.build_report(_marked_text(), REG_KEY["key_id"],
-                                     output_dir=out_dir)
+    result = controller.build_report(_marked_text(), REG_KEY["key_id"], output_dir=out_dir)
     html_path = Path(result["html_path"])
     assert html_path.exists()
     html = html_path.read_text(encoding="utf-8")
@@ -170,6 +176,7 @@ def test_build_report_writes_html(controller, tmp_path):
 def test_build_report_default_dir_is_downloads_or_tmp(controller, monkeypatch):
     # Force the fallback branch: no Downloads dir -> tmp is used.
     import tempfile
+
     fake_home = tempfile.mkdtemp()
     monkeypatch.setattr(Path, "home", staticmethod(lambda: Path(fake_home)))
     result = controller.build_report(_marked_text(), REG_KEY["key_id"])
@@ -180,8 +187,7 @@ def test_build_report_default_dir_is_downloads_or_tmp(controller, monkeypatch):
 
 # ------------------------------------------------------------ sign / verify
 def test_sign_verify_roundtrip(controller):
-    payload = {"verdict": "watermark_detected", "z_score": 4.5,
-               "key_id": REG_KEY["key_id"], "text_sample": "abc"}
+    payload = {"verdict": "watermark_detected", "z_score": 4.5, "key_id": REG_KEY["key_id"], "text_sample": "abc"}
     signed = controller.sign_report_json(payload, REG_KEY["key_id"])
     assert signed["signature"]["algorithm"] == "hmac-sha256"
     assert signed["signature"]["key_id"] == REG_KEY["key_id"]
@@ -244,6 +250,7 @@ def test_controller_module_has_no_qt(controller):
     """The controller must import and run without Qt installed."""
     import re
     import sys
+
     mod = sys.modules["ai_watermark_toolkit.ui.desktop.controller"]
     src = Path(mod.__file__).read_text(encoding="utf-8")
     # No Qt import statements (the word may appear in docs — imports are
@@ -264,9 +271,11 @@ def test_clean_text_empty_raises(controller):
 
 
 def test_dilute_text_rewrites_phrasing(controller):
-    text = ("In conclusion, it is important to note that the utilization "
-            "of this methodology demonstrates significant potential. "
-            "Furthermore, the implementation thereof yields results. ") * 3
+    text = (
+        "In conclusion, it is important to note that the utilization "
+        "of this methodology demonstrates significant potential. "
+        "Furthermore, the implementation thereof yields results. "
+    ) * 3
     result = controller.dilute_text(text)
     assert result["changed"] >= 1
     assert isinstance(result["text"], str)
@@ -274,8 +283,7 @@ def test_dilute_text_rewrites_phrasing(controller):
 
 
 def test_rewrite_text_structural(controller):
-    text = ("The quick brown fox jumps over the lazy dog. "
-            "It is a beautiful day in the neighborhood. ") * 4
+    text = ("The quick brown fox jumps over the lazy dog. It is a beautiful day in the neighborhood. ") * 4
     result = controller.rewrite_text(text, mode="structural")
     assert result["rewritten"]
     assert result["mode"] == "structural"
@@ -283,8 +291,7 @@ def test_rewrite_text_structural(controller):
 
 
 def test_run_pipeline_full_chain(controller):
-    text = ("This is a completely normal sentence without any markers. "
-            "The weather is nice and people are happy. ") * 8
+    text = ("This is a completely normal sentence without any markers. The weather is nice and people are happy. ") * 8
     result = controller.run_pipeline(text)
     assert "output" in result
     assert "report" in result
@@ -457,44 +464,63 @@ def test_ui_smoke_offscreen(monkeypatch):
         assert callable(window.verify)
         assert callable(window.kgw_sample)
         # TUI-Parität: neue Untermenü-Slots sind verdrahtet
-        for slot in ("clean_text", "dilute_text", "rewrite_text",
-                     "run_pipeline", "inspect_file", "clean_file",
-                     "embed_file", "detect_file_prov", "image_score",
-                     "watch_once", "attack_matrix", "synthid_sweep",
-                     "run_optimizer", "similarity", "system_state",
-                     "check_update", "install_llm_model", "delta_z",
-                     "finding_report", "sign_report_file",
-                     "verify_report_file", "generate_keypair"):
+        for slot in (
+            "clean_text",
+            "dilute_text",
+            "rewrite_text",
+            "run_pipeline",
+            "inspect_file",
+            "clean_file",
+            "embed_file",
+            "detect_file_prov",
+            "image_score",
+            "watch_once",
+            "attack_matrix",
+            "synthid_sweep",
+            "run_optimizer",
+            "similarity",
+            "system_state",
+            "check_update",
+            "install_llm_model",
+            "delta_z",
+            "finding_report",
+            "sign_report_file",
+            "verify_report_file",
+            "generate_keypair",
+        ):
             assert callable(getattr(window, slot)), slot
         # Untermenü-Struktur im Actions-Menü (TUI-Parität, deterministisch)
         actions_menu = window._top_menus["Actions"]
         # Submenu QActions are alive and attached to the Actions menu
         # (C++-owned; the underlying QMenu is retained by the window).
-        sub_actions = [a for a in actions_menu.actions()
-                       if a.menu() is not None]
+        sub_actions = [a for a in actions_menu.actions() if a.menu() is not None]
         sub_titles = [a.text() for a in sub_actions]
-        assert sub_titles == ["&Text-Werkzeuge", "&Datei-Werkzeuge",
-                              "&Befunde", "&Benchmarks", "&System"], sub_titles
+        assert sub_titles == ["&Text-Werkzeuge", "&Datei-Werkzeuge", "&Befunde", "&Benchmarks", "&System"], sub_titles
         expected_items = {
-            "Text Tools": ["act.clean_text", "act.dilute_text",
-                           "act.rewrite_text", "act.pipeline"],
-            "File Tools": ["act.inspect_file", "act.clean_file",
-                           "act.embed_file", "act.detect_prov",
-                           "act.image_score", "act.watch_dir"],
-            "Findings": ["act.delta_z", "act.finding_report",
-                         "act.sign_report", "act.verify_report",
-                         "act.gen_keypair"],
-            "Benchmarks": ["act.attack_matrix", "act.synthid_sweep",
-                           "act.optimizer", "act.similarity"],
-            "System": ["act.system_state", "act.check_update",
-                       "act.install_model"],
+            "Text Tools": ["act.clean_text", "act.dilute_text", "act.rewrite_text", "act.pipeline"],
+            "File Tools": [
+                "act.inspect_file",
+                "act.clean_file",
+                "act.embed_file",
+                "act.detect_prov",
+                "act.image_score",
+                "act.watch_dir",
+            ],
+            "Findings": [
+                "act.delta_z",
+                "act.finding_report",
+                "act.sign_report",
+                "act.verify_report",
+                "act.gen_keypair",
+            ],
+            "Benchmarks": ["act.attack_matrix", "act.synthid_sweep", "act.optimizer", "act.similarity"],
+            "System": ["act.system_state", "act.check_update", "act.install_model"],
         }
         for key, act_keys in expected_items.items():
             # Read through the window's retained Python references (they keep
             # the C++ QMenu alive); the QAction→menu mapping was verified above.
             sub = window._submenu_menus[key]
-            got = [a.text() for a in sub.actions()
-                   if not a.isSeparator()]
+            got = [a.text() for a in sub.actions() if not a.isSeparator()]
             want = [window._tr(k) for k in act_keys]
             assert got == want, f"{key}: {got}"
         # i18n: switching the language combo retranslates menus + toolbar

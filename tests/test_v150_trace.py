@@ -102,9 +102,23 @@ def test_cli_trace_reports_spike():
     marked = _mark(clean)
     doc = " ".join(clean.split()[:150] + marked.split()[:120])
     proc = subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "trace",
-         "--key", KEY, "--window", "120", "--step", "120", "--stdin"],
-        input=doc, capture_output=True, text=True, cwd=".",
+        [
+            sys.executable,
+            "-m",
+            "ai_watermark_toolkit.cli",
+            "trace",
+            "--key",
+            KEY,
+            "--window",
+            "120",
+            "--step",
+            "120",
+            "--stdin",
+        ],
+        input=doc,
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     assert proc.returncode == 0, f"trace CLI failed: {proc.stderr}"
     assert "FINDING" in proc.stdout or "Spans above threshold" in proc.stdout
@@ -115,9 +129,24 @@ def test_cli_trace_json_output():
     marked = _mark(clean)
     doc = " ".join(clean.split()[:150] + marked.split()[:120])
     proc = subprocess.run(
-        [sys.executable, "-m", "ai_watermark_toolkit.cli", "trace",
-         "--key", KEY, "--window", "120", "--step", "120", "--json", "--stdin"],
-        input=doc, capture_output=True, text=True, cwd=".",
+        [
+            sys.executable,
+            "-m",
+            "ai_watermark_toolkit.cli",
+            "trace",
+            "--key",
+            KEY,
+            "--window",
+            "120",
+            "--step",
+            "120",
+            "--json",
+            "--stdin",
+        ],
+        input=doc,
+        capture_output=True,
+        text=True,
+        cwd=".",
     )
     assert proc.returncode == 0, f"trace CLI failed: {proc.stderr}"
     data = json.loads(proc.stdout)

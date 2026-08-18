@@ -3,6 +3,7 @@
 Tests the MCP tool manifest and simulates JSON-RPC calls against the API
 that the MCP server would proxy.
 """
+
 from __future__ import annotations
 
 import json
@@ -86,16 +87,18 @@ class TestMCPToolInvocation:
     def server_url(self):
         """Start the simple HTTP server as a subprocess."""
         import os
+
         port = _free_port()
         env = os.environ.copy()
         env["AI_WM_ENV"] = "development"
 
-        cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "serve",
-               "--host", "127.0.0.1", "--port", str(port)]
+        cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "serve", "--host", "127.0.0.1", "--port", str(port)]
         proc = subprocess.Popen(
-            cmd, cwd=str(PROJECT_ROOT),
+            cmd,
+            cwd=str(PROJECT_ROOT),
             env=env,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         url = f"http://127.0.0.1:{port}"
         for _ in range(50):
@@ -119,6 +122,7 @@ class TestMCPToolInvocation:
         corresponding HTTP request.
         """
         import httpx
+
         tools = json.loads((MCP_DIR / "tools.json").read_text(encoding="utf-8"))
         tool = next((t for t in tools["tools"] if t["name"] == tool_name), None)
         if tool is None:
@@ -145,11 +149,15 @@ class TestMCPToolInvocation:
 
     def test_pipeline_tool(self, server_url):
         """MCP pipeline tool should run the pipeline."""
-        result = self._json_rpc_call(server_url, "lab_pipeline", {
-            "text": "Hello world test.",
-            "lang": "en",
-            "intensity": "standard",
-        })
+        result = self._json_rpc_call(
+            server_url,
+            "lab_pipeline",
+            {
+                "text": "Hello world test.",
+                "lang": "en",
+                "intensity": "standard",
+            },
+        )
         assert result["status_code"] == 200
         assert "text" in result["body"]
         assert "report" in result["body"]

@@ -24,20 +24,20 @@ from ai_watermark_toolkit.forensics.kgw import (
     green_token,
 )
 
-_SIL1 = ("ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu "
-         "ga ge gi go gu ka ke ki ko ku la le li lo lu ma me mi mo mu "
-         "na ne ni no nu pa pe pi po pu ra re ri ro ru sa se si so su "
-         "ta te ti to tu va ve vi vo vu wa we wi wo wu za ze zi zo zu").split()
-_SIL2 = ("an en in on un ar er ir or ur al el il ol ul at et it ot ut "
-         "as es is os us").split()
+_SIL1 = (
+    "ba be bi bo bu ca ce ci co cu da de di do du fa fe fi fo fu "
+    "ga ge gi go gu ka ke ki ko ku la le li lo lu ma me mi mo mu "
+    "na ne ni no nu pa pe pi po pu ra re ri ro ru sa se si so su "
+    "ta te ti to tu va ve vi vo vu wa we wi wo wu za ze zi zo zu"
+).split()
+_SIL2 = ("an en in on un ar er ir or ur al el il ol ul at et it ot ut as es is os us").split()
 VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 
 KEY_A = "test-secret-alpha-001"
 KEY_B = "test-secret-beta-002"
 
 
-def generate_redlist(seed_token: str, key: str, n: int = 400,
-                     gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
+def generate_redlist(seed_token: str, key: str, n: int = 400, gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
     """KGW redlist generator: pick from the COMPLEMENT of the greenlist."""
     rng = random.Random(seed)
     out = [seed_token]
@@ -50,8 +50,7 @@ def generate_redlist(seed_token: str, key: str, n: int = 400,
     return " ".join(out)
 
 
-def generate_greenlist(seed_token: str, key: str, n: int = 400,
-                       gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
+def generate_greenlist(seed_token: str, key: str, n: int = 400, gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
     """KGW greenlist generator (mirror of test_v113): greedy green pick."""
     rng = random.Random(seed)
     out = [seed_token]

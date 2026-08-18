@@ -18,6 +18,7 @@ Honest limits:
   - Hard-bound C2PA removal is OUT OF SCOPE — we report, not strip.
   - For full C2PA manifest parsing, use a dedicated C2PA toolchain.
 """
+
 from __future__ import annotations
 
 import re
@@ -145,19 +146,19 @@ class VideoWatermarkPlugin(DetectorPlugin):
         i = start
         n = end or len(data)
         while i + 8 <= n:
-            size = int.from_bytes(data[i:i + 4], "big")
-            fourcc = data[i + 4:i + 8]
+            size = int.from_bytes(data[i : i + 4], "big")
+            fourcc = data[i + 4 : i + 8]
             header = 8
             if size == 1:
                 if i + 16 > n:
                     break
-                size = int.from_bytes(data[i + 8:i + 16], "big")
+                size = int.from_bytes(data[i + 8 : i + 16], "big")
                 header = 16
             elif size == 0:
                 size = n - i
             if size < header or i + size > n:
                 break
-            yield fourcc, data[i + header:i + size], header
+            yield fourcc, data[i + header : i + size], header
             i += size
 
     def _check_isobmff(self, data: bytes) -> tuple[float, list[str], dict]:
@@ -173,9 +174,7 @@ class VideoWatermarkPlugin(DetectorPlugin):
             return 0.0, ["not_isobmff"], {"c2pa_boxes": [], "xmp_found": False}
 
         # Recursively scan all boxes (including nested containers)
-        score, notes, c2pa_boxes, xmp_found = self._scan_boxes_recursive(
-            boxes, score, notes, c2pa_boxes, xmp_found
-        )
+        score, notes, c2pa_boxes, xmp_found = self._scan_boxes_recursive(boxes, score, notes, c2pa_boxes, xmp_found)
 
         return score, notes, {"c2pa_boxes": c2pa_boxes, "xmp_found": xmp_found}
 
@@ -214,9 +213,9 @@ class VideoWatermarkPlugin(DetectorPlugin):
 
             # Check for manifest signature strings in any box
             if _C2PA_MANIFEST_SIG.search(payload) and name not in [b"c2pa", b"jumb"]:
-                    c2pa_boxes.append(f"sig_in_{name}")
-                    score = max(score, 0.7)
-                    notes.append(f"manifest_signature_in_{name}")
+                c2pa_boxes.append(f"sig_in_{name}")
+                score = max(score, 0.7)
+                notes.append(f"manifest_signature_in_{name}")
 
             # Recurse into container boxes
             if fourcc in (b"moov", b"trak", b"mdia", b"minf", b"stbl", b"dinf", b"edts", b"udta", b"meta"):
@@ -325,6 +324,7 @@ class VideoWatermarkPlugin(DetectorPlugin):
         Note: hard-bound C2PA may not be fully removable by byte-level ops.
         """
         from ai_watermark_toolkit.metadata.service import clean as meta_clean
+
         cleaned, _ = meta_clean(raw, filename)
         return cleaned
 

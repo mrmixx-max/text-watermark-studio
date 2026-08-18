@@ -15,6 +15,7 @@ from .service import LocalLLMService
 @dataclass
 class ModelHealth:
     """Health status for a single model in the router."""
+
     model_name: str
     is_healthy: bool = False
     last_checked: str | None = None
@@ -24,18 +25,19 @@ class ModelHealth:
 
     def to_dict(self) -> dict:
         return {
-            'model': self.model_name,
-            'healthy': self.is_healthy,
-            'last_checked': self.last_checked,
-            'last_error': self.last_error,
-            'response_time_ms': self.response_time_ms,
-            'consecutive_failures': self.consecutive_failures,
+            "model": self.model_name,
+            "healthy": self.is_healthy,
+            "last_checked": self.last_checked,
+            "last_error": self.last_error,
+            "response_time_ms": self.response_time_ms,
+            "consecutive_failures": self.consecutive_failures,
         }
 
 
 @dataclass
 class RouterStats:
     """Aggregate statistics for the router."""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -59,12 +61,12 @@ class RouterStats:
 
     def to_dict(self) -> dict:
         return {
-            'total_requests': self.total_requests,
-            'successful_requests': self.successful_requests,
-            'failed_requests': self.failed_requests,
-            'fallback_count': self.fallback_count,
-            'per_model_requests': dict(self.per_model_requests),
-            'per_model_failures': dict(self.per_model_failures),
+            "total_requests": self.total_requests,
+            "successful_requests": self.successful_requests,
+            "failed_requests": self.failed_requests,
+            "fallback_count": self.fallback_count,
+            "per_model_requests": dict(self.per_model_requests),
+            "per_model_failures": dict(self.per_model_failures),
         }
 
 
@@ -99,9 +101,7 @@ class ModelRouter:
         self._models: list[str] = list(models) if models else []
 
         # Health map keyed by model name.
-        self._health: dict[str, ModelHealth] = {
-            m: ModelHealth(model_name=m) for m in self._models
-        }
+        self._health: dict[str, ModelHealth] = {m: ModelHealth(model_name=m) for m in self._models}
 
         # Round-robin cursor -- index into the *healthy* model list.
         self._rr_index: int = 0
@@ -185,8 +185,9 @@ class ModelRouter:
         start = time.monotonic()
         try:
             self._svc._ollama(
-                '/api/show', method='POST',
-                payload={'name': model_name, 'stream': False},
+                "/api/show",
+                method="POST",
+                payload={"name": model_name, "stream": False},
                 timeout=self._health_check_timeout,
             )
             elapsed = (time.monotonic() - start) * 1000
@@ -236,7 +237,7 @@ class ModelRouter:
         """Pick the next model from *healthy* using round-robin. Thread-safe."""
         with self._lock:
             if not healthy:
-                return ''
+                return ""
             idx = self._rr_index % len(healthy)
             self._rr_index = (self._rr_index + 1) % len(healthy)
             return healthy[idx]
@@ -252,7 +253,7 @@ class ModelRouter:
         """
         healthy = self._get_healthy_models()
         if not healthy:
-            return ''
+            return ""
         if prefer and prefer in healthy:
             return prefer
         return self._round_robin_pick(healthy)
@@ -289,7 +290,7 @@ class ModelRouter:
             self.refresh_health()
             healthy = self._get_healthy_models()
             if not healthy:
-                raise RouterExhaustedError('no healthy models available')
+                raise RouterExhaustedError("no healthy models available")
 
         # Build attempt order: prefer first, then round-robin from there.
         attempt_order: list[str] = []
@@ -311,14 +312,14 @@ class ModelRouter:
             self._stats.record_request(model)
             tried.append(model)
             attempt_payload = dict(payload)
-            attempt_payload['model'] = model
+            attempt_payload["model"] = model
             try:
                 resp = self._call_model(model, attempt_payload)
-                resp['_router_meta'] = {
-                    'model': model,
-                    'attempted': tried,
-                    'fallback_count': len(tried) - 1,
-                    'timestamp': self._now_iso(),
+                resp["_router_meta"] = {
+                    "model": model,
+                    "attempted": tried,
+                    "fallback_count": len(tried) - 1,
+                    "timestamp": self._now_iso(),
                 }
                 self._stats.record_success()
                 return resp
@@ -338,9 +339,7 @@ class ModelRouter:
                         self._stats.record_fallback()
                         on_fallback(model, next_m, e)
 
-        raise RouterExhaustedError(
-            f'all {len(tried)} model(s) failed; last error: {last_error}'
-        ) from last_error
+        raise RouterExhaustedError(f"all {len(tried)} model(s) failed; last error: {last_error}") from last_error
 
     def _call_model(self, model: str, payload: dict) -> dict:
         """Make the actual HTTP call to a model via Ollama's OpenAI-compatible endpoint."""
@@ -350,27 +349,27 @@ class ModelRouter:
         base = self._svc.ollama_base()
         url = f"{base}/v1/chat/completions"
         parsed = urlparse(url)
-        if parsed.scheme not in ('http', 'https'):
-            raise ValueError(f'invalid scheme: {parsed.scheme}')
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(f"invalid scheme: {parsed.scheme}")
 
-        data = json.dumps(payload).encode('utf-8')
+        data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
-            url, data=data, method='POST',
-            headers={'Content-Type': 'application/json'},
+            url,
+            data=data,
+            method="POST",
+            headers={"Content-Type": "application/json"},
         )
         try:
-            timeout = payload.get('timeout', 120)
+            timeout = payload.get("timeout", 120)
             with urllib.request.urlopen(req, timeout=timeout) as resp:
-                return json.loads(resp.read().decode('utf-8'))
+                return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
-            body = ''
+            body = ""
             with contextlib.suppress(OSError, AttributeError):
-                body = e.read().decode('utf-8', errors='replace')
-            raise ModelRequestError(
-                f'model {model} HTTP {e.code} {e.reason}: {body}'
-            ) from e
+                body = e.read().decode("utf-8", errors="replace")
+            raise ModelRequestError(f"model {model} HTTP {e.code} {e.reason}: {body}") from e
         except urllib.error.URLError as e:
-            raise ModelRequestError(f'model {model} unreachable: {e.reason}') from e
+            raise ModelRequestError(f"model {model} unreachable: {e.reason}") from e
 
     # ---- status / introspection -----------------------------------------
 
@@ -383,14 +382,14 @@ class ModelRouter:
 
         healthy_count = sum(1 for h in self._health.values() if h.is_healthy)
         return {
-            'models': health_list,
-            'model_count': len(self._models),
-            'healthy_count': healthy_count,
-            'unhealthy_count': len(self._models) - healthy_count,
-            'round_robin_index': self._rr_index,
-            'max_consecutive_failures': self._max_consecutive_failures,
-            'health_cache_ttl': self._health_cache_ttl,
-            'stats': self._stats.to_dict(),
+            "models": health_list,
+            "model_count": len(self._models),
+            "healthy_count": healthy_count,
+            "unhealthy_count": len(self._models) - healthy_count,
+            "round_robin_index": self._rr_index,
+            "max_consecutive_failures": self._max_consecutive_failures,
+            "health_cache_ttl": self._health_cache_ttl,
+            "stats": self._stats.to_dict(),
         }
 
     def reset_stats(self) -> None:

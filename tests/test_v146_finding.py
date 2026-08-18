@@ -76,21 +76,126 @@ TEXT = (
 
 # Redlist-Korpus (test_v132-Muster): Silbenwörter, aus denen der Generator
 # aus dem KOMPLEMENT der Greenlist wählt (z -> stark negativ, reproduzierbar).
-_SIL1 = ["ba", "be", "bi", "bo", "bu", "ca", "ce", "ci", "co", "cu", "da", "de", "di", "do", "du", "fa", "fe", "fi", "fo", "fu", "ga", "ge", "gi", "go", "gu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "pa", "pe", "pi", "po", "pu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "wa", "we", "wi", "wo", "wu", "za", "ze", "zi", "zo", "zu"]
-_SIL2 = ["an", "en", "in", "on", "un", "ar", "er", "ir", "or", "ur", "al", "el", "il", "ol", "ul", "at", "et", "it", "ot", "ut", "as", "es", "is", "os", "us"]
+_SIL1 = [
+    "ba",
+    "be",
+    "bi",
+    "bo",
+    "bu",
+    "ca",
+    "ce",
+    "ci",
+    "co",
+    "cu",
+    "da",
+    "de",
+    "di",
+    "do",
+    "du",
+    "fa",
+    "fe",
+    "fi",
+    "fo",
+    "fu",
+    "ga",
+    "ge",
+    "gi",
+    "go",
+    "gu",
+    "ka",
+    "ke",
+    "ki",
+    "ko",
+    "ku",
+    "la",
+    "le",
+    "li",
+    "lo",
+    "lu",
+    "ma",
+    "me",
+    "mi",
+    "mo",
+    "mu",
+    "na",
+    "ne",
+    "ni",
+    "no",
+    "nu",
+    "pa",
+    "pe",
+    "pi",
+    "po",
+    "pu",
+    "ra",
+    "re",
+    "ri",
+    "ro",
+    "ru",
+    "sa",
+    "se",
+    "si",
+    "so",
+    "su",
+    "ta",
+    "te",
+    "ti",
+    "to",
+    "tu",
+    "va",
+    "ve",
+    "vi",
+    "vo",
+    "vu",
+    "wa",
+    "we",
+    "wi",
+    "wo",
+    "wu",
+    "za",
+    "ze",
+    "zi",
+    "zo",
+    "zu",
+]
+_SIL2 = [
+    "an",
+    "en",
+    "in",
+    "on",
+    "un",
+    "ar",
+    "er",
+    "ir",
+    "or",
+    "ur",
+    "al",
+    "el",
+    "il",
+    "ol",
+    "ul",
+    "at",
+    "et",
+    "it",
+    "ot",
+    "ut",
+    "as",
+    "es",
+    "is",
+    "os",
+    "us",
+]
 REDLIST_VOCAB = [s1 + s2 for s1 in _SIL1 for s2 in _SIL2]
 REDLIST_KEY = "test-secret-alpha-001"
 
 
-def generate_redlist(seed_token: str, key: str, n: int = 400,
-                     gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
+def generate_redlist(seed_token: str, key: str, n: int = 400, gamma: float = DEFAULT_GAMMA, seed: int = 7) -> str:
     """KGW redlist generator (test_v132 pattern): picks from the COMPLEMENT."""
     rng = random.Random(seed)
     out = [seed_token]
     prev = seed_token
     for _ in range(n):
-        red_cands = [c for c in REDLIST_VOCAB
-                     if not green_token(c, prev, key, gamma)]
+        red_cands = [c for c in REDLIST_VOCAB if not green_token(c, prev, key, gamma)]
         chosen = rng.choice(red_cands) if red_cands else rng.choice(REDLIST_VOCAB)
         out.append(chosen)
         prev = chosen
@@ -115,8 +220,7 @@ def run_cli(args, stdin=None, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
     base = [sys.executable, "-m", "ai_watermark_toolkit.cli"]
-    return subprocess.run(base + args, capture_output=True, text=True,
-                          input=stdin, env=env, cwd=cwd or REPO)
+    return subprocess.run(base + args, capture_output=True, text=True, input=stdin, env=env, cwd=cwd or REPO)
 
 
 # ---------------------------------------------------------------- classify
@@ -128,8 +232,7 @@ class TestClassifyFinding:
         keyed-Detektion ist nie allein beweisend — nur Redlist-Vorzeichen,
         Bonferroni-p und konsistente Segmente heben auf Klasse A.
         """
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         best = d["best"]
         assert best["z_score"] >= 4.0, best
         f = classify_finding(d)
@@ -154,8 +257,7 @@ class TestClassifyFinding:
 
     def test_redlist_weak_stays_class_c(self):
         """Schwaches Redlist-Signal (|z| < 4) hebt NICHT auf Klasse A."""
-        r = {"verdict": "weak_redlist_signal", "signal": "redlist",
-             "z_score": -2.5, "p_value": 0.012}
+        r = {"verdict": "weak_redlist_signal", "signal": "redlist", "z_score": -2.5, "p_value": 0.012}
         f = classify_finding(r)
         assert f["evidence_class"] == "C", f
         assert f["category"] == "Redlist"
@@ -163,31 +265,33 @@ class TestClassifyFinding:
 
     def test_bonferroni_p_adjusted_is_class_a(self):
         """Bonferroni-adjustierter p-Wert < alpha -> überprüfbarer Befund A."""
-        r = {"verdict": "no_signal", "z_score": 2.1, "p_value": 0.4,
-             "best_p_adjusted": 0.0001, "tested_keys": 5,
-             "note": "bonferroni_adjusted_over_5_keys"}
+        r = {
+            "verdict": "no_signal",
+            "z_score": 2.1,
+            "p_value": 0.4,
+            "best_p_adjusted": 0.0001,
+            "tested_keys": 5,
+            "note": "bonferroni_adjusted_over_5_keys",
+        }
         f = classify_finding(r)
         assert f["evidence_class"] == "A", f
         assert f["priority"] == 4
 
     def test_unadjusted_p_value_never_class_a(self):
         """Nur der UNADJUSTIERTE p-Wert bleibt Klasse C (Einzelhypothese)."""
-        r = {"verdict": "watermark_detected", "signal": "greenlist",
-             "z_score": 9.0, "p_value": 1e-12, "n_tokens": 300}
+        r = {"verdict": "watermark_detected", "signal": "greenlist", "z_score": 9.0, "p_value": 1e-12, "n_tokens": 300}
         f = classify_finding(r)
         assert f["evidence_class"] == "C", f
 
     def test_consistent_segments_is_class_a(self):
         """Konsistente Segmente (alle mean_z > 4, >= 2 Segmente) -> A."""
-        r = {"verdict": "no_signal", "z_score": 0.1,
-             "segments": [{"mean_z": 9.0}, {"mean_z": 8.5}, {"mean_z": 12.0}]}
+        r = {"verdict": "no_signal", "z_score": 0.1, "segments": [{"mean_z": 9.0}, {"mean_z": 8.5}, {"mean_z": 12.0}]}
         f = classify_finding(r)
         assert f["evidence_class"] == "A", f
 
     def test_single_segment_not_class_a(self):
         """Ein einzelnes Segment ist nur der ganze Text — kein Klasse-A-Beleg."""
-        r = {"verdict": "no_signal", "z_score": 0.1,
-             "segments": [{"mean_z": 9.0}]}
+        r = {"verdict": "no_signal", "z_score": 0.1, "segments": [{"mean_z": 9.0}]}
         f = classify_finding(r)
         assert f["evidence_class"] == "C", f
 
@@ -234,18 +338,18 @@ class TestClassifyFinding:
 
     def test_context_missing_without_context(self, marked):
         """Ohne Kontext-Parameter -> context_missing:true (Klasse D ehrlich)."""
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         f = classify_finding(d)
         assert f["context_missing"] is True
         assert any("Kontext" in e for e in f["exculpatory"])
 
     def test_context_provided_clears_flag(self, marked):
         """Institutionelle Regel / Entstehungshistorie -> context_missing:false."""
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
-        ctx = {"institutional_rule": "KI-Nutzung muss deklariert werden",
-               "origin_history": "Entwurf 2026-01, 3 Versionen, Betreuerfeedback"}
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
+        ctx = {
+            "institutional_rule": "KI-Nutzung muss deklariert werden",
+            "origin_history": "Entwurf 2026-01, 3 Versionen, Betreuerfeedback",
+        }
         f = classify_finding(d, context=ctx)
         assert f["context_missing"] is False
         assert f["context_notes"]["institutional_rule"]
@@ -253,16 +357,14 @@ class TestClassifyFinding:
 
     def test_empty_context_dict_is_missing(self, marked):
         """Ein leeres context-Dict zählt als fehlender Kontext (keine Regel)."""
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         assert classify_finding(d, context={})["context_missing"] is True
 
 
 # ---------------------------------------------------------------- Struktur
 class TestFindingStructure:
     def _marked_finding(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         return classify_finding(d)
 
     def test_full_schema(self, marked):
@@ -277,16 +379,23 @@ class TestFindingStructure:
         assert f["context_missing"] in (True, False)
 
     def test_possible_explanations_at_least_two(self, marked):
-        for f in (self._marked_finding(marked),
-                  classify_finding({"verdict": "redlist_detected",
-                                    "signal": "redlist", "z_score": -11.5}),
-                  classify_finding({"removed": True, "delta_z": 5.0,
-                                    "z_before": 9.0, "z_after": 2.0,
-                                    "verdict_before": "watermark_detected",
-                                    "verdict_after": "no_signal"}),
-                  classify_finding({"e_value": 99.0, "detected": True,
-                                    "verdict": "e_value_detected",
-                                    "threshold": 20.0, "n_tokens": 50})):
+        for f in (
+            self._marked_finding(marked),
+            classify_finding({"verdict": "redlist_detected", "signal": "redlist", "z_score": -11.5}),
+            classify_finding(
+                {
+                    "removed": True,
+                    "delta_z": 5.0,
+                    "z_before": 9.0,
+                    "z_after": 2.0,
+                    "verdict_before": "watermark_detected",
+                    "verdict_after": "no_signal",
+                }
+            ),
+            classify_finding(
+                {"e_value": 99.0, "detected": True, "verdict": "e_value_detected", "threshold": 20.0, "n_tokens": 50}
+            ),
+        ):
             assert len(f["possible_explanations"]) >= 2, f
             assert len(f["exculpatory"]) >= 1, f
             assert f["recommended_next_steps"], f
@@ -319,12 +428,10 @@ class TestFindingStructure:
 # ---------------------------------------------------------------- Report
 class TestBuildFindingReport:
     def test_bundles_modules(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         ev = e_detect(marked, KEY)
         dz = delta_z(marked, _shuffle(marked), KEY)
-        rep = build_finding_report({"detect": d, "e_value": ev, "delta_z": dz},
-                                   key_id=KEY)
+        rep = build_finding_report({"detect": d, "e_value": ev, "delta_z": dz}, key_id=KEY)
         assert rep["report_type"] == "ki-erklaerungs-befund"
         assert len(rep["findings"]) == 3
         classes = {f["evidence_class"] for f in rep["findings"]}
@@ -335,32 +442,35 @@ class TestBuildFindingReport:
         assert rep["priority"] == 4  # max der Einzelprioritäten (B=4 > C=3)
         assert len(rep["evidence_matrix"]) == 3
         row = rep["evidence_matrix"][0]
-        assert set(row) >= {"finding_id", "evidence_class", "category",
-                            "observation", "risk", "priority",
-                            "possible_explanations", "next_step"}
+        assert set(row) >= {
+            "finding_id",
+            "evidence_class",
+            "category",
+            "observation",
+            "risk",
+            "priority",
+            "possible_explanations",
+            "next_step",
+        }
 
     def test_flat_detect_result_accepted(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         rep = build_finding_report(d, key_id=KEY)
         assert len(rep["findings"]) == 1
         assert rep["findings"][0]["evidence_class"] == "C"
 
     def test_verdict_text_never_concludes_ai_generated(self, marked):
         """Anti-Hype: 'KI-generiert' erscheint NIE als Feststellung."""
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         ev = e_detect(marked, KEY)
         dz = delta_z(marked, _shuffle(marked), KEY)
-        rep = build_finding_report({"detect": d, "e_value": ev, "delta_z": dz},
-                                   key_id=KEY)
+        rep = build_finding_report({"detect": d, "e_value": ev, "delta_z": dz}, key_id=KEY)
         assert "KI-generiert" not in rep["verdict_text"]
         assert "KI-Unterstützung vereinbar" in rep["verdict_text"]
         assert "nicht" in rep["verdict_text"]  # beweist es nicht
 
     def test_verdict_text_herkunft_not_bestimmbar(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         rep = build_finding_report(d, key_id=KEY)
         assert "Herkunft nicht" in rep["verdict_text"]
 
@@ -373,8 +483,7 @@ class TestBuildFindingReport:
 
     def test_verdict_text_class_a_case(self):
         """Klasse A: vertiefte Prüfung angezeigt, aber keine Feststellung."""
-        r = {"verdict": "redlist_detected", "signal": "redlist",
-             "z_score": -11.55, "p_value": 1e-20}
+        r = {"verdict": "redlist_detected", "signal": "redlist", "z_score": -11.55, "p_value": 1e-20}
         rep = build_finding_report(r, key_id=REDLIST_KEY)
         assert rep["priority"] == 5
         assert "dringend angezeigt" in rep["verdict_text"]
@@ -382,14 +491,12 @@ class TestBuildFindingReport:
         assert "beweisen sie" in rep["verdict_text"]
 
     def test_schlussfolgerung_hinweis(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         rep = build_finding_report(d, key_id=KEY)
         assert "keine KI-Nutzung, kein Plagiat und keine Täuschung" in rep["schlussfolgerung_hinweis"]
 
     def test_signed_report_valid(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         signed = build_finding_report(d, key_id=KEY, sign_secret="hmac-secret-1")
         sig = signed["signature"]
         assert sig["algorithm"] == "hmac-sha256"
@@ -398,27 +505,22 @@ class TestBuildFindingReport:
         assert verify_report(signed, "wrong-secret")["valid"] is False
 
     def test_unsigned_report_has_no_signature(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         rep = build_finding_report(d, key_id=KEY)
         assert "signature" not in rep
 
     def test_deterministic_finding_id(self, marked):
         """Gleicher Text/Key -> gleiche finding_id (reproduzierbar)."""
-        d1 = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                        "secret": KEY}])
-        d2 = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                        "secret": KEY}])
+        d1 = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
+        d2 = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])
         assert classify_finding(d1)["finding_id"] == classify_finding(d2)["finding_id"]
         # Verschiedener Schlüssel -> verschiedene ID
         other = {"verdict": "no_signal", "z_score": 0.2, "p_value": 0.9}
         assert classify_finding(other)["finding_id"] != classify_finding(d1)["finding_id"]
 
     def test_priority_is_max_of_findings(self, marked):
-        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw",
-                                       "secret": KEY}])  # C, prio 3
-        rl = {"verdict": "redlist_detected", "signal": "redlist",
-              "z_score": -11.55, "p_value": 1e-20}  # A, prio 5
+        d = detect_multi_key(marked, [{"key_id": KEY, "family": "kgw", "secret": KEY}])  # C, prio 3
+        rl = {"verdict": "redlist_detected", "signal": "redlist", "z_score": -11.55, "p_value": 1e-20}  # A, prio 5
         rep = build_finding_report({"detect": d, "delta_z": rl}, key_id=KEY)
         assert rep["priority"] == 5
 
@@ -443,8 +545,7 @@ class TestCliFinding:
     def test_cli_e_value_and_delta_z_combined(self, tmp_path, marked):
         f = self._write(tmp_path, "b.txt", marked)
         a = self._write(tmp_path, "a.txt", _shuffle(marked))
-        r = run_cli(["finding", str(f), "--key", KEY, "--e-value",
-                     "--delta-z", str(a)], cwd=tmp_path)
+        r = run_cli(["finding", str(f), "--key", KEY, "--e-value", "--delta-z", str(a)], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         out = json.loads(r.stdout)
         assert len(out["findings"]) == 3
@@ -455,8 +556,7 @@ class TestCliFinding:
 
     def test_cli_sign_verifiable(self, tmp_path, marked):
         f = self._write(tmp_path, "b.txt", marked)
-        r = run_cli(["finding", str(f), "--key", KEY, "--sign", "cli-secret-1"],
-                    cwd=tmp_path)
+        r = run_cli(["finding", str(f), "--key", KEY, "--sign", "cli-secret-1"], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         signed = json.loads(r.stdout)
         assert signed["signature"]["algorithm"] == "hmac-sha256"
@@ -465,14 +565,12 @@ class TestCliFinding:
     def test_cli_output_file(self, tmp_path, marked):
         f = self._write(tmp_path, "b.txt", marked)
         out = tmp_path / "finding.json"
-        r = run_cli(["finding", str(f), "--key", KEY, "-o", str(out)],
-                    cwd=tmp_path)
+        r = run_cli(["finding", str(f), "--key", KEY, "-o", str(out)], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         assert json.loads(out.read_text(encoding="utf-8"))["findings"][0]["evidence_class"] == "C"
 
     def test_cli_stdin(self, tmp_path, marked):
-        r = run_cli(["finding", "--stdin", "--key", KEY], stdin=marked,
-                    cwd=tmp_path)
+        r = run_cli(["finding", "--stdin", "--key", KEY], stdin=marked, cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         assert json.loads(r.stdout)["findings"][0]["evidence_class"] == "C"
 
@@ -488,8 +586,7 @@ class TestCliFinding:
         assert "input file" in r.stderr
 
     def test_cli_missing_file_exit_2(self, tmp_path):
-        r = run_cli(["finding", str(tmp_path / "nope.txt"), "--key", KEY],
-                    cwd=tmp_path)
+        r = run_cli(["finding", str(tmp_path / "nope.txt"), "--key", KEY], cwd=tmp_path)
         assert r.returncode == 2
         assert "file not found" in r.stderr.lower()
 
@@ -514,36 +611,31 @@ class TestApiFinding:
         reg = KeyRegistry(str(tmp_path / "keys.json"))
         monkeypatch.setattr(forensics_route, "keys", reg)
         # audit writes data/audit.log — silence it (no data/ writes in tests)
-        monkeypatch.setattr(forensics_route, "audit",
-                            type("DummyAudit", (), {"write": lambda self, p: p})())
+        monkeypatch.setattr(forensics_route, "audit", type("DummyAudit", (), {"write": lambda self, p: p})())
         return TestClient(fastapi_app.app)
 
     def _register(self, client, key_id="find-api-1", secret=KEY):
-        client.post("/api/forensics/keys",
-                    json={"key_id": key_id, "family": "kgw", "secret": secret,
-                          "gamma": GAMMA})
+        client.post("/api/forensics/keys", json={"key_id": key_id, "family": "kgw", "secret": secret, "gamma": GAMMA})
 
     def test_api_requires_auth(self, tmp_path, monkeypatch, marked):
         from types import SimpleNamespace
 
         from ai_watermark_toolkit.api.middleware import auth as auth_mod
+
         c = self._client(tmp_path, monkeypatch)
         self._register(c)
-        monkeypatch.setattr(auth_mod, "settings",
-                            SimpleNamespace(api_key="test-secret"))
+        monkeypatch.setattr(auth_mod, "settings", SimpleNamespace(api_key="test-secret"))
         body = {"text": marked, "key_id": "find-api-1"}
         r = c.post("/api/forensics/finding", json=body)
         assert r.status_code == 401
-        r = c.post("/api/forensics/finding", json=body,
-                   headers={"X-API-Key": "test-secret"})
+        r = c.post("/api/forensics/finding", json=body, headers={"X-API-Key": "test-secret"})
         assert r.status_code == 200, r.text
         assert r.json()["report_type"] == "ki-erklaerungs-befund"
 
     def test_api_finding_structure(self, tmp_path, monkeypatch, marked):
         c = self._client(tmp_path, monkeypatch)
         self._register(c)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "find-api-1"})
+        r = c.post("/api/forensics/finding", json={"text": marked, "key_id": "find-api-1"})
         assert r.status_code == 200, r.text
         out = r.json()
         assert out["key_id"] == "find-api-1"
@@ -556,8 +648,7 @@ class TestApiFinding:
     def test_api_e_value_option(self, tmp_path, monkeypatch, marked):
         c = self._client(tmp_path, monkeypatch)
         self._register(c)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "find-api-1", "e_value": True})
+        r = c.post("/api/forensics/finding", json={"text": marked, "key_id": "find-api-1", "e_value": True})
         assert r.status_code == 200, r.text
         out = r.json()
         assert len(out["findings"]) == 2
@@ -567,9 +658,10 @@ class TestApiFinding:
     def test_api_delta_z_option(self, tmp_path, monkeypatch, marked):
         c = self._client(tmp_path, monkeypatch)
         self._register(c)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "find-api-1",
-                         "delta_z": {"text_after": _shuffle(marked)}})
+        r = c.post(
+            "/api/forensics/finding",
+            json={"text": marked, "key_id": "find-api-1", "delta_z": {"text_after": _shuffle(marked)}},
+        )
         assert r.status_code == 200, r.text
         out = r.json()
         assert len(out["findings"]) == 2
@@ -579,9 +671,9 @@ class TestApiFinding:
     def test_api_delta_z_transform_option(self, tmp_path, monkeypatch, marked):
         c = self._client(tmp_path, monkeypatch)
         self._register(c)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "find-api-1",
-                         "delta_z": {"transform": "shuffle"}})
+        r = c.post(
+            "/api/forensics/finding", json={"text": marked, "key_id": "find-api-1", "delta_z": {"transform": "shuffle"}}
+        )
         assert r.status_code == 200, r.text
         classes = {x["evidence_class"] for x in r.json()["findings"]}
         assert "B" in classes
@@ -590,8 +682,7 @@ class TestApiFinding:
         """sign=true -> Report signiert mit dem REGISTRY-Secret (= KEY hier)."""
         c = self._client(tmp_path, monkeypatch)
         self._register(c)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "find-api-1", "sign": True})
+        r = c.post("/api/forensics/finding", json={"text": marked, "key_id": "find-api-1", "sign": True})
         assert r.status_code == 200, r.text
         out = r.json()
         assert out["signature"]["algorithm"] == "hmac-sha256"
@@ -599,24 +690,19 @@ class TestApiFinding:
 
     def test_api_unknown_key_404(self, tmp_path, monkeypatch, marked):
         c = self._client(tmp_path, monkeypatch)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "nope"})
+        r = c.post("/api/forensics/finding", json={"text": marked, "key_id": "nope"})
         assert r.status_code == 404
 
     def test_api_body_secret_ignored(self, tmp_path, monkeypatch, marked):
         """Secret NIE im Body: key_id muss registriert sein."""
         c = self._client(tmp_path, monkeypatch)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "find-api-1",
-                         "secret": "forged-in-body"})
+        r = c.post("/api/forensics/finding", json={"text": marked, "key_id": "find-api-1", "secret": "forged-in-body"})
         assert r.status_code == 404  # nicht registriert -> kein Server-Secret
 
     def test_api_delta_z_missing_text_after_400(self, tmp_path, monkeypatch, marked):
         c = self._client(tmp_path, monkeypatch)
         self._register(c)
-        r = c.post("/api/forensics/finding",
-                   json={"text": marked, "key_id": "find-api-1",
-                         "delta_z": {}})
+        r = c.post("/api/forensics/finding", json={"text": marked, "key_id": "find-api-1", "delta_z": {}})
         assert r.status_code == 400
 
     def test_api_priority_scaling_redlist(self, tmp_path, monkeypatch):
@@ -624,8 +710,7 @@ class TestApiFinding:
         c = self._client(tmp_path, monkeypatch)
         self._register(c, key_id="rl-api-1", secret=REDLIST_KEY)
         red = generate_redlist("start", REDLIST_KEY)
-        r = c.post("/api/forensics/finding",
-                   json={"text": red, "key_id": "rl-api-1"})
+        r = c.post("/api/forensics/finding", json={"text": red, "key_id": "rl-api-1"})
         assert r.status_code == 200, r.text
         out = r.json()
         assert out["findings"][0]["evidence_class"] == "A"

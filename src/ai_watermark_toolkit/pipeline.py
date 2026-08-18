@@ -58,9 +58,7 @@ def detect_text(
             "statistical": [ngram],
         },
         "actions_applied": [],
-        "residual_risk": (
-            "Heuristic only for statistical signals; not a keyed watermark detector."
-        ),
+        "residual_risk": ("Heuristic only for statistical signals; not a keyed watermark detector."),
     }
 
 

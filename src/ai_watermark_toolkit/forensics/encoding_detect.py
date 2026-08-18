@@ -44,10 +44,12 @@ BOM_MAP = {
     BOM_UTF16_BE: "utf-16-be",
 }
 
+
 # Encoding detection result
 @dataclass
 class EncodingResult:
     """Result of encoding detection."""
+
     encoding: str  # detected encoding
     confidence: float  # 0.0 to 1.0
     bom: str | None = None  # BOM type if present
@@ -228,26 +230,30 @@ def _detect_mixed_encoding(data: bytes, window_size: int = 64) -> EncodingResult
     current_start = 0
 
     for i in range(0, len(data) - window_size + 1, window_size // 2):
-        window = data[i:i + window_size]
+        window = data[i : i + window_size]
         window_enc = _quick_detect(window)
 
         if window_enc != current_encoding:
             if current_encoding is not None:
-                segments.append({
-                    "start": current_start,
-                    "end": i,
-                    "encoding": current_encoding,
-                })
+                segments.append(
+                    {
+                        "start": current_start,
+                        "end": i,
+                        "encoding": current_encoding,
+                    }
+                )
             current_encoding = window_enc
             current_start = i
 
     # Add final segment
     if current_encoding is not None:
-        segments.append({
-            "start": current_start,
-            "end": len(data),
-            "encoding": current_encoding,
-        })
+        segments.append(
+            {
+                "start": current_start,
+                "end": len(data),
+                "encoding": current_encoding,
+            }
+        )
 
     # Filter: only "mixed" if we have segments with genuinely different encodings
     unique_encs = {s["encoding"] for s in segments}
@@ -258,6 +264,7 @@ def _detect_mixed_encoding(data: bytes, window_size: int = 64) -> EncodingResult
         result.mixed_segments = segments
         # Overall encoding is the most common one
         from collections import Counter
+
         enc_counts = Counter(s["encoding"] for s in segments)
         result.encoding = enc_counts.most_common(1)[0][0]
         result.confidence = 0.7
@@ -301,16 +308,16 @@ def _detect_conversion_attack(data: bytes) -> EncodingResult:
 
     # Check for overlong UTF-8 sequences
     overlong_pattern = re.compile(
-        b'[\xc0\xc1]'  # 2-byte sequences for ASCII (overlong)
-        b'|[\xe0\x80-\x9f]'  # 3-byte overlong
-        b'|[\xf0\x80-\x8f]',  # 4-byte overlong
+        b"[\xc0\xc1]"  # 2-byte sequences for ASCII (overlong)
+        b"|[\xe0\x80-\x9f]"  # 3-byte overlong
+        b"|[\xf0\x80-\x8f]",  # 4-byte overlong
     )
     if overlong_pattern.search(data):
         attacks.append("overlong_utf8_sequences")
 
     # Check for invalid UTF-8 that would become valid in Latin-1
     # Bytes 0x80-0xBF without a leading byte = orphaned continuation bytes
-    orphaned = re.compile(b'(?<![\xc0-\xfd])[\x80-\xbf]')
+    orphaned = re.compile(b"(?<![\xc0-\xfd])[\x80-\xbf]")
     if orphaned.search(data):
         attacks.append("orphaned_continuation_bytes")
 
@@ -318,11 +325,11 @@ def _detect_conversion_attack(data: bytes) -> EncodingResult:
     # Common: Cyrillic 'а' (U+0430) replacing Latin 'a' (U+0061)
     # In UTF-8: Cyrillic 'а' = D0 B0
     cyrillic_homoglyphs = re.compile(
-        b'[\xd0-\xd3][\x80-\xbf]'  # Cyrillic range in UTF-8
+        b"[\xd0-\xd3][\x80-\xbf]"  # Cyrillic range in UTF-8
     )
     if cyrillic_homoglyphs.search(data):
         # Check if there's also Latin text (suspicious mix)
-        latin_text = re.compile(b'[a-zA-Z]{4,}')
+        latin_text = re.compile(b"[a-zA-Z]{4,}")
         if latin_text.search(data):
             attacks.append("cyrillic_latin_homoglyph_mix")
 
@@ -398,9 +405,7 @@ def detect_and_convert(data: bytes, target_encoding: str = "utf-8") -> tuple[byt
         converted = text.encode(target_encoding, errors="replace")
         return converted, result
     except (UnicodeDecodeError, LookupError) as e:
-        raise ValueError(
-            f"cannot convert from {result.encoding} to {target_encoding}: {e}"
-        )
+        raise ValueError(f"cannot convert from {result.encoding} to {target_encoding}: {e}")
 
 
 def strip_bom(data: bytes) -> tuple[bytes, str | None]:

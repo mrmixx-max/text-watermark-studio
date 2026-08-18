@@ -1,4 +1,5 @@
 """Shared fixtures for E2E integration tests."""
+
 from __future__ import annotations
 
 import json

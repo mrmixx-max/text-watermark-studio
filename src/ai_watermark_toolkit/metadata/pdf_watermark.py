@@ -49,13 +49,16 @@ def _sign(secret: str, payload: bytes) -> str:
 def _make_packet(key_id: str, secret: str, payload: bytes) -> bytes:
     """Create a signed watermark packet."""
     sig = _sign(secret, payload)
-    return json.dumps({
-        "marker": WM_MARKER,
-        "key_id": key_id,
-        "sig": sig,
-        "payload_b64": payload.hex(),
-        "v": 1,
-    }, separators=(",", ":")).encode()
+    return json.dumps(
+        {
+            "marker": WM_MARKER,
+            "key_id": key_id,
+            "sig": sig,
+            "payload_b64": payload.hex(),
+            "v": 1,
+        },
+        separators=(",", ":"),
+    ).encode()
 
 
 def _parse_packet(raw: bytes) -> dict | None:
@@ -75,9 +78,9 @@ def _parse_packet(raw: bytes) -> dict | None:
 # content stream for Td/TJ operators with characteristic spacing.
 
 # Pattern: Td operator with small position adjustments
-_TD_RE = re.compile(rb'\s*(-?[\d.]+)\s+(-?[\d.]+)\s+Td')
+_TD_RE = re.compile(rb"\s*(-?[\d.]+)\s+(-?[\d.]+)\s+Td")
 # Pattern: TJ array with numeric kerns
-_TJ_RE = re.compile(rb'\[(.*?)\]TJ')
+_TJ_RE = re.compile(rb"\[(.*?)\]TJ")
 
 # Base space width in "Tw" units
 _SPACE_UNIT = 1000  # PDF text space units per em
@@ -124,13 +127,13 @@ def embed_spacing_watermark(pdf_data: bytes, message: str, secret: str) -> bytes
     pos = 0
 
     for m in _TD_RE.finditer(pdf_data):
-        out.extend(pdf_data[pos:m.end()])
+        out.extend(pdf_data[pos : m.end()])
         pos = m.end()
 
         if bit_idx < len(all_bits):
             # Always inject a marker: 25 for bit=0, 75 for bit=1
             shift = 75 if all_bits[bit_idx] == 1 else 25
-            out.extend(f' {shift} Tc '.encode())
+            out.extend(f" {shift} Tc ".encode())
             bit_idx += 1
 
     out.extend(pdf_data[pos:])
@@ -142,8 +145,8 @@ def detect_spacing_watermark(pdf_data: bytes, secret: str) -> dict:
     bits = []
 
     for m in _TD_RE.finditer(pdf_data):
-        after = pdf_data[m.end():m.end() + 30]
-        tc_match = re.match(rb'\s+(\d+)\s+Tc', after)
+        after = pdf_data[m.end() : m.end() + 30]
+        tc_match = re.match(rb"\s+(\d+)\s+Tc", after)
         if tc_match:
             val = int(tc_match.group(1))
             # Threshold at 50: 25 = bit 0, 75 = bit 1
@@ -159,7 +162,7 @@ def detect_spacing_watermark(pdf_data: bytes, secret: str) -> dict:
     if length == 0 or length > len(bits) - 16:
         return {"found": False, "reason": "invalid_length", "message": None}
 
-    msg_bits = bits[16:16 + length]
+    msg_bits = bits[16 : 16 + length]
     if len(msg_bits) < length:
         return {"found": False, "reason": "truncated", "message": None}
 
@@ -222,7 +225,7 @@ def detect_metadata_watermark(pdf_data: bytes, secrets: dict[str, str]) -> dict:
 
         key_id = packet.get("key_id", "")
         stored_sig = packet.get("sig", "")
-        restored = pdf_data[:m.start()] + pdf_data[m.end():]
+        restored = pdf_data[: m.start()] + pdf_data[m.end() :]
         expected_sig = _sign(secrets.get(key_id, ""), restored)
 
         if hmac.compare_digest(stored_sig, expected_sig):
@@ -249,21 +252,21 @@ def embed_color_watermark(pdf_data: bytes, message: str, secret: str) -> bytes:
         length_bits.append((length >> i) & 1)
     all_bits = length_bits + _text_to_bits(message)
 
-    color_re = re.compile(rb'(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+rg')
+    color_re = re.compile(rb"(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+rg")
 
     bit_idx = 0
     out = bytearray()
     pos = 0
 
     for m in color_re.finditer(pdf_data):
-        out.extend(pdf_data[pos:m.end()])
+        out.extend(pdf_data[pos : m.end()])
         pos = m.end()
 
         if bit_idx < len(all_bits):
             if all_bits[bit_idx] == 1:
-                out.extend(b' 0 0 0.004 rg')
+                out.extend(b" 0 0 0.004 rg")
             else:
-                out.extend(b' 0 0 0.001 rg')
+                out.extend(b" 0 0 0.001 rg")
             bit_idx += 1
 
     out.extend(pdf_data[pos:])
@@ -274,15 +277,13 @@ def detect_color_watermark(pdf_data: bytes, secret: str) -> dict:
     """Detect a text color watermark."""
     bits = []
 
-    color_re = re.compile(
-        rb'(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+rg'
-    )
+    color_re = re.compile(rb"(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+rg")
 
     for m in color_re.finditer(pdf_data):
-        after = pdf_data[m.end():m.end() + 30]
-        if re.match(rb'\s*0\s+0\s+0\.004\s+rg', after):
+        after = pdf_data[m.end() : m.end() + 30]
+        if re.match(rb"\s*0\s+0\s+0\.004\s+rg", after):
             bits.append(1)
-        elif re.match(rb'\s*0\s+0\s+0\.001\s+rg', after):
+        elif re.match(rb"\s*0\s+0\s+0\.001\s+rg", after):
             bits.append(0)
 
     if len(bits) < 16:
@@ -295,7 +296,7 @@ def detect_color_watermark(pdf_data: bytes, secret: str) -> dict:
     if length == 0 or length > len(bits) - 16:
         return {"found": False, "reason": "invalid_length", "message": None}
 
-    msg_bits = bits[16:16 + length]
+    msg_bits = bits[16 : 16 + length]
     while len(msg_bits) % 8 != 0:
         msg_bits.append(0)
 

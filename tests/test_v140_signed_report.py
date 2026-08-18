@@ -45,10 +45,11 @@ PAYLOAD = {
 
 def _find_cli_python():
     """Find the Python executable that can import cryptography."""
-    import sys
+
     # If current Python can import cryptography, use it
     try:
         import cryptography  # noqa: F401
+
         return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
     except ImportError:
         pass
@@ -65,7 +66,9 @@ def _find_cli_python():
                 try:
                     result = subprocess.run(
                         [str(py), "-c", "import cryptography; print(cryptography.__version__)"],
-                        capture_output=True, text=True, timeout=10
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
                     )
                     if result.returncode == 0:
                         return [str(py), "-m", "ai_watermark_toolkit.cli"]
@@ -77,9 +80,10 @@ def _find_cli_python():
 
 def _find_cli_python():
     """Find the Python executable that can import cryptography."""
-    import sys
+
     try:
         import cryptography  # noqa: F401
+
         return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
     except ImportError:
         pass
@@ -99,8 +103,10 @@ def _find_cli_python():
             try:
                 result = subprocess.run(
                     [str(py), "-c", "import cryptography; print(cryptography.__version__)"],
-                    capture_output=True, text=True, timeout=10,
-                    env={**os.environ, "PYTHONPATH": str(SRC)}
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    env={**os.environ, "PYTHONPATH": str(SRC)},
                 )
                 if result.returncode == 0:
                     return [str(py), "-m", "ai_watermark_toolkit.cli"]
@@ -117,8 +123,7 @@ def run_cli(args, stdin=None, cwd=None):
         env["VIRTUAL_ENV"] = venv
         env["PATH"] = str(Path(venv) / "Scripts") + os.pathsep + env.get("PATH", "")
     base = _find_cli_python()
-    return subprocess.run(base + args, capture_output=True, text=True,
-                          input=stdin, env=env, cwd=cwd or REPO)
+    return subprocess.run(base + args, capture_output=True, text=True, input=stdin, env=env, cwd=cwd or REPO)
 
 
 # ---------------------------------------------------------------- HMAC core
@@ -199,8 +204,7 @@ class TestHmacCore:
     def test_malformed_inputs(self):
         assert verify_report("not-a-dict", SECRET)["reason"] == "malformed"
         assert verify_report({"payload": 1}, SECRET)["reason"] == "missing_signature"
-        assert verify_report({"signature": {"algorithm": "nope"}}, SECRET)[
-            "reason"] == "unsupported_algorithm"
+        assert verify_report({"signature": {"algorithm": "nope"}}, SECRET)["reason"] == "unsupported_algorithm"
 
     def test_sign_requires_dict_and_secret(self):
         with pytest.raises(ValueError):
@@ -236,34 +240,31 @@ class TestCliSignedReport:
     def test_cli_sign_verify_roundtrip_secret_file(self, tmp_path):
         payload = self._payload_file(tmp_path)
         secret_f = self._secret_file(tmp_path)
-        r = run_cli(["report-sign", str(payload), "--secret-file", str(secret_f),
-                     "--key-id", "demo-kgw-1"], cwd=tmp_path)
+        r = run_cli(
+            ["report-sign", str(payload), "--secret-file", str(secret_f), "--key-id", "demo-kgw-1"], cwd=tmp_path
+        )
         assert r.returncode == 0, r.stderr
         out = tmp_path / "report-signed.json"
         assert out.exists()
         signed = json.loads(out.read_text(encoding="utf-8"))
         assert signed["signature"]["algorithm"] == "hmac-sha256"
-        r = run_cli(["report-verify", str(out), "--secret-file", str(secret_f)],
-                    cwd=tmp_path)
+        r = run_cli(["report-verify", str(out), "--secret-file", str(secret_f)], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         assert json.loads(r.stdout)["valid"] is True
 
     def test_cli_sign_from_stdin(self, tmp_path):
-        r = run_cli(["report-sign", "-", "--secret", SECRET], stdin=json.dumps(PAYLOAD),
-                    cwd=tmp_path)
+        r = run_cli(["report-sign", "-", "--secret", SECRET], stdin=json.dumps(PAYLOAD), cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         assert (tmp_path / "report-signed.json").exists()
 
     def test_cli_verify_wrong_secret_exit_1(self, tmp_path):
         payload = self._payload_file(tmp_path)
         secret_f = self._secret_file(tmp_path)
-        assert run_cli(["report-sign", str(payload), "--secret-file", str(secret_f)],
-                       cwd=tmp_path).returncode == 0
+        assert run_cli(["report-sign", str(payload), "--secret-file", str(secret_f)], cwd=tmp_path).returncode == 0
         out = tmp_path / "report-signed.json"
         wrong = tmp_path / "wrong.txt"
         wrong.write_text("totally-wrong", encoding="utf-8")
-        r = run_cli(["report-verify", str(out), "--secret-file", str(wrong)],
-                    cwd=tmp_path)
+        r = run_cli(["report-verify", str(out), "--secret-file", str(wrong)], cwd=tmp_path)
         assert r.returncode == 1
         assert json.loads(r.stdout)["valid"] is False
 
@@ -276,22 +277,19 @@ class TestCliSignedReport:
     def test_cli_verify_missing_secret_exit_2(self, tmp_path):
         payload = self._payload_file(tmp_path)
         secret_f = self._secret_file(tmp_path)
-        assert run_cli(["report-sign", str(payload), "--secret-file", str(secret_f)],
-                       cwd=tmp_path).returncode == 0
+        assert run_cli(["report-sign", str(payload), "--secret-file", str(secret_f)], cwd=tmp_path).returncode == 0
         r = run_cli(["report-verify", str(tmp_path / "report-signed.json")], cwd=tmp_path)
         assert r.returncode == 2
 
     def test_cli_verify_tampered_exit_1(self, tmp_path):
         payload = self._payload_file(tmp_path)
         secret_f = self._secret_file(tmp_path)
-        assert run_cli(["report-sign", str(payload), "--secret-file", str(secret_f)],
-                       cwd=tmp_path).returncode == 0
+        assert run_cli(["report-sign", str(payload), "--secret-file", str(secret_f)], cwd=tmp_path).returncode == 0
         out = tmp_path / "report-signed.json"
         signed = json.loads(out.read_text(encoding="utf-8"))
         signed["green_rate"] = 0.99
         out.write_text(json.dumps(signed), encoding="utf-8")
-        r = run_cli(["report-verify", str(out), "--secret-file", str(secret_f)],
-                    cwd=tmp_path)
+        r = run_cli(["report-verify", str(out), "--secret-file", str(secret_f)], cwd=tmp_path)
         assert r.returncode == 1
         res = json.loads(r.stdout)
         assert res["valid"] is False
@@ -306,8 +304,9 @@ class TestCliSignedReport:
     def test_cli_mldsa_unavailable_error_path(self, tmp_path):
         if mldsa_available():
             pytest.skip("mldsa present — error path not exercised")
-        r = run_cli(["report-sign", "-", "--algorithm", "mldsa-44", "--secret", SECRET],
-                    stdin=json.dumps(PAYLOAD), cwd=tmp_path)
+        r = run_cli(
+            ["report-sign", "-", "--algorithm", "mldsa-44", "--secret", SECRET], stdin=json.dumps(PAYLOAD), cwd=tmp_path
+        )
         assert r.returncode == 1
         assert "mldsa-44" in r.stderr.lower()
         r = run_cli(["report-keygen"], cwd=tmp_path)
@@ -328,30 +327,26 @@ class TestApiSignedReport:
         return TestClient(fastapi_app.app)
 
     def _register_key(self, client, key_id="sig-key-1", secret=SECRET):
-        client.post("/api/forensics/keys",
-                    json={"key_id": key_id, "family": "kgw", "secret": secret})
+        client.post("/api/forensics/keys", json={"key_id": key_id, "family": "kgw", "secret": secret})
 
     def test_api_sign_verify_roundtrip(self, tmp_path, monkeypatch):
         c = self._client(tmp_path, monkeypatch)
         self._register_key(c)
-        r = c.post("/api/forensics/report-sign",
-                   json={"payload": PAYLOAD, "key_id": "sig-key-1"})
+        r = c.post("/api/forensics/report-sign", json={"payload": PAYLOAD, "key_id": "sig-key-1"})
         assert r.status_code == 200, r.text
         signed = r.json()
         assert signed["signature"]["algorithm"] == "hmac-sha256"
         assert signed["signature"]["key_id"] == "sig-key-1"
         assert "secret" not in json.dumps(signed).replace("shared_secret", "")
         assert SECRET not in json.dumps(signed)  # echtes Secret nie im Report
-        r = c.post("/api/forensics/report-verify",
-                   json={"signed": signed, "key_id": "sig-key-1"})
+        r = c.post("/api/forensics/report-verify", json={"signed": signed, "key_id": "sig-key-1"})
         assert r.status_code == 200
         assert r.json()["valid"] is True
 
     def test_api_verify_key_id_from_document(self, tmp_path, monkeypatch):
         c = self._client(tmp_path, monkeypatch)
         self._register_key(c)
-        signed = c.post("/api/forensics/report-sign",
-                        json={"payload": PAYLOAD, "key_id": "sig-key-1"}).json()
+        signed = c.post("/api/forensics/report-sign", json={"payload": PAYLOAD, "key_id": "sig-key-1"}).json()
         r = c.post("/api/forensics/report-verify", json={"signed": signed})
         assert r.status_code == 200
         assert r.json()["valid"] is True
@@ -359,11 +354,9 @@ class TestApiSignedReport:
     def test_api_verify_tampered_invalid(self, tmp_path, monkeypatch):
         c = self._client(tmp_path, monkeypatch)
         self._register_key(c)
-        signed = c.post("/api/forensics/report-sign",
-                        json={"payload": PAYLOAD, "key_id": "sig-key-1"}).json()
+        signed = c.post("/api/forensics/report-sign", json={"payload": PAYLOAD, "key_id": "sig-key-1"}).json()
         signed["z_score"] = -1.0
-        r = c.post("/api/forensics/report-verify",
-                   json={"signed": signed, "key_id": "sig-key-1"})
+        r = c.post("/api/forensics/report-verify", json={"signed": signed, "key_id": "sig-key-1"})
         assert r.status_code == 200
         res = r.json()
         assert res["valid"] is False
@@ -371,42 +364,41 @@ class TestApiSignedReport:
 
     def test_api_sign_unknown_key_404(self, tmp_path, monkeypatch):
         c = self._client(tmp_path, monkeypatch)
-        r = c.post("/api/forensics/report-sign",
-                   json={"payload": PAYLOAD, "key_id": "nope"})
+        r = c.post("/api/forensics/report-sign", json={"payload": PAYLOAD, "key_id": "nope"})
         assert r.status_code == 404
 
     def test_api_sign_key_without_secret_400(self, tmp_path, monkeypatch):
         c = self._client(tmp_path, monkeypatch)
         c.post("/api/forensics/keys", json={"key_id": "nosecret"})
-        r = c.post("/api/forensics/report-sign",
-                   json={"payload": PAYLOAD, "key_id": "nosecret"})
+        r = c.post("/api/forensics/report-sign", json={"payload": PAYLOAD, "key_id": "nosecret"})
         assert r.status_code == 400
         assert "secret" in r.json()["detail"]
 
     def test_api_sign_mldsa_rejected_400(self, tmp_path, monkeypatch):
         c = self._client(tmp_path, monkeypatch)
         self._register_key(c)
-        r = c.post("/api/forensics/report-sign",
-                   json={"payload": PAYLOAD, "key_id": "sig-key-1",
-                         "algorithm": "mldsa-44"})
+        r = c.post(
+            "/api/forensics/report-sign", json={"payload": PAYLOAD, "key_id": "sig-key-1", "algorithm": "mldsa-44"}
+        )
         assert r.status_code == 400
 
     def test_api_requires_auth_when_configured(self, tmp_path, monkeypatch):
         from types import SimpleNamespace
 
         from ai_watermark_toolkit.api.middleware import auth as auth_mod
+
         c = self._client(tmp_path, monkeypatch)
         self._register_key(c)  # register while auth is still off
         monkeypatch.setattr(auth_mod, "settings", SimpleNamespace(api_key="test-secret"))
-        r = c.post("/api/forensics/report-sign",
-                   json={"payload": PAYLOAD, "key_id": "sig-key-1"})
+        r = c.post("/api/forensics/report-sign", json={"payload": PAYLOAD, "key_id": "sig-key-1"})
         assert r.status_code == 401
-        r = c.post("/api/forensics/report-verify",
-                   json={"signed": {"signature": {"key_id": "sig-key-1"}}})
+        r = c.post("/api/forensics/report-verify", json={"signed": {"signature": {"key_id": "sig-key-1"}}})
         assert r.status_code == 401
-        r = c.post("/api/forensics/report-sign",
-                   json={"payload": PAYLOAD, "key_id": "sig-key-1"},
-                   headers={"X-API-Key": "test-secret"})
+        r = c.post(
+            "/api/forensics/report-sign",
+            json={"payload": PAYLOAD, "key_id": "sig-key-1"},
+            headers={"X-API-Key": "test-secret"},
+        )
         assert r.status_code == 200
 
 
@@ -421,9 +413,9 @@ class TestMldsa44:
 
     def test_sign_verify_roundtrip(self):
         pair = generate_mldsa_keypair()
-        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44",
-                             private_key_pem=pair["private_key_pem"],
-                             key_id="mldsa-key-1")
+        signed = sign_report(
+            PAYLOAD, SECRET, algorithm="mldsa-44", private_key_pem=pair["private_key_pem"], key_id="mldsa-key-1"
+        )
         sig = signed["signature"]
         assert sig["algorithm"] == "mldsa-44"
         assert sig["signature_b64"]
@@ -437,8 +429,7 @@ class TestMldsa44:
 
     def test_tamper_invalid(self):
         pair = generate_mldsa_keypair()
-        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44",
-                             private_key_pem=pair["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44", private_key_pem=pair["private_key_pem"])
         signed["findings"] = []
         res = verify_report(signed)
         assert res["valid"] is False
@@ -448,8 +439,7 @@ class TestMldsa44:
     def test_wrong_public_key_invalid(self):
         pair = generate_mldsa_keypair()
         other = generate_mldsa_keypair()
-        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44",
-                             private_key_pem=pair["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44", private_key_pem=pair["private_key_pem"])
         res = verify_report(signed, public_key_pem=other["public_key_pem"])
         assert res["valid"] is False
         # P0-2: fremder externer Key wird als Trust-Anker behandelt — die
@@ -469,10 +459,20 @@ class TestMldsa44:
         assert priv.exists() and pub.exists()
         payload = tmp_path / "payload.json"
         payload.write_text(json.dumps(PAYLOAD), encoding="utf-8")
-        r = run_cli(["report-sign", str(payload), "--algorithm", "mldsa-44",
-                     "--private-key", str(priv), "--key-id", "mldsa-key-1"], cwd=tmp_path)
+        r = run_cli(
+            [
+                "report-sign",
+                str(payload),
+                "--algorithm",
+                "mldsa-44",
+                "--private-key",
+                str(priv),
+                "--key-id",
+                "mldsa-key-1",
+            ],
+            cwd=tmp_path,
+        )
         assert r.returncode == 0, r.stderr
-        r = run_cli(["report-verify", str(tmp_path / "report-signed.json"),
-                     "--public-key", str(pub)], cwd=tmp_path)
+        r = run_cli(["report-verify", str(tmp_path / "report-signed.json"), "--public-key", str(pub)], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         assert json.loads(r.stdout)["valid"] is True

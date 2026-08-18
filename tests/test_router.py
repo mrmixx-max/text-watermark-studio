@@ -3,6 +3,7 @@
 Uses a mock Ollama HTTP server (http.server-based) to stay offline and
 deterministic.  Mirrors the pattern from test_v128_llm_models.py.
 """
+
 from __future__ import annotations
 
 import json
@@ -55,13 +56,21 @@ class MockOllamaHandler(BaseHTTPRequestHandler):
             if name in FAILING_MODELS:
                 self._json(500, {"error": "out of memory"})
             else:
-                self._json(200, {
-                    "id": "chatcmpl-mock",
-                    "object": "chat.completion",
-                    "model": name,
-                    "choices": [{"message": {"role": "assistant", "content": f"response from {name}"}, "finish_reason": "stop"}],
-                    "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
-                })
+                self._json(
+                    200,
+                    {
+                        "id": "chatcmpl-mock",
+                        "object": "chat.completion",
+                        "model": name,
+                        "choices": [
+                            {
+                                "message": {"role": "assistant", "content": f"response from {name}"},
+                                "finish_reason": "stop",
+                            }
+                        ],
+                        "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
+                    },
+                )
         elif self.path == "/api/pull":
             name = body.get("name", "")
             self.send_response(200)
@@ -107,14 +116,19 @@ def _reset_ollama_state():
 def svc(tmp_path, mock_ollama, monkeypatch):
     monkeypatch.setenv("OLLAMA_BASE_URL", mock_ollama)
     cfg = tmp_path / "local_llm.json"
-    cfg.write_text(json.dumps({
-        "provider": "ollama",
-        "model_family": "llama3.2:3b",
-        "model_variant": "llama3.2:3b",
-        "server_base_url": f"{mock_ollama}/v1",
-        "installed": True,
-        "updated_at": None,
-    }), encoding="utf-8")
+    cfg.write_text(
+        json.dumps(
+            {
+                "provider": "ollama",
+                "model_family": "llama3.2:3b",
+                "model_variant": "llama3.2:3b",
+                "server_base_url": f"{mock_ollama}/v1",
+                "installed": True,
+                "updated_at": None,
+            }
+        ),
+        encoding="utf-8",
+    )
     return LocalLLMService(path=cfg)
 
 
@@ -130,11 +144,16 @@ def router(svc):
 
 # ---- ModelHealth dataclass ---------------------------------------------
 
+
 class TestModelHealth:
     def test_to_dict_roundtrip(self):
-        h = ModelHealth(model_name="llama3.2:3b", is_healthy=True,
-                        last_checked="2026-01-01T00:00:00+00:00",
-                        response_time_ms=12.3, consecutive_failures=0)
+        h = ModelHealth(
+            model_name="llama3.2:3b",
+            is_healthy=True,
+            last_checked="2026-01-01T00:00:00+00:00",
+            response_time_ms=12.3,
+            consecutive_failures=0,
+        )
         d = h.to_dict()
         assert d["model"] == "llama3.2:3b"
         assert d["healthy"] is True
@@ -148,6 +167,7 @@ class TestModelHealth:
 
 
 # ---- RouterStats dataclass ---------------------------------------------
+
 
 class TestRouterStats:
     def test_record_and_to_dict(self):
@@ -168,6 +188,7 @@ class TestRouterStats:
 
 
 # ---- ModelRouter construction ------------------------------------------
+
 
 class TestModelRouterConstruction:
     def test_empty_models(self, svc):
@@ -200,6 +221,7 @@ class TestModelRouterConstruction:
 
 
 # ---- health checking ---------------------------------------------------
+
 
 class TestHealthCheck:
     def test_check_health_marks_healthy(self, router):
@@ -239,6 +261,7 @@ class TestHealthCheck:
 
 # ---- routing / round-robin ---------------------------------------------
 
+
 class TestRouting:
     def test_get_next_model_returns_healthy(self, router):
         router.refresh_health()
@@ -273,6 +296,7 @@ class TestRouting:
 
 
 # ---- execute with fallback ---------------------------------------------
+
 
 class TestExecute:
     def test_execute_succeeds_first_model(self, router):
@@ -340,6 +364,7 @@ class TestExecute:
 
 # ---- router_status -----------------------------------------------------
 
+
 class TestRouterStatus:
     def test_status_shape(self, router):
         st = router.router_status()
@@ -375,6 +400,7 @@ class TestRouterStatus:
 
 
 # ---- edge cases --------------------------------------------------------
+
 
 class TestEdgeCases:
     def test_single_model_router(self, svc):

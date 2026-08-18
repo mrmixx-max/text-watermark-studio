@@ -18,8 +18,7 @@ class WatermarkLabService:
 
     def __init__(self, registry: KeyRegistry | None = None):
         self.plugins = get_family_plugins()
-        self.registry = registry if registry is not None else KeyRegistry(
-            'data/key_registry.json')
+        self.registry = registry if registry is not None else KeyRegistry("data/key_registry.json")
 
     def families(self):
         return list_families()
@@ -35,13 +34,13 @@ class WatermarkLabService:
         options (secret/gamma/level/context/seed) take precedence.
         """
         opts = dict(options or {})
-        if not opts.get('secret'):
+        if not opts.get("secret"):
             for key in self.registry.list_keys():
-                family = key.get('family', '')
-                if key.get('secret') and family in ('kgw', 'unknown', ''):
-                    opts.setdefault('secret', key['secret'])
-                    if key.get('gamma') is not None:
-                        opts.setdefault('gamma', key['gamma'])
+                family = key.get("family", "")
+                if key.get("secret") and family in ("kgw", "unknown", ""):
+                    opts.setdefault("secret", key["secret"])
+                    if key.get("gamma") is not None:
+                        opts.setdefault("gamma", key["gamma"])
                     break
         return opts
 
@@ -52,13 +51,13 @@ class WatermarkLabService:
     def embed_with(self, family: str, text: str, options: dict | None = None):
         plugin = self.plugins.get(family)
         if not plugin:
-            return {'error': 'unknown_family'}
+            return {"error": "unknown_family"}
         return plugin.embed(text, self._kgw_options(options))
 
     def demo_with(self, family: str, options: dict | None = None):
         plugin = self.plugins.get(family)
         if not plugin:
-            return {'error': 'unknown_family'}
-        if not callable(getattr(plugin, 'demo', None)):
-            return {'error': 'demo_not_supported'}
+            return {"error": "unknown_family"}
+        if not callable(getattr(plugin, "demo", None)):
+            return {"error": "demo_not_supported"}
         return plugin.demo(dict(options or {}))

@@ -14,4 +14,5 @@ __all__ = ["DesktopController", "main"]
 def main(argv: list[str] | None = None) -> int:
     """Launch the desktop shell (requires PySide6, optional extra)."""
     from .app import main as _app_main
+
     return _app_main(argv)

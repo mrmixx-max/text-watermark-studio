@@ -157,17 +157,21 @@ def _png(data: bytes, clean: bool) -> MetaReport:
     i = 8
     removed = 0
     while i + 8 <= len(data):
-        length = int.from_bytes(data[i:i + 4], "big")
-        ctype = data[i + 4:i + 8]
+        length = int.from_bytes(data[i : i + 4], "big")
+        ctype = data[i + 4 : i + 8]
         if i + 12 + length > len(data):
             break
-        chunk = data[i:i + 12 + length]
+        chunk = data[i : i + 12 + length]
         kind = ctype.decode("latin1", "replace")
         # eXIf = EXIF carrier; iTXt/zTXt/tEXt with XMP = AI metadata hints
         if kind == "eXIf" or (
             kind in ("iTXt", "zTXt", "tEXt")
-            and (b"XML:com.adobe.xmp" in chunk or b"provenance" in chunk.lower()
-                 or b"c2pa" in chunk.lower() or b"ai" in chunk.lower()[:200])
+            and (
+                b"XML:com.adobe.xmp" in chunk
+                or b"provenance" in chunk.lower()
+                or b"c2pa" in chunk.lower()
+                or b"ai" in chunk.lower()[:200]
+            )
         ):
             removed += 12 + length
             if kind == "eXIf":
@@ -202,13 +206,13 @@ def _jpeg(data: bytes, clean: bool) -> MetaReport:
             continue
         marker = data[i + 1]
         if marker in (0xD8, 0xD9) or 0xD0 <= marker <= 0xD7:
-            out.write(data[i:i + 2])
+            out.write(data[i : i + 2])
             i += 2
             continue
-        seg_len = int.from_bytes(data[i + 2:i + 4], "big")
+        seg_len = int.from_bytes(data[i + 2 : i + 4], "big")
         if seg_len < 2 or i + 2 + seg_len > len(data):
             break
-        seg = data[i:i + 2 + seg_len]
+        seg = data[i : i + 2 + seg_len]
         drop = False
         if marker == 0xE1:  # APP1: EXIF ("Exif\0\0") or XMP ("http://ns.adobe.com/xap/1.0/\0")
             if seg[4:10] == b"Exif\x00\x00":
@@ -248,6 +252,7 @@ def _svg(data: bytes, clean: bool) -> MetaReport:
     text = data.decode("utf-8", "replace")
     new_text = re.sub(r"<metadata[\s\S]*?</metadata>", "", text, flags=re.IGNORECASE)
     new_text = re.sub(r"<rdf:RDF[\s\S]*?</rdf:RDF>", "", new_text, flags=re.IGNORECASE)
+
     # attributes carrying provenance
     def _strip_attrs(m):
         tag = m.group(0)
@@ -255,6 +260,7 @@ def _svg(data: bytes, clean: bool) -> MetaReport:
             tag = re.sub(rf"\s{attr}='[^']*'", "", tag, flags=re.IGNORECASE)
             tag = re.sub(rf'\s{attr}="[^"]*"', "", tag, flags=re.IGNORECASE)
         return tag
+
     new_text = re.sub(r"<[a-zA-Z][^>]*>", _strip_attrs, new_text)
     if new_text != text:
         rep.actions.append("removed_svg_metadata_and_ai_attrs")
@@ -277,7 +283,9 @@ def _pdf(data: bytes, clean: bool) -> MetaReport:
         # remove XMP metadata streams: << /Type /Metadata ... stream ... endstream
         new = re.sub(
             rb"<<\s*/Type\s*/Metadata[\s\S]{0,2000}?>>\s*stream\s*[\s\S]{0,200000}?endstream",
-            b"", data, count=8,
+            b"",
+            data,
+            count=8,
         )
         # neutralize creator/producer Info entries
         new = re.sub(rb"/Producer\s*\([^)]*\)", b"/Producer ()", new)
@@ -301,8 +309,9 @@ def _odt(data: bytes, clean: bool) -> MetaReport:
     return _zip_container(data, clean, "odt", "meta.xml", None, None)
 
 
-def _zip_container(data: bytes, clean: bool, fmt: str,
-                   core_path: str, app_path: str | None, custom_dir: str | None) -> MetaReport:
+def _zip_container(
+    data: bytes, clean: bool, fmt: str, core_path: str, app_path: str | None, custom_dir: str | None
+) -> MetaReport:
     rep = MetaReport(format=fmt)
     try:
         zin = zipfile.ZipFile(io.BytesIO(data))
@@ -366,19 +375,19 @@ def _iter_isobmff_boxes(data: bytes, start: int = 0):
     i = start
     n = len(data)
     while i + 8 <= n:
-        size = int.from_bytes(data[i:i + 4], "big")
-        fourcc = data[i + 4:i + 8]
+        size = int.from_bytes(data[i : i + 4], "big")
+        fourcc = data[i + 4 : i + 8]
         header = 8
         if size == 1:
             if i + 16 > n:
                 break
-            size = int.from_bytes(data[i + 8:i + 16], "big")
+            size = int.from_bytes(data[i + 8 : i + 16], "big")
             header = 16
         elif size == 0:
             size = n - i
         if size < header or i + size > n:
             break
-        yield fourcc, data[i + header:i + size], header
+        yield fourcc, data[i + header : i + size], header
         i += size
 
 
@@ -430,9 +439,9 @@ def _isobmff(data: bytes, clean: bool, fmt: str) -> MetaReport:
                         sub_removed += s_header + len(s_payload)
                         continue
                 if s_fourcc in (b"xml ", b"bxml") and _AI_KEY_HINTS.search(s_payload[:512]):
-                        rep.actions.append(f"removed_meta_subbox_{s_name}_xml_metadata")
-                        sub_removed += s_header + len(s_payload)
-                        continue
+                    rep.actions.append(f"removed_meta_subbox_{s_name}_xml_metadata")
+                    sub_removed += s_header + len(s_payload)
+                    continue
                 sub_clean.extend(_box_bytes(s_fourcc, s_payload))
             new_meta = verflags + bytes(sub_clean)
             if out is not None:
@@ -459,6 +468,7 @@ def _isobmff(data: bytes, clean: bool, fmt: str) -> MetaReport:
 # EXIF chunk FourCC is "EXIF", XMP is "XMP " (with trailing space); ICC
 # profiles can carry provenance too. C2PA appears as a "C2PA" chunk.
 
+
 def _webp(data: bytes, clean: bool) -> MetaReport:
     rep = MetaReport(format="webp")
     if data[:4] != b"RIFF" or data[8:12] != b"WEBP":
@@ -472,11 +482,11 @@ def _webp(data: bytes, clean: bool) -> MetaReport:
     i = 12
     removed = 0
     while i + 8 <= len(data):
-        fourcc = data[i:i + 4]
-        size = int.from_bytes(data[i + 4:i + 8], "little")
+        fourcc = data[i : i + 4]
+        size = int.from_bytes(data[i + 4 : i + 8], "little")
         if i + 8 + size > len(data):
             break
-        chunk = data[i:i + 8 + size]
+        chunk = data[i : i + 8 + size]
         name = fourcc.decode("latin1", "replace")
         drop = False
         if fourcc in (b"EXIF", b"XMP ", b"C2PA"):
@@ -508,14 +518,20 @@ def _html(data: bytes, clean: bool) -> MetaReport:
     rep = MetaReport(format="html")
     text = data.decode("utf-8", "replace")
     new = text
+
     # meta tags carrying AI provenance
     def _meta_sub(m):
         tag = m.group(0)
         if _AI_META_NAMES.search(tag):
-            rep.removed_keys.append(re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE).group(1) if re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE) else "meta")
+            rep.removed_keys.append(
+                re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE).group(1)
+                if re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE)
+                else "meta"
+            )
             rep.actions.append("removed_ai_meta_tag")
             return ""
         return tag
+
     new = re.sub(r"<meta\b[^>]*>", _meta_sub, new, flags=re.IGNORECASE)
     # JSON-LD with provenance keys
     new = re.sub(r"<script\b[^>]*application/ld\+json[^>]*>[\s\S]*?</script>", "", new, flags=re.IGNORECASE)

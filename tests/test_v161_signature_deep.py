@@ -9,7 +9,6 @@ Contract under test:
 - analyze_signature: combined analysis producing final verdict.
 """
 
-
 from ai_watermark_toolkit.forensics.signature_deep import (
     _get_ngrams,
     _tokenize_sentences,

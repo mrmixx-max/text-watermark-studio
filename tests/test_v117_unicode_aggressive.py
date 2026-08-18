@@ -12,19 +12,19 @@ from ai_watermark_toolkit.sanitize_unicode import analyze, sanitize
 
 class TestStandardClasses:
     def test_lre_flagged(self):
-        assert any(f.cp == "U+202A" for f in analyze("a\u202Ab"))
+        assert any(f.cp == "U+202A" for f in analyze("a\u202ab"))
 
     def test_bom_flagged(self):
-        assert any(f.cp == "U+FEFF" for f in analyze("\uFEFFhello"))
+        assert any(f.cp == "U+FEFF" for f in analyze("\ufeffhello"))
 
     def test_mongolian_vs_flagged(self):
-        assert any(f.cp == "U+180E" for f in analyze("a\u180Eb"))
+        assert any(f.cp == "U+180E" for f in analyze("a\u180eb"))
 
     def test_deprecated_format_chars_flagged(self):
-        assert any(f.cp == "U+206A" for f in analyze("x\u206Ay"))
+        assert any(f.cp == "U+206A" for f in analyze("x\u206ay"))
 
     def test_lrm_rlm_flagged(self):
-        fs = analyze("l\u200Er\u200Fl")
+        fs = analyze("l\u200er\u200fl")
         assert any(f.cp == "U+200E" for f in fs)
         assert any(f.cp == "U+200F" for f in fs)
 
@@ -42,25 +42,25 @@ class TestAggressiveMode:
         assert any(f.cp == "U+3164" for f in fs)
 
     def test_object_replacement_flagged_aggressive(self):
-        fs = analyze("a\uFFFcb", aggressive=True)
+        fs = analyze("a\ufffcb", aggressive=True)
         assert any(f.cp == "U+FFFC" for f in fs)
 
     def test_mongolian_variation_selector_flagged_aggressive(self):
-        fs = analyze("a\u180Bb", aggressive=True)
+        fs = analyze("a\u180bb", aggressive=True)
         assert any(f.cp == "U+180B" for f in fs)
 
     def test_hangul_choseong_filler_flagged_aggressive(self):
-        fs = analyze("a\u115Fb", aggressive=True)
+        fs = analyze("a\u115fb", aggressive=True)
         assert any(f.cp == "U+115F" for f in fs)
 
 
 class TestSanitizeAggressive:
     def test_aggressive_sanitize_removes_fillers(self):
-        text = "Hi\u2800there\u3164x\uFFFCend"
+        text = "Hi\u2800there\u3164x\ufffcend"
         res = sanitize(text, aggressive=True)
         assert "\u2800" not in res.text
         assert "\u3164" not in res.text
-        assert "\uFFFC" not in res.text
+        assert "\ufffc" not in res.text
         assert res.text == "Hitherexend"
 
     def test_default_sanitize_keeps_braille(self):
@@ -70,7 +70,7 @@ class TestSanitizeAggressive:
         assert not res.findings
 
     def test_standard_and_aggressive_counts_differ(self):
-        text = "a\u200Bb\u2800c"
+        text = "a\u200bb\u2800c"
         std = len(analyze(text))
         agg = len(analyze(text, aggressive=True))
         assert agg == std + 1  # only the braille blank is extra

@@ -25,27 +25,39 @@ from typing import Any
 
 from .metrics import composite
 
-EVAL_PATH = Path(__file__).resolve().parents[3] / 'data' / 'optimization_evals.json'
+EVAL_PATH = Path(__file__).resolve().parents[3] / "data" / "optimization_evals.json"
 
 # one changed variable per candidate (vs. the base prompt)
 _VARIABLES: list[dict[str, Any]] = [
-    {"variant": "output_format", "changed_variable": "output format instruction",
-     "append": " Return only the rewritten text with no preamble."},
-    {"variant": "style_rule", "changed_variable": "style constraint",
-     "append": " Use short, concrete sentences. Prefer active voice."},
-    {"variant": "constraint_negative", "changed_variable": "negative constraints",
-     "append": " Do not add new facts, opinions, or transitions."},
-    {"variant": "order_restructured", "changed_variable": "instruction order",
-     "prepend": "Preserve every number, name and quotation exactly. "},
+    {
+        "variant": "output_format",
+        "changed_variable": "output format instruction",
+        "append": " Return only the rewritten text with no preamble.",
+    },
+    {
+        "variant": "style_rule",
+        "changed_variable": "style constraint",
+        "append": " Use short, concrete sentences. Prefer active voice.",
+    },
+    {
+        "variant": "constraint_negative",
+        "changed_variable": "negative constraints",
+        "append": " Do not add new facts, opinions, or transitions.",
+    },
+    {
+        "variant": "order_restructured",
+        "changed_variable": "instruction order",
+        "prepend": "Preserve every number, name and quotation exactly. ",
+    },
 ]
 
 
 class PromptOptimizationService:
     """Optimizer with locked evals, baseline hash, guardrail + versioning."""
 
-    def __init__(self, registry=None, eval_path: Path | None = None,
-                 backend: str = "deterministic"):
+    def __init__(self, registry=None, eval_path: Path | None = None, backend: str = "deterministic"):
         from ..prompts.service import PromptRegistryService
+
         self.registry = registry or PromptRegistryService()
         self.eval_path = Path(eval_path or EVAL_PATH)
         self.backend = backend
@@ -67,13 +79,10 @@ class PromptOptimizationService:
     def variants(self, system: str) -> list[dict[str, Any]]:
         """Base + candidates, each changing exactly one variable."""
         base = system.strip()
-        out = [{"variant": "baseline", "changed_variable": None,
-                "system_prompt": base}]
+        out = [{"variant": "baseline", "changed_variable": None, "system_prompt": base}]
         for v in _VARIABLES:
             prompt = v["prepend"] + base if v.get("prepend") else base + v["append"]
-            out.append({"variant": v["variant"],
-                        "changed_variable": v["changed_variable"],
-                        "system_prompt": prompt})
+            out.append({"variant": v["variant"], "changed_variable": v["changed_variable"], "system_prompt": prompt})
         return out
 
     # ---- applying a candidate (deterministic or LLM) -----------------------
@@ -85,6 +94,7 @@ class PromptOptimizationService:
         if self.backend == "ollama" and _llm_enabled():
             return _apply_llm(system_prompt, text)
         from .deterministic_rewrite import apply_constraints
+
         return apply_constraints(system_prompt, text)
 
     # ---- scoring -----------------------------------------------------------
@@ -99,8 +109,7 @@ class PromptOptimizationService:
             per_case.append({"eval_id": case["id"], **r})
         avg = sum(c["score"] for c in per_case) / len(per_case) if per_case else 0.0
         guard = all(c["guardrail_passed"] for c in per_case)
-        return {"candidate": candidate, "per_case": per_case,
-                "avg_score": round(avg, 4), "guardrail_passed": guard}
+        return {"candidate": candidate, "per_case": per_case, "avg_score": round(avg, 4), "guardrail_passed": guard}
 
     def optimize(self, system: str) -> dict[str, Any]:
         """Run the loop: baseline -> candidates -> scores -> winner
@@ -119,25 +128,28 @@ class PromptOptimizationService:
             "baseline_hash": base_hash,
             "baseline_score": baseline["avg_score"],
             "winner": winner,
-            "ranking": [{"variant": r["candidate"]["variant"],
-                         "avg_score": r["avg_score"],
-                         "guardrail_passed": r["guardrail_passed"]}
-                        for r in ranked],
+            "ranking": [
+                {
+                    "variant": r["candidate"]["variant"],
+                    "avg_score": r["avg_score"],
+                    "guardrail_passed": r["guardrail_passed"],
+                }
+                for r in ranked
+            ],
         }
 
     # ---- promotion / versioning --------------------------------------------
 
-    def promote(self, system: str, template_id: str,
-                candidate_variant: str | None = None,
-                version: str | None = None) -> dict[str, Any]:
+    def promote(
+        self, system: str, template_id: str, candidate_variant: str | None = None, version: str | None = None
+    ) -> dict[str, Any]:
         """Promote the best (or a named) candidate into the registry as an
         immutable new version — only if it beats the baseline AND passes the
         guardrail. Returns the new template record."""
         report = self.optimize(system)
         winner = report["winner"]
         if candidate_variant:
-            cand = next(c for c in self.variants(system)
-                        if c["variant"] == candidate_variant)
+            cand = next(c for c in self.variants(system) if c["variant"] == candidate_variant)
             winner = self.score_candidate(cand)
         if winner is None:
             raise ValueError("no_candidate")
@@ -147,8 +159,10 @@ class PromptOptimizationService:
             raise ValueError("no_improvement")
 
         from ..prompts.service import PromptRegistryService
+
         if not isinstance(self.registry, PromptRegistryService):
             from ..prompts.service import PromptRegistryService as PRS
+
             self.registry = PRS(self.registry.path if hasattr(self.registry, "path") else None)
 
         now = datetime.now(timezone.utc).isoformat()
@@ -194,21 +208,27 @@ class PromptOptimizationService:
         target = self.registry.get_template(template_id, version=version)
         current = self.registry.get_template(template_id)
         from ..prompts.service import PromptRegistryService
+
         if not isinstance(self.registry, PromptRegistryService):
             from ..prompts.service import PromptRegistryService as PRS
+
             self.registry = PRS(self.registry.path)
         # bump current stable's patch number for the restored copy
         cur_parts = [int(p) for p in current["version"].split(".")[:3]]
         new_version = f"{cur_parts[0]}.{cur_parts[1]}.{cur_parts[2] + 1}"
-        record = {**target, "version": new_version, "channel": "stable",
-                  "optimization": {**(target.get("optimization") or {}),
-                                   "rolled_back_from": current["version"]}}
+        record = {
+            **target,
+            "version": new_version,
+            "channel": "stable",
+            "optimization": {**(target.get("optimization") or {}), "rolled_back_from": current["version"]},
+        }
         self.registry.create_version(record)
         return record
 
 
 def _llm_enabled() -> bool:
     import os
+
     return os.environ.get("LOCAL_LLM_ENABLED", "").lower() in ("1", "true", "yes")
 
 

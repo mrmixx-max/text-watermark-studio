@@ -57,30 +57,18 @@ from __future__ import annotations
 
 # Kriterien-Katalog: id -> (gruppe, label, default 0-5).
 CRITERIA: dict[str, dict] = {
-    "T1": {"group": "technical", "default": 5,
-           "label": "Detektor ist keyed und deterministisch (reproduzierbar)"},
-    "T2": {"group": "technical", "default": 2,
-           "label": "FPR/FNR auf realem Korpus dokumentiert (Studie)"},
-    "T3": {"group": "technical", "default": 3,
-           "label": "Adversarial-Robustheit gemessen (Attack-Matrix)"},
-    "T4": {"group": "technical", "default": 5,
-           "label": "Evidenzklassen A-D implementiert (Anti-Hype-Regeln)"},
-    "L1": {"group": "legal", "default": 4,
-           "label": "Befund-Schema gerichtsfest dokumentiert"},
-    "L2": {"group": "legal", "default": 0,
-           "label": "Unabhängige Validierung / Peer-Review"},
-    "L3": {"group": "legal", "default": 2,
-           "label": "DSGVO / Rechtsgrundlage dokumentiert"},
-    "L4": {"group": "legal", "default": 3,
-           "label": "Audit-Trail / Signatur (HMAC überall, ML-DSA CLI)"},
-    "O1": {"group": "operational", "default": 2,
-           "label": "Betriebs-Dokumentation (Runbooks)"},
-    "O2": {"group": "operational", "default": 0,
-           "label": "Incident- / Fehlerprozess etabliert"},
-    "O3": {"group": "operational", "default": 5,
-           "label": "100% lokal / keine Telemetrie"},
-    "O4": {"group": "operational", "default": 0,
-           "label": "Redundanz / Ausfallsicherheit"},
+    "T1": {"group": "technical", "default": 5, "label": "Detektor ist keyed und deterministisch (reproduzierbar)"},
+    "T2": {"group": "technical", "default": 2, "label": "FPR/FNR auf realem Korpus dokumentiert (Studie)"},
+    "T3": {"group": "technical", "default": 3, "label": "Adversarial-Robustheit gemessen (Attack-Matrix)"},
+    "T4": {"group": "technical", "default": 5, "label": "Evidenzklassen A-D implementiert (Anti-Hype-Regeln)"},
+    "L1": {"group": "legal", "default": 4, "label": "Befund-Schema gerichtsfest dokumentiert"},
+    "L2": {"group": "legal", "default": 0, "label": "Unabhängige Validierung / Peer-Review"},
+    "L3": {"group": "legal", "default": 2, "label": "DSGVO / Rechtsgrundlage dokumentiert"},
+    "L4": {"group": "legal", "default": 3, "label": "Audit-Trail / Signatur (HMAC überall, ML-DSA CLI)"},
+    "O1": {"group": "operational", "default": 2, "label": "Betriebs-Dokumentation (Runbooks)"},
+    "O2": {"group": "operational", "default": 0, "label": "Incident- / Fehlerprozess etabliert"},
+    "O3": {"group": "operational", "default": 5, "label": "100% lokal / keine Telemetrie"},
+    "O4": {"group": "operational", "default": 0, "label": "Redundanz / Ausfallsicherheit"},
 }
 
 # Gates: hart, nicht verhandelbar (G1 blockiert aktuell FORENSIC_READY).
@@ -124,8 +112,7 @@ def _clamp(value, lo: int = 0, hi: int = 5) -> int:
         return lo
 
 
-def compute_frs(scores: dict | None = None, gates: dict | None = None, *,
-                basis: str = "self_assessed") -> dict:
+def compute_frs(scores: dict | None = None, gates: dict | None = None, *, basis: str = "self_assessed") -> dict:
     """Berechnet den Forensic Readiness Score (12 Kriterien, 3 Gates).
 
     ``scores``: optionale Overrides je Kriterium (``{"T2": 5}``); nicht

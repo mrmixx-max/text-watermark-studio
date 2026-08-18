@@ -3,6 +3,7 @@
 Tests both the FastAPI app (via TestClient) and the simple stdlib HTTP server
 (via real subprocess + httpx).
 """
+
 from __future__ import annotations
 
 import socket
@@ -34,6 +35,7 @@ class TestFastAPIApp:
         from fastapi.testclient import TestClient
 
         from ai_watermark_toolkit.api.fastapi_app import app
+
         return TestClient(app)
 
     def test_health_endpoint(self, client):
@@ -70,8 +72,7 @@ class TestFastAPIApp:
 
     def test_dilute_endpoint(self, client):
         """POST /api/dilute should return diluted text."""
-        r = client.post("/api/dilute",
-                        json={"text": "This is not only good but also great.", "intensity": "standard"})
+        r = client.post("/api/dilute", json={"text": "This is not only good but also great.", "intensity": "standard"})
         assert r.status_code == 200
         data = r.json()
         assert "text" in data
@@ -79,8 +80,7 @@ class TestFastAPIApp:
 
     def test_pipeline_endpoint(self, client):
         """POST /api/pipeline should run the full pipeline."""
-        r = client.post("/api/pipeline",
-                        json={"text": "Hello\u200bWorld test.", "lang": "en", "intensity": "standard"})
+        r = client.post("/api/pipeline", json={"text": "Hello\u200bWorld test.", "lang": "en", "intensity": "standard"})
         assert r.status_code == 200
         data = r.json()
         assert "text" in data
@@ -96,11 +96,14 @@ class TestFastAPIApp:
     def test_detect_with_keyed_kgw(self, client):
         """POST /api/forensics/detect with key should run KGW detection."""
         # First register a key
-        r = client.post("/api/forensics/keys", json={
-            "key_id": "e2e-fastapi-key",
-            "family": "kgw",
-            "trigger_phrase": "",
-        })
+        r = client.post(
+            "/api/forensics/keys",
+            json={
+                "key_id": "e2e-fastapi-key",
+                "family": "kgw",
+                "trigger_phrase": "",
+            },
+        )
         # Key registration may or may not succeed depending on implementation
         # but the endpoint should respond
         assert r.status_code in (200, 201, 404, 422)
@@ -122,16 +125,18 @@ class TestSimpleHTTPServer:
     def server_url(self):
         """Start the simple HTTP server as a subprocess."""
         import os
+
         port = _free_port()
         env = os.environ.copy()
         env["AI_WM_ENV"] = "development"
 
-        cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "serve",
-               "--host", "127.0.0.1", "--port", str(port)]
+        cmd = [sys.executable, "-m", "ai_watermark_toolkit.cli", "serve", "--host", "127.0.0.1", "--port", str(port)]
         proc = subprocess.Popen(
-            cmd, cwd=str(PROJECT_ROOT),
+            cmd,
+            cwd=str(PROJECT_ROOT),
             env=env,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         url = f"http://127.0.0.1:{port}"
         # Wait for server to be ready
@@ -151,6 +156,7 @@ class TestSimpleHTTPServer:
     def test_health_via_httpx(self, server_url):
         """GET /health should return ok via real HTTP."""
         import httpx
+
         r = httpx.get(f"{server_url}/health", timeout=5)
         assert r.status_code == 200
         assert r.json()["ok"] is True
@@ -158,9 +164,8 @@ class TestSimpleHTTPServer:
     def test_detect_via_httpx(self, server_url):
         """POST /api/detect should work via real HTTP."""
         import httpx
-        r = httpx.post(f"{server_url}/api/detect",
-                       json={"text": "Furthermore, this helps.", "lang": "en"},
-                       timeout=5)
+
+        r = httpx.post(f"{server_url}/api/detect", json={"text": "Furthermore, this helps.", "lang": "en"}, timeout=5)
         assert r.status_code == 200
         data = r.json()
         assert "layers" in data
@@ -168,9 +173,8 @@ class TestSimpleHTTPServer:
     def test_clean_via_httpx(self, server_url):
         """POST /api/clean should work via real HTTP."""
         import httpx
-        r = httpx.post(f"{server_url}/api/clean",
-                       json={"text": "Hello\u200bWorld\u202e"},
-                       timeout=5)
+
+        r = httpx.post(f"{server_url}/api/clean", json={"text": "Hello\u200bWorld\u202e"}, timeout=5)
         assert r.status_code == 200
         data = r.json()
         assert "\u200b" not in data["text"]
@@ -178,18 +182,20 @@ class TestSimpleHTTPServer:
     def test_dilute_via_httpx(self, server_url):
         """POST /api/dilute should work via real HTTP."""
         import httpx
-        r = httpx.post(f"{server_url}/api/dilute",
-                       json={"text": "Hello world", "intensity": "standard"},
-                       timeout=5)
+
+        r = httpx.post(f"{server_url}/api/dilute", json={"text": "Hello world", "intensity": "standard"}, timeout=5)
         assert r.status_code == 200
         assert "text" in r.json()
 
     def test_pipeline_via_httpx(self, server_url):
         """POST /api/pipeline should work via real HTTP."""
         import httpx
-        r = httpx.post(f"{server_url}/api/pipeline",
-                       json={"text": "Hello\u200bWorld", "lang": "en", "intensity": "standard"},
-                       timeout=5)
+
+        r = httpx.post(
+            f"{server_url}/api/pipeline",
+            json={"text": "Hello\u200bWorld", "lang": "en", "intensity": "standard"},
+            timeout=5,
+        )
         assert r.status_code == 200
         data = r.json()
         assert "text" in data
@@ -198,11 +204,13 @@ class TestSimpleHTTPServer:
     def test_404_via_httpx(self, server_url):
         """Unknown route should return 404."""
         import httpx
+
         r = httpx.post(f"{server_url}/api/nonexistent", json={"text": "test"}, timeout=5)
         assert r.status_code == 404
 
     def test_root_returns_html(self, server_url):
         """GET / should return HTML (or 404 if web root missing)."""
         import httpx
+
         r = httpx.get(f"{server_url}/", timeout=5)
         assert r.status_code in (200, 404)

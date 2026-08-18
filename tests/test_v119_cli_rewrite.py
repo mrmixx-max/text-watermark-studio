@@ -24,8 +24,14 @@ def run_cli(args, stdin=None, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
     base = [sys.executable, "-m", "ai_watermark_toolkit.cli"]
-    return subprocess.run(base + args, capture_output=True, text=True, input=stdin,
-                          env=env, cwd=cwd or os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return subprocess.run(
+        base + args,
+        capture_output=True,
+        text=True,
+        input=stdin,
+        env=env,
+        cwd=cwd or os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    )
 
 
 class TestCliRewrite:

@@ -74,6 +74,7 @@ OVERRIDE_TYPES = {
 @dataclass
 class RepairReport:
     """Report of what was repaired."""
+
     was_valid: bool = False
     repairs: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -160,12 +161,14 @@ def _parse_rels_xml(data: bytes) -> list[dict]:
     rels = []
     for elem in root:
         if elem.tag.endswith("}Relationship") or elem.tag == "Relationship":
-            rels.append({
-                "Id": elem.get("Id", ""),
-                "Type": elem.get("Type", ""),
-                "Target": elem.get("Target", ""),
-                "TargetMode": elem.get("TargetMode", "Internal"),
-            })
+            rels.append(
+                {
+                    "Id": elem.get("Id", ""),
+                    "Type": elem.get("Type", ""),
+                    "Target": elem.get("Target", ""),
+                    "TargetMode": elem.get("TargetMode", "Internal"),
+                }
+            )
     return rels
 
 
@@ -283,17 +286,21 @@ def repair_docx(data: bytes) -> RepairReport:
             # Build minimal relationships pointing to document.xml
             rels = []
             if "word/document.xml" in valid_parts:
-                rels.append({
-                    "Id": "rId1",
-                    "Type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
-                    "Target": "word/document.xml",
-                })
+                rels.append(
+                    {
+                        "Id": "rId1",
+                        "Type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+                        "Target": "word/document.xml",
+                    }
+                )
             if "docProps/core.xml" in valid_parts:
-                rels.append({
-                    "Id": "rId2",
-                    "Type": "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-                    "Target": "docProps/core.xml",
-                })
+                rels.append(
+                    {
+                        "Id": "rId2",
+                        "Type": "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+                        "Target": "docProps/core.xml",
+                    }
+                )
             rels_xml = _build_rels_xml(rels)
             zout.writestr("_rels/.rels", rels_xml)
             valid_parts.append("_rels/.rels")

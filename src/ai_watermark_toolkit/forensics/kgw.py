@@ -49,15 +49,11 @@ def _bpe_encoding():
         try:
             import tiktoken
         except ImportError as e:  # pragma: no cover - dependency hint path
-            raise ImportError(
-                "BPE-level detection needs tiktoken: pip install text-watermark-studio[bpe]"
-            ) from e
+            raise ImportError("BPE-level detection needs tiktoken: pip install text-watermark-studio[bpe]") from e
         try:
             _BPE_ENC = tiktoken.get_encoding("cl100k_base")
         except (KeyError, ValueError) as e:  # pragma: no cover - encoding error
-            raise RuntimeError(
-                "BPE encoding 'cl100k_base' unavailable — tiktoken may need an update"
-            ) from e
+            raise RuntimeError("BPE encoding 'cl100k_base' unavailable — tiktoken may need an update") from e
     return _BPE_ENC
 
 
@@ -81,6 +77,7 @@ def _bpe_subwords_cached(word: str) -> list[str]:
         cached = bpe_tokenize(word)
         _BPE_WORD_CACHE[word] = cached
     return cached
+
 
 # Small built-in rewrite lexicon: content word -> synonyms. Demo-scale by
 # design; plug in WordNet or a domain lexicon for stronger coverage.
@@ -165,9 +162,7 @@ def green_token(token: str, context, key: str, gamma: float = DEFAULT_GAMMA) -> 
     c=1 call sites keep producing the exact same greenlist decisions.
     """
     ctx = list(context) if isinstance(context, (list, tuple)) else [context]
-    digest = hashlib.sha256(
-        (f"{key}:" + ":".join(ctx) + f":{token}").encode("utf-8")
-    ).hexdigest()
+    digest = hashlib.sha256((f"{key}:" + ":".join(ctx) + f":{token}").encode("utf-8")).hexdigest()
     return _unit_interval(digest) < gamma
 
 
@@ -196,9 +191,13 @@ def _summarize_z(green: int, n: int, gamma: float) -> dict:
     else:
         verdict, signal = "no_signal", None
     return {
-        "z_score": round(z, 4), "p_value": round(p_value, 10),
-        "green_count": green, "n_tokens": n, "green_rate": round(rate, 4),
-        "verdict": verdict, "signal": signal,
+        "z_score": round(z, 4),
+        "p_value": round(p_value, 10),
+        "green_count": green,
+        "n_tokens": n,
+        "green_rate": round(rate, 4),
+        "verdict": verdict,
+        "signal": signal,
     }
 
 
@@ -221,13 +220,16 @@ def _type_stats(pairs: list, key: str, gamma: float) -> dict:
     for tok, (count, gc) in per.items():
         var = count * gamma * (1.0 - gamma)
         zc = (gc - count * gamma) / math.sqrt(var) if count and var > 0 else None
-        types.append({
-            "token": tok, "count": count,
-            "share": count / n if n else 0.0,
-            "green_count": gc,
-            "green_rate": gc / count if count else None,
-            "z_contribution": zc,
-        })
+        types.append(
+            {
+                "token": tok,
+                "count": count,
+                "share": count / n if n else 0.0,
+                "green_count": gc,
+                "green_rate": gc / count if count else None,
+                "z_contribution": zc,
+            }
+        )
     types.sort(key=lambda t: -t["count"])
     return {
         "n_tokens": n,
@@ -238,12 +240,10 @@ def _type_stats(pairs: list, key: str, gamma: float) -> dict:
 
 def _scored_pairs(tokens: list[str], context_seq: int) -> list:
     """(token, context) pairs exactly as detect_kgw scores a token list."""
-    return [(tokens[i], tokens[max(0, i - context_seq):i])
-            for i in range(1, len(tokens))]
+    return [(tokens[i], tokens[max(0, i - context_seq) : i]) for i in range(1, len(tokens))]
 
 
-def signature_token_stats(tokens: list[str], context_seq: int, key: str,
-                          gamma: float = DEFAULT_GAMMA) -> dict:
+def signature_token_stats(tokens: list[str], context_seq: int, key: str, gamma: float = DEFAULT_GAMMA) -> dict:
     """Per-token-TYPE statistics over the scored stream (signature diagnostics).
 
     `tokens` is a full token list (its first element is the unscored seed
@@ -272,28 +272,27 @@ def signature_token_stats(tokens: list[str], context_seq: int, key: str,
         "total_green": raw["total_green"],
         "types": [
             {
-                "token": t["token"], "count": t["count"],
+                "token": t["token"],
+                "count": t["count"],
                 "share": round(t["share"], 4),
                 "green_count": t["green_count"],
-                "green_rate": round(t["green_rate"], 4)
-                if t["green_rate"] is not None else None,
-                "z_contribution": round(t["z_contribution"], 4)
-                if t["z_contribution"] is not None else None,
+                "green_rate": round(t["green_rate"], 4) if t["green_rate"] is not None else None,
+                "z_contribution": round(t["z_contribution"], 4) if t["z_contribution"] is not None else None,
             }
             for t in raw["types"]
         ],
     }
 
 
-def _filter_pairs(pairs: list, key: str, gamma: float, min_share: float,
-                  max_filter: int, tokens: list[str] | None = None) -> dict:
+def _filter_pairs(
+    pairs: list, key: str, gamma: float, min_share: float, max_filter: int, tokens: list[str] | None = None
+) -> dict:
     """Shared signature-filter core over scored pairs (see signature_filter)."""
     stats = _type_stats(pairs, key, gamma)
     candidates = [
-        t for t in stats["types"]
-        if t["share"] >= min_share
-        and t["z_contribution"] is not None
-        and abs(t["z_contribution"]) >= 3.0
+        t
+        for t in stats["types"]
+        if t["share"] >= min_share and t["z_contribution"] is not None and abs(t["z_contribution"]) >= 3.0
     ]
     # Most destabilizing first (stable sort: equal |z| keeps count order).
     candidates.sort(key=lambda t: -abs(t["z_contribution"]))
@@ -301,14 +300,14 @@ def _filter_pairs(pairs: list, key: str, gamma: float, min_share: float,
     removed_set = {t["token"] for t in removed_types}
     n_removed = sum(t["count"] for t in removed_types)
     return {
-        "filtered_tokens": (
-            [tok for tok in tokens if tok not in removed_set]
-            if tokens is not None else []
-        ),
+        "filtered_tokens": ([tok for tok in tokens if tok not in removed_set] if tokens is not None else []),
         "removed": [
-            {"token": t["token"], "count": t["count"],
-             "share": round(t["share"], 4),
-             "z_contribution": round(t["z_contribution"], 4)}
+            {
+                "token": t["token"],
+                "count": t["count"],
+                "share": round(t["share"], 4),
+                "z_contribution": round(t["z_contribution"], 4),
+            }
             for t in removed_types
         ],
         "n_removed": n_removed,
@@ -319,9 +318,14 @@ def _filter_pairs(pairs: list, key: str, gamma: float, min_share: float,
     }
 
 
-def signature_filter(tokens: list[str], context_seq: int, key: str,
-                     gamma: float = DEFAULT_GAMMA, min_share: float = 0.25,
-                     max_filter: int = 3) -> dict:
+def signature_filter(
+    tokens: list[str],
+    context_seq: int,
+    key: str,
+    gamma: float = DEFAULT_GAMMA,
+    min_share: float = 0.25,
+    max_filter: int = 3,
+) -> dict:
     """Frequency-heuristic signature-token pre-filter for FPR CONTROL.
 
     Removes the up to `max_filter` token TYPES whose share of the scored
@@ -351,8 +355,7 @@ def signature_filter(tokens: list[str], context_seq: int, key: str,
        "n_removed": int, "n_before": int, "n_after": int,
        "green_removed": int}
     """
-    return _filter_pairs(_scored_pairs(tokens, context_seq), key, gamma,
-                         min_share, max_filter, tokens)
+    return _filter_pairs(_scored_pairs(tokens, context_seq), key, gamma, min_share, max_filter, tokens)
 
 
 def _apply_signature_filter(pairs: list, n: int, key: str, gamma: float) -> dict:
@@ -375,18 +378,28 @@ def _apply_signature_filter(pairs: list, n: int, key: str, gamma: float) -> dict
     }
     if n_after < 10:
         return {
-            "z_score": None, "p_value": None, "green_count": green_after,
-            "n_tokens": n_after, "green_rate": None, "verdict": "too_short",
-            "signal": None, "signature_filtered": sf,
+            "z_score": None,
+            "p_value": None,
+            "green_count": green_after,
+            "n_tokens": n_after,
+            "green_rate": None,
+            "verdict": "too_short",
+            "signal": None,
+            "signature_filtered": sf,
         }
     result = _summarize_z(green_after, n_after, gamma)
     result["signature_filtered"] = sf
     return result
 
 
-def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
-               level: str = "word", context: int = 1,
-               signature_filter: bool = False) -> dict:
+def detect_kgw(
+    text: str,
+    key: str,
+    gamma: float = DEFAULT_GAMMA,
+    level: str = "word",
+    context: int = 1,
+    signature_filter: bool = False,
+) -> dict:
     """Z-score test for one key. Returns None-ish fields if text too short.
 
     level="bpe" runs the greenlist over BPE subword tokens at WORD BOUNDARIES:
@@ -412,19 +425,25 @@ def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     shape byte-identical.
     """
     if level == "bpe":
-        return _detect_bpe_boundaries(text, key, gamma,
-                                      signature_filter=signature_filter)
+        return _detect_bpe_boundaries(text, key, gamma, signature_filter=signature_filter)
     tokens = tokenize(text, level=level)
     n = len(tokens) - 1  # number of scored tokens (each scored against its predecessors)
     if n < 10:
         res = {
-            "z_score": None, "p_value": None, "green_count": 0,
-            "n_tokens": n, "green_rate": None, "verdict": "too_short",
+            "z_score": None,
+            "p_value": None,
+            "green_count": 0,
+            "n_tokens": n,
+            "green_rate": None,
+            "verdict": "too_short",
             "signal": None,
         }
         if signature_filter:
             res["signature_filtered"] = {
-                "removed": [], "n_removed": 0, "n_after": n, "n_before": n,
+                "removed": [],
+                "n_removed": 0,
+                "n_after": n,
+                "n_before": n,
             }
         return res
     if signature_filter:
@@ -432,12 +451,10 @@ def detect_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         # path (e_value._iter_scored is the single source of truth), with the
         # signature types dropped before the Z-test.
         from .e_value import _iter_scored  # lazy: e_value imports this module
+
         pairs = list(_iter_scored(text, key, gamma, level, context))
         return _apply_signature_filter(pairs, n, key, gamma)
-    green = sum(
-        1 for i in range(1, len(tokens))
-        if green_token(tokens[i], tokens[max(0, i - context):i], key, gamma)
-    )
+    green = sum(1 for i in range(1, len(tokens)) if green_token(tokens[i], tokens[max(0, i - context) : i], key, gamma))
     return _summarize_z(green, n, gamma)
 
 
@@ -457,39 +474,48 @@ def _score_bpe_boundaries(subs: list[list[str]], key: str, gamma: float) -> tupl
     n = len(subs) - 1
     if n <= 0:
         return 0, 0
-    green = sum(
-        1 for i in range(1, len(subs))
-        if green_token(subs[i][0], subs[i - 1][-1], key, gamma)
-    )
+    green = sum(1 for i in range(1, len(subs)) if green_token(subs[i][0], subs[i - 1][-1], key, gamma))
     return green, n
 
 
-def _detect_bpe_boundaries(text: str, key: str, gamma: float,
-                           signature_filter: bool = False) -> dict:
+def _detect_bpe_boundaries(text: str, key: str, gamma: float, signature_filter: bool = False) -> dict:
     """BPE-level detection scored at word boundaries (see detect_kgw)."""
     subs = _bpe_word_subwords(text)
     green, n = _score_bpe_boundaries(subs, key, gamma)
     if n < 10:
         res = {
-            "z_score": None, "p_value": None, "green_count": 0,
-            "n_tokens": n, "green_rate": None, "verdict": "too_short",
+            "z_score": None,
+            "p_value": None,
+            "green_count": 0,
+            "n_tokens": n,
+            "green_rate": None,
+            "verdict": "too_short",
             "signal": None,
         }
         if signature_filter:
             res["signature_filtered"] = {
-                "removed": [], "n_removed": 0, "n_after": n, "n_before": n,
+                "removed": [],
+                "n_removed": 0,
+                "n_after": n,
+                "n_before": n,
             }
         return res
     if signature_filter:
         from .e_value import _iter_scored  # lazy: e_value imports this module
+
         pairs = list(_iter_scored(text, key, gamma, "bpe", 1))
         return _apply_signature_filter(pairs, n, key, gamma)
     return _summarize_z(green, n, gamma)
 
 
-def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA,
-                     level: str = "word", context: int = 1,
-                     signature_filter: bool = False) -> dict:
+def detect_multi_key(
+    text: str,
+    keys: list[dict],
+    gamma: float = DEFAULT_GAMMA,
+    level: str = "word",
+    context: int = 1,
+    signature_filter: bool = False,
+) -> dict:
     """Test all KGW-family keys. Best |Z|-score wins; report all.
 
     keys: list of dicts with at least {'key_id': str, 'secret': str}.
@@ -512,8 +538,7 @@ def detect_multi_key(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA,
         family = k.get("family", "")
         if not secret or (family and family != "kgw"):
             continue
-        r = detect_kgw(text, secret, gamma, level=level, context=context,
-                       signature_filter=signature_filter)
+        r = detect_kgw(text, secret, gamma, level=level, context=context, signature_filter=signature_filter)
         r["key_id"] = k.get("key_id", "unknown")
         results.append(r)
     if not results:
@@ -551,10 +576,15 @@ def _derive_seed(key: str, seed: int | None) -> int:
     return seed
 
 
-def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
-                   vocab: dict[str, list[str]] | None = None,
-                   seed: int | None = None, level: str = "word",
-                   context: int = 1) -> dict:
+def mark_greenlist(
+    text: str,
+    key: str,
+    gamma: float = DEFAULT_GAMMA,
+    vocab: dict[str, list[str]] | None = None,
+    seed: int | None = None,
+    level: str = "word",
+    context: int = 1,
+) -> dict:
     """Directly greenlist-mark a text so the detector finds it (embed path).
 
     Unlike embed_kgw (lexicon-synonym rewrite, best-effort), this imposes the
@@ -577,6 +607,7 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     watermarking.
     """
     from .frequent_vocab import FREQUENT_VOCAB
+
     pool = vocab if vocab is not None else FREQUENT_VOCAB
     # deterministic seed ensures identical input + key always produce the
     # SAME marking (reproducible embeddings). A random per-run seed makes
@@ -652,12 +683,14 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
         entry = subs_by_idx.get(i)
         if entry is not None:
             orig, rep = entry
-            substitutions.append({
-                "start": offset,
-                "end": offset + len(rep),
-                "original": orig,
-                "replacement": rep,
-            })
+            substitutions.append(
+                {
+                    "start": offset,
+                    "end": offset + len(rep),
+                    "original": orig,
+                    "replacement": rep,
+                }
+            )
         offset += len(part)
     if level == "bpe":
         # Report the SAME green rate the detector sees: word-boundary pairs
@@ -669,10 +702,15 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     else:
         tokens_after = tokenize(new_text, level=level)
         n = max(0, len(tokens_after) - 1)
-        green_now = sum(
-            1 for i in range(1, len(tokens_after))
-            if green_token(tokens_after[i], tokens_after[max(0, i - context):i], key, gamma)
-        ) if n else 0
+        green_now = (
+            sum(
+                1
+                for i in range(1, len(tokens_after))
+                if green_token(tokens_after[i], tokens_after[max(0, i - context) : i], key, gamma)
+            )
+            if n
+            else 0
+        )
         total_tokens = len(tokens_after)
     return {
         "text": new_text,
@@ -683,8 +721,13 @@ def mark_greenlist(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     }
 
 
-def embed_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
-              lexicon: dict[str, list[str]] | None = None, seed: int | None = None) -> dict:
+def embed_kgw(
+    text: str,
+    key: str,
+    gamma: float = DEFAULT_GAMMA,
+    lexicon: dict[str, list[str]] | None = None,
+    seed: int | None = None,
+) -> dict:
     """DEPRECATED — use :func:`mark_greenlist` instead.
 
     Legacy KGW-embed via lexicon rewrite: replaces content words with
@@ -726,10 +769,11 @@ def embed_kgw(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     new_text = "".join(parts)
     tokens_after = tokenize(new_text)
     n = max(0, len(tokens_after) - 1)
-    green_now = sum(
-        1 for i in range(1, len(tokens_after))
-        if green_token(tokens_after[i], tokens_after[i - 1], key, gamma)
-    ) if n else 0
+    green_now = (
+        sum(1 for i in range(1, len(tokens_after)) if green_token(tokens_after[i], tokens_after[i - 1], key, gamma))
+        if n
+        else 0
+    )
     return {
         "text": new_text,
         "replacements": replaced,

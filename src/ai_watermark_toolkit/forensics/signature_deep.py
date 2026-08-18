@@ -40,26 +40,105 @@ from dataclasses import dataclass, field
 # Common English unigram frequencies (approximate, for perplexity baseline)
 # Source: large English corpus averages
 ENGLISH_UNIGRAM = {
-    "the": 0.071, "be": 0.042, "to": 0.039, "of": 0.037, "and": 0.035,
-    "a": 0.032, "in": 0.028, "that": 0.021, "have": 0.019, "i": 0.018,
-    "it": 0.017, "for": 0.016, "not": 0.015, "on": 0.014, "with": 0.013,
-    "he": 0.012, "as": 0.011, "you": 0.010, "do": 0.009, "at": 0.008,
-    "this": 0.008, "but": 0.007, "his": 0.007, "by": 0.006, "from": 0.006,
-    "they": 0.006, "we": 0.006, "say": 0.005, "her": 0.005, "she": 0.005,
-    "or": 0.005, "an": 0.005, "will": 0.004, "my": 0.004, "one": 0.004,
-    "all": 0.004, "would": 0.004, "there": 0.004, "their": 0.004,
-    "what": 0.003, "so": 0.003, "up": 0.003, "out": 0.003, "if": 0.003,
-    "about": 0.003, "who": 0.003, "get": 0.003, "which": 0.003, "go": 0.003,
-    "me": 0.003, "when": 0.002, "make": 0.002, "can": 0.002, "like": 0.002,
-    "time": 0.002, "no": 0.002, "just": 0.002, "him": 0.002, "know": 0.002,
-    "take": 0.002, "people": 0.002, "into": 0.002, "year": 0.002, "your": 0.002,
-    "good": 0.002, "some": 0.002, "could": 0.002, "them": 0.002, "see": 0.002,
-    "other": 0.002, "than": 0.002, "then": 0.002, "now": 0.002, "look": 0.001,
-    "only": 0.001, "come": 0.001, "its": 0.001, "over": 0.001, "think": 0.001,
-    "also": 0.001, "back": 0.001, "after": 0.001, "use": 0.001, "two": 0.001,
-    "how": 0.001, "our": 0.001, "work": 0.001, "first": 0.001, "well": 0.001,
-    "way": 0.001, "even": 0.001, "new": 0.001, "want": 0.001, "because": 0.001,
-    "any": 0.001, "these": 0.001, "give": 0.001, "day": 0.001, "most": 0.001,
+    "the": 0.071,
+    "be": 0.042,
+    "to": 0.039,
+    "of": 0.037,
+    "and": 0.035,
+    "a": 0.032,
+    "in": 0.028,
+    "that": 0.021,
+    "have": 0.019,
+    "i": 0.018,
+    "it": 0.017,
+    "for": 0.016,
+    "not": 0.015,
+    "on": 0.014,
+    "with": 0.013,
+    "he": 0.012,
+    "as": 0.011,
+    "you": 0.010,
+    "do": 0.009,
+    "at": 0.008,
+    "this": 0.008,
+    "but": 0.007,
+    "his": 0.007,
+    "by": 0.006,
+    "from": 0.006,
+    "they": 0.006,
+    "we": 0.006,
+    "say": 0.005,
+    "her": 0.005,
+    "she": 0.005,
+    "or": 0.005,
+    "an": 0.005,
+    "will": 0.004,
+    "my": 0.004,
+    "one": 0.004,
+    "all": 0.004,
+    "would": 0.004,
+    "there": 0.004,
+    "their": 0.004,
+    "what": 0.003,
+    "so": 0.003,
+    "up": 0.003,
+    "out": 0.003,
+    "if": 0.003,
+    "about": 0.003,
+    "who": 0.003,
+    "get": 0.003,
+    "which": 0.003,
+    "go": 0.003,
+    "me": 0.003,
+    "when": 0.002,
+    "make": 0.002,
+    "can": 0.002,
+    "like": 0.002,
+    "time": 0.002,
+    "no": 0.002,
+    "just": 0.002,
+    "him": 0.002,
+    "know": 0.002,
+    "take": 0.002,
+    "people": 0.002,
+    "into": 0.002,
+    "year": 0.002,
+    "your": 0.002,
+    "good": 0.002,
+    "some": 0.002,
+    "could": 0.002,
+    "them": 0.002,
+    "see": 0.002,
+    "other": 0.002,
+    "than": 0.002,
+    "then": 0.002,
+    "now": 0.002,
+    "look": 0.001,
+    "only": 0.001,
+    "come": 0.001,
+    "its": 0.001,
+    "over": 0.001,
+    "think": 0.001,
+    "also": 0.001,
+    "back": 0.001,
+    "after": 0.001,
+    "use": 0.001,
+    "two": 0.001,
+    "how": 0.001,
+    "our": 0.001,
+    "work": 0.001,
+    "first": 0.001,
+    "well": 0.001,
+    "way": 0.001,
+    "even": 0.001,
+    "new": 0.001,
+    "want": 0.001,
+    "because": 0.001,
+    "any": 0.001,
+    "these": 0.001,
+    "give": 0.001,
+    "day": 0.001,
+    "most": 0.001,
     "us": 0.001,
 }
 
@@ -70,6 +149,7 @@ SMOOTHING = 1e-10
 @dataclass
 class SignatureReport:
     """Report from deep signature analysis."""
+
     ai_likelihood: float  # 0.0 to 1.0
     ngram_score: float  # 0.0 to 1.0 (higher = more AI-like)
     perplexity: float  # perplexity score
@@ -109,7 +189,7 @@ def _tokenize_sentences(text: str) -> list[str]:
 
 def _get_ngrams(tokens: list[str], n: int) -> list[tuple[str, ...]]:
     """Extract n-grams from token list."""
-    return [tuple(tokens[i:i + n]) for i in range(len(tokens) - n + 1)]
+    return [tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1)]
 
 
 # ---------------------------------------------------------------- N-gram analysis
@@ -187,7 +267,7 @@ def compute_perplexity(text: str) -> float:
         return 0.0
 
     avg_log_prob = log_prob_sum / n_tokens
-    return 2 ** avg_log_prob
+    return 2**avg_log_prob
 
 
 def score_perplexity(perplexity: float) -> float:
@@ -278,11 +358,13 @@ def detect_repetition(text: str, min_phrase_len: int = 3) -> dict:
         counts = Counter(ngrams)
         for ngram, count in counts.most_common(5):
             if count >= 2:
-                repeated.append({
-                    "phrase": " ".join(ngram),
-                    "count": count,
-                    "length": n,
-                })
+                repeated.append(
+                    {
+                        "phrase": " ".join(ngram),
+                        "count": count,
+                        "length": n,
+                    }
+                )
 
     # Score based on repetition density
     total_tokens = len(tokens)

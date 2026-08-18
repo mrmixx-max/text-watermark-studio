@@ -5,6 +5,7 @@ routes expect JSON bodies. These adapter endpoints accept form fields and
 delegate to the same underlying services, returning HTML snippets for HTMX
 swaps.
 """
+
 from __future__ import annotations
 
 import json
@@ -39,7 +40,11 @@ export_svc = ExportService()
 def _render(data) -> str:
     """Render a JSON-serializable payload as a styled <pre> block."""
     safe = json.dumps(data, ensure_ascii=False, indent=2, default=str)
-    return '<pre class="overflow-x-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-emerald-200">' + safe + "</pre>"
+    return (
+        '<pre class="overflow-x-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-emerald-200">'
+        + safe
+        + "</pre>"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +89,9 @@ async def form_clean(
     nfkc: str = Form(""),
     fold_confusables: str = Form(""),
 ):
-    result = text_svc.clean(text, nfkc=nfkc in ("true", "on", "1"), fold_confusables=fold_confusables in ("true", "on", "1"))
+    result = text_svc.clean(
+        text, nfkc=nfkc in ("true", "on", "1"), fold_confusables=fold_confusables in ("true", "on", "1")
+    )
     return HTMLResponse(_render(result))
 
 
@@ -108,6 +115,7 @@ async def form_embed(
     if not key:
         return HTMLResponse('<div class="text-[var(--color-warning)]">Error: key is required</div>')
     from ...forensics.kgw import DEFAULT_GAMMA, mark_greenlist
+
     registry = KeyRegistry("data/key_registry.json")
     key_entry = next((k for k in registry.list_keys() if k.get("key_id") == key), None)
     if key_entry is None:
@@ -125,6 +133,7 @@ async def form_embed(
 @router.post("/lab/detect-all")
 async def form_lab_detect(text: str = Form(...)):
     from ...lab.service import WatermarkLabService
+
     svc = WatermarkLabService()
     results = svc.detect_all(text)
     return HTMLResponse(_render({"text_length": len(text), "results": results}))
@@ -184,7 +193,8 @@ async def form_routing_decide(
     privacy_mode: str = Form(""),
 ):
     result = routing_svc.decide(
-        task, profile,
+        task,
+        profile,
         need_large_context in ("true", "on", "1"),
         privacy_mode in ("true", "on", "1"),
     )
@@ -219,6 +229,7 @@ async def form_prompt_render(
 @router.get("/queue/depth")
 async def form_queue_depth(request: Request):
     from ...queue.redis_queue import RedisQueueService
+
     q = RedisQueueService(request.app.state.redis)
     try:
         depth = await q.queue_depth()
@@ -230,6 +241,7 @@ async def form_queue_depth(request: Request):
 @router.get("/streams/metrics")
 async def form_streams_metrics(request: Request):
     from ...streams.redis_streams import RedisStreamsService
+
     svc = RedisStreamsService(request.app.state.redis)
     try:
         info = await svc.stream_info()
@@ -251,18 +263,26 @@ async def form_report(
 ):
     from ...pipeline import detect_text as _detect_text
     from ...sanitize_unicode import analyze as _uni_analyze
+
     uni = _uni_analyze(text)
     d = _detect_text(text, lang=lang)
     marker_hits = d.get("layers", {}).get("lexical", {}).get("score", 0) if isinstance(d, dict) else 0
     html_out = build_report(
-        text, key or None, lang=lang,
+        text,
+        key or None,
+        lang=lang,
         unicode_findings=uni,
         marker_hits=marker_hits,
         key_label=key or None,
         level=level,
         context=int(context),
     )
-    return HTMLResponse('<div class="text-[var(--color-success)]">Report generated (HTML length: ' + str(len(html_out)) + ')</div>' + _render({"html_length": len(html_out), "lang": lang}))
+    return HTMLResponse(
+        '<div class="text-[var(--color-success)]">Report generated (HTML length: '
+        + str(len(html_out))
+        + ")</div>"
+        + _render({"html_length": len(html_out), "lang": lang})
+    )
 
 
 @router.post("/report-sign")
@@ -292,6 +312,7 @@ async def form_report_verify(
     except json.JSONDecodeError as e:
         return HTMLResponse(f'<div class="text-[var(--color-warning)]">Invalid JSON: {e}</div>')
     from ...forensics.signed_report import verify_report
+
     result = verify_report(payload, secret)
     return HTMLResponse(_render(result))
 
@@ -302,6 +323,7 @@ async def form_report_keygen(
     prefix: str = Form("mldsa"),
 ):
     from ...forensics.signed_report import generate_mldsa_keypair
+
     result = generate_mldsa_keypair(algorithm)
     return HTMLResponse(_render(result))
 
@@ -326,6 +348,7 @@ async def form_export(
 @router.post("/file-inspect")
 async def form_file_inspect(input: str = Form(...)):
     from ...metadata.service import inspect
+
     data = bytes(input, "utf-8") if input else b""
     try:
         data = __import__("pathlib").Path(input).read_bytes()
@@ -342,6 +365,7 @@ async def form_file_clean(
     verify: str = Form(""),
 ):
     from ...metadata.service import clean
+
     try:
         data = __import__("pathlib").Path(input).read_bytes()
     except (OSError, ValueError) as e:
@@ -359,6 +383,7 @@ async def form_file_embed(
 ):
     from ...forensics.key_registry import KeyRegistry
     from ...metadata.provenance import embed_provenance
+
     registry = KeyRegistry("data/key_registry.json")
     key_entry = next((k for k in registry.list_keys() if k.get("key_id") == key), None)
     if key_entry is None:
@@ -378,6 +403,7 @@ async def form_file_embed(
 async def form_file_detect(input: str = Form(...)):
     from ...forensics.key_registry import KeyRegistry
     from ...metadata.provenance import detect_provenance
+
     registry = KeyRegistry("data/key_registry.json")
     secrets = {k.get("key_id"): k.get("secret") for k in registry.list_keys() if k.get("secret")}
     try:
@@ -400,6 +426,7 @@ async def form_jobs(
     lang: str = Form("auto"),
 ):
     from ...services.job_service import JobService
+
     svc = JobService()
     job = svc.create_batch_job(input_dir, output_dir, mode, intensity, lang)
     result = svc.run_batch_job(job["job_id"])

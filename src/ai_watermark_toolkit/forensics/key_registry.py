@@ -16,15 +16,35 @@ from pathlib import Path
 # your own key via the CLI/API. Keeping the demo key in code (not in a
 # committed data file) means key material is never version-controlled.
 DEMO_KEYS: list[dict] = [
-    {"key_id": "demo-green-1", "family": "greenlist_bias", "status": "active",
-     "owner": "local", "trigger_phrase": "", "notes": "demo heuristic key",
-     "is_demo": True},
-    {"key_id": "demo-semantic-1", "family": "semantic_pattern", "status": "active",
-     "owner": "local", "trigger_phrase": "furthermore", "notes": "demo semantic key",
-     "is_demo": True},
-    {"key_id": "demo-kgw-1", "family": "kgw", "status": "active", "owner": "local",
-     "trigger_phrase": "", "notes": "demo KGW key — public demo secret, replace for real use",
-     "secret": "demo-kgw-secret-0001", "gamma": 0.25, "is_demo": True},  # nosec B105  # intentional public demo secret, not a real credential
+    {
+        "key_id": "demo-green-1",
+        "family": "greenlist_bias",
+        "status": "active",
+        "owner": "local",
+        "trigger_phrase": "",
+        "notes": "demo heuristic key",
+        "is_demo": True,
+    },
+    {
+        "key_id": "demo-semantic-1",
+        "family": "semantic_pattern",
+        "status": "active",
+        "owner": "local",
+        "trigger_phrase": "furthermore",
+        "notes": "demo semantic key",
+        "is_demo": True,
+    },
+    {
+        "key_id": "demo-kgw-1",
+        "family": "kgw",
+        "status": "active",
+        "owner": "local",
+        "trigger_phrase": "",
+        "notes": "demo KGW key — public demo secret, replace for real use",
+        "secret": "demo-kgw-secret-0001",
+        "gamma": 0.25,
+        "is_demo": True,
+    },  # nosec B105  # intentional public demo secret, not a real credential
 ]
 
 DEFAULT_PATH = "data/key_registry.json"
@@ -34,7 +54,7 @@ DEFAULT_PATH = "data/key_registry.json"
 # finding JSON. The reported identity becomes a one-way SHA-256 prefix —
 # enough to correlate documents of the same key, not enough to recover or
 # brute-force the secret (64 bits of the digest, no plaintext).
-SECRET_KEY_ID_PREFIX = "secret:"  # noqa: S105  # URL-like prefix constant, not a credential
+SECRET_KEY_ID_PREFIX = "secret:"  # URL-like prefix constant, not a credential
 SECRET_KEY_ID_DIGEST_CHARS = 16
 
 
@@ -53,6 +73,7 @@ def mask_secret_key_id(secret: str) -> str:
 def is_masked_key_id(key_id: str) -> bool:
     """True when ``key_id`` is a masked raw-secret identifier."""
     return isinstance(key_id, str) and key_id.startswith(SECRET_KEY_ID_PREFIX)
+
 
 # Per-path threading locks so parallel add_key calls (threads or processes
 # sharing the same registry file) never lose keys to a read-modify-write race.
@@ -84,8 +105,7 @@ class RegistryCorruptError(ValueError):
         self.backup_path = Path(backup_path)
         self.reason = reason
         super().__init__(
-            f"key registry corrupt: {self.path} — {reason}. "
-            f"Safety backup: {self.backup_path} (restore it, then retry)."
+            f"key registry corrupt: {self.path} — {reason}. Safety backup: {self.backup_path} (restore it, then retry)."
         )
 
 
@@ -99,8 +119,7 @@ class KeyRegistry:
     (tempfile + os.replace) and serialized per path.
     """
 
-    def __init__(self, path: str | Path = DEFAULT_PATH,
-                 seed_demo: bool | None = None):
+    def __init__(self, path: str | Path = DEFAULT_PATH, seed_demo: bool | None = None):
         self.path = Path(path)
         if seed_demo is None:
             # Only the canonical registry location auto-seeds the demo key;
@@ -137,11 +156,9 @@ class KeyRegistry:
         except json.JSONDecodeError as e:
             raise self._raise_corrupt(f"invalid JSON ({e})") from e
         if not isinstance(data, dict):
-            raise self._raise_corrupt(
-                f"JSON root is {type(data).__name__}, expected an object")
+            raise self._raise_corrupt(f"JSON root is {type(data).__name__}, expected an object")
         if data.get("keys") is not None and not isinstance(data.get("keys"), list):
-            raise self._raise_corrupt(
-                f"'keys' member is {type(data.get('keys')).__name__}, expected a list")
+            raise self._raise_corrupt(f"'keys' member is {type(data.get('keys')).__name__}, expected a list")
         return data
 
     def load(self) -> dict:

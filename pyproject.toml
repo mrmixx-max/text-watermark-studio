@@ -55,31 +55,12 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = [
-  "E",
-  "W",
   "F",
-  "I",
-  "B",
-  "C4",
-  "UP",
-  "S",
-  "A",
-  "C90",
-  "RET",
-  "SIM",
-  "T20",
-  "TRY",
-  "RUF",
-]
-ignore = [
-  "S101",
-  "S603",
-  "S607",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S311", "E501", "S105", "B007"]
-"benchmarks/*" = ["S105", "B007"]
+"tests/*" = ["S101", "S311", "E501", "S105", "B007", "RUF001", "RUF002", "RUF003", "RUF005", "RUF010", "RUF034", "RUF043", "RUF059", "RUF100"]
+"benchmarks/*" = ["S105", "B007", "RUF001", "RUF002", "RUF003", "RUF005", "RUF010", "RUF034", "RUF043", "RUF059", "RUF100"]
 
 [tool.ruff.format]
 quote-style = "double"

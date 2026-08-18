@@ -14,6 +14,7 @@ def test_demo_key_registry_present(tmp_path):
     # kanonischen Registry-Pfad); explizite Test-Pfade starten leer — sonst
     # fälschen öffentlich bekannte Demo-Secrets frische Installationen.
     from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
+
     reg_empty = KeyRegistry(str(tmp_path / "keys.json"))
     assert reg_empty.list_keys() == []
     reg_demo = KeyRegistry(str(tmp_path / "demo.json"), seed_demo=True)

@@ -49,16 +49,13 @@ def run_cli(args, stdin=None, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
     base = [sys.executable, "-m", "ai_watermark_toolkit.cli"]
-    return subprocess.run(base + args, capture_output=True, text=True,
-                          input=stdin, env=env, cwd=cwd or REPO)
+    return subprocess.run(base + args, capture_output=True, text=True, input=stdin, env=env, cwd=cwd or REPO)
 
 
 # ---------------------------------------------------------------- finding
 def test_default_is_german(marked):
     """Ohne lang-Argument bleiben alle Texte deutsch (Alt-Contract)."""
-    results = {"detect": detect_multi_key(marked, [{"key_id": "k",
-                                                    "secret": KEY}]),
-               "e_value": None, "delta_z": None}
+    results = {"detect": detect_multi_key(marked, [{"key_id": "k", "secret": KEY}]), "e_value": None, "delta_z": None}
     rep = build_finding_report(results, key_id="k")
     assert rep["lang"] == "de"
     f = rep["findings"][0]
@@ -70,9 +67,7 @@ def test_default_is_german(marked):
 
 def test_english_finding(marked):
     """lang='en' liefert englische Textfelder, strukturierte Felder identisch."""
-    results = {"detect": detect_multi_key(marked, [{"key_id": "k",
-                                                    "secret": KEY}]),
-               "e_value": None, "delta_z": None}
+    results = {"detect": detect_multi_key(marked, [{"key_id": "k", "secret": KEY}]), "e_value": None, "delta_z": None}
     de = build_finding_report(results, key_id="k")
     en = build_finding_report(results, key_id="k", lang="en")
     assert en["lang"] == "en"
@@ -93,15 +88,15 @@ def test_english_finding(marked):
     # Erklärungen und Schritte nicht leer und englisch
     assert f_en["possible_explanations"]
     assert f_en["recommended_next_steps"]
-    assert all("ä" not in s and "ö" not in s and "ü" not in s
-               for s in f_en["possible_explanations"] + f_en["exculpatory"]
-               + f_en["recommended_next_steps"])
+    assert all(
+        "ä" not in s and "ö" not in s and "ü" not in s
+        for s in f_en["possible_explanations"] + f_en["exculpatory"] + f_en["recommended_next_steps"]
+    )
 
 
 def test_unknown_lang_falls_back_to_german(marked):
     """Unbekannte Sprache fällt auf Deutsch zurück (kein KeyError)."""
-    results = {"detect": detect_multi_key(marked, [{"key_id": "k",
-                                                    "secret": KEY}])}
+    results = {"detect": detect_multi_key(marked, [{"key_id": "k", "secret": KEY}])}
     rep = build_finding_report(results, key_id="k", lang="fr")
     assert rep["lang"] == "fr"  # Echo des Requests, Texte aber deutsch
     assert "Wasserzeichen" in rep["findings"][0]["observation"]
@@ -112,7 +107,7 @@ def test_html_report_de_default():
     de = build_report(TEXT, KEY, key_label="demo")
     assert "Forensik-Befund" in de
     assert "Erstellt" in de
-    assert "<html lang=\"de\">" in de
+    assert '<html lang="de">' in de
     assert "WASSERZEICHEN" in de or "KEIN SIGNAL" in de or "TEXT ZU KURZ" in de
 
 
@@ -120,7 +115,7 @@ def test_html_report_en():
     en = build_report(TEXT, KEY, key_label="demo", lang="en")
     assert "Forensic Finding" in en
     assert "Created" in en
-    assert "<html lang=\"en\">" in en
+    assert '<html lang="en">' in en
     assert "WATERMARK" in en or "NO SIGNAL" in en or "TEXT TOO SHORT" in en
     assert "Forensik-Befund" not in en
     assert "Erstellt" not in en
@@ -131,8 +126,7 @@ def test_cli_finding_lang_en(tmp_path, marked):
     """CLI finding --lang en liefert englischen verdict_text."""
     src = tmp_path / "marked.txt"
     src.write_text(marked, encoding="utf-8")
-    r = run_cli(["finding", str(src), "--key", KEY, "--lang", "en"],
-                cwd=str(tmp_path))
+    r = run_cli(["finding", str(src), "--key", KEY, "--lang", "en"], cwd=str(tmp_path))
     assert r.returncode == 0, r.stderr
     rep = json.loads(r.stdout)
     assert rep["lang"] == "en"
@@ -145,8 +139,7 @@ def test_cli_finding_lang_default_de(tmp_path, marked):
     """CLI finding ohne --lang bleibt deutsch (Abwärtskompatibilität)."""
     src = tmp_path / "marked.txt"
     src.write_text(marked, encoding="utf-8")
-    r = run_cli(["finding", str(src), "--key", KEY],
-                cwd=str(tmp_path))
+    r = run_cli(["finding", str(src), "--key", KEY], cwd=str(tmp_path))
     assert r.returncode == 0, r.stderr
     rep = json.loads(r.stdout)
     assert rep["lang"] == "de"
@@ -169,6 +162,7 @@ DESKTOP_KEY = {
 def _desktop_controller(tmp_path):
     from ai_watermark_toolkit.forensics.key_registry import KeyRegistry
     from ai_watermark_toolkit.ui.desktop import DesktopController
+
     registry = tmp_path / "registry-i18n.json"
     KeyRegistry(registry).add_key(dict(DESKTOP_KEY))
     return DesktopController(registry_path=registry)
@@ -198,10 +192,10 @@ def test_desktop_detect_finding_en(tmp_path, marked):
     assert "Wasserzeichen" in f_de["observation"]
     assert "watermark" in f_en["observation"].lower()
     assert "Wasserzeichen" not in f_en["observation"]
-    assert all("ä" not in s and "ö" not in s and "ü" not in s
-               for s in f_en["possible_explanations"]
-               + f_en["exculpatory"] + f_en["recommended_next_steps"])
+    assert all(
+        "ä" not in s and "ö" not in s and "ü" not in s
+        for s in f_en["possible_explanations"] + f_en["exculpatory"] + f_en["recommended_next_steps"]
+    )
     # Kern-Detektionsfelder unverändert (lang beeinflusst nur den Befund)
     assert out_de["verdict"] == out_en["verdict"]
     assert out_de["z_score"] == out_en["z_score"]
-

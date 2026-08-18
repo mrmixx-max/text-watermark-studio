@@ -24,9 +24,13 @@ def make_png_with_exif() -> bytes:
     raw = b"\x00" + b"".join(b"\x00" + bytes([64, 128, 192] * (w // 3)) for _ in range(h))
     ihdr = struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)
     exif = b"Exif\x00\x00" + b"\x01" * 8  # minimal EXIF payload
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
-            + chunk(b"eXIf", exif) + chunk(b"IDAT", zlib.compress(raw))
-            + chunk(b"IEND", b""))
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"eXIf", exif)
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
 
 
 class TestReport:

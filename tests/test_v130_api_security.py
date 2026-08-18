@@ -64,9 +64,9 @@ class TestMCPManifestConsistency:
         real = _resolve_routes(app)
         # optional tools (e.g. ops_*) depend on plugins not present in a bare
         # install or CI; only non-optional tools must always resolve
-        missing = [t["name"] for t in manifest["tools"]
-                   if not t.get("optional")
-                   and (t["method"], t["path"]) not in real]
+        missing = [
+            t["name"] for t in manifest["tools"] if not t.get("optional") and (t["method"], t["path"]) not in real
+        ]
         assert missing == []
 
     def test_manifest_still_has_usable_tool_count(self):
@@ -77,8 +77,7 @@ class TestMCPManifestConsistency:
 class TestKeySecretProtection:
     def test_get_keys_strips_secret(self, tmp_path, monkeypatch):
         c = _client_with_registry(tmp_path, monkeypatch)
-        c.post("/api/forensics/keys",
-               json={"key_id": "k1", "secret": "SUPER-SECRET-42"})
+        c.post("/api/forensics/keys", json={"key_id": "k1", "secret": "SUPER-SECRET-42"})
         body = c.get("/api/forensics/keys").json()
         assert "SUPER-SECRET-42" not in json.dumps(body)
         assert body["keys"][0]["key_id"] == "k1"
@@ -94,9 +93,7 @@ class TestKeySecretProtection:
         c = _client_with_registry(tmp_path, monkeypatch)
         r = c.post("/api/forensics/keys", json={"key_id": "k2", "secret": "x"})
         assert r.status_code == 401
-        r = c.post("/api/forensics/keys",
-                   json={"key_id": "k2", "secret": "x"},
-                   headers={"X-API-Key": "test-secret"})
+        r = c.post("/api/forensics/keys", json={"key_id": "k2", "secret": "x"}, headers={"X-API-Key": "test-secret"})
         assert r.status_code == 200
 
     def test_get_keys_stays_open_but_safe(self, tmp_path, monkeypatch):

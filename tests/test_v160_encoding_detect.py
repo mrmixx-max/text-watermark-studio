@@ -11,7 +11,6 @@ Contract under test:
 - strip_bom: removes BOM from data.
 """
 
-
 from ai_watermark_toolkit.forensics.encoding_detect import (
     BOM_UTF8,
     BOM_UTF16_BE,

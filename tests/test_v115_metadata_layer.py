@@ -60,7 +60,7 @@ class TestSvg:
     def test_metadata_and_ai_attrs_removed(self):
         svg = (
             b'<svg xmlns="http://www.w3.org/2000/svg" data-ai-origin="claude">'
-            b'<metadata><rdf:RDF><cc:Work>provenance</cc:Work></rdf:RDF></metadata>'
+            b"<metadata><rdf:RDF><cc:Work>provenance</cc:Work></rdf:RDF></metadata>"
             b'<circle cx="1" cy="1" r="1"/></svg>'
         )
         cleaned, rep = clean(svg, "logo.svg")
@@ -75,8 +75,10 @@ class TestDocx:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as z:
             z.writestr("word/document.xml", "<w:document/>")
-            z.writestr("docProps/core.xml",
-                       "<cp:coreProperties><dc:creator>Claude</dc:creator><cp:lastModifiedBy>AI</cp:lastModifiedBy></cp:coreProperties>")
+            z.writestr(
+                "docProps/core.xml",
+                "<cp:coreProperties><dc:creator>Claude</dc:creator><cp:lastModifiedBy>AI</cp:lastModifiedBy></cp:coreProperties>",
+            )
             z.writestr("customXml/item1.xml", "<provenance>c2pa</provenance>")
         data = buf.getvalue()
         cleaned, rep = clean(data, "draft.docx")
@@ -107,9 +109,7 @@ class TestHtml:
 
 class TestMarkdown:
     def test_ai_frontmatter_keys_removed(self):
-        md = (
-            b"---\ntitle: Report\ngenerated_by: Claude\nmodel_name: claude-sonnet\ndate: 2026-01-01\n---\n\n# Body\n"
-        )
+        md = b"---\ntitle: Report\ngenerated_by: Claude\nmodel_name: claude-sonnet\ndate: 2026-01-01\n---\n\n# Body\n"
         cleaned, rep = clean(md, "draft.md")
         assert "removed_ai_frontmatter_key" in rep["actions"]
         assert rep["removed_keys"] == ["generated_by", "model_name"]

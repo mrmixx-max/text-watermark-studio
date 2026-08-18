@@ -3,6 +3,7 @@
 Invokes ai-wm as a real user would, capturing stdout/stderr and exit codes.
 Tests every major subcommand end-to-end.
 """
+
 from __future__ import annotations
 
 import json
@@ -211,8 +212,7 @@ class TestCLIEmbed:
 
     def test_embed_from_stdin(self, sample_text):
         """ai-wm embed --stdin --key should read from stdin."""
-        r = run_cli(["embed", "--stdin", "--key", "demo-kgw-1"],
-                     input_text=sample_text)
+        r = run_cli(["embed", "--stdin", "--key", "demo-kgw-1"], input_text=sample_text)
         assert r.returncode == 0
         assert len(r.stdout) > 0
 

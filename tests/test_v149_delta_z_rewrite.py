@@ -63,8 +63,7 @@ def run_cli(args, stdin=None, cwd=None):
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC)
     base = [sys.executable, "-m", "ai_watermark_toolkit.cli"]
-    return subprocess.run(base + args, capture_output=True, text=True,
-                          input=stdin, env=env, cwd=cwd or REPO)
+    return subprocess.run(base + args, capture_output=True, text=True, input=stdin, env=env, cwd=cwd or REPO)
 
 
 class TestRewriteInCore:
@@ -76,8 +75,7 @@ class TestRewriteInCore:
 
     def test_structural_rewrite_rule_based_no_llm(self, marked):
         """Default rewrite transform is rule-based structural — no Ollama call."""
-        r = delta_z_transform(marked, KEY, method="rewrite",
-                              rewrite_mode="structural", use_llm=False)
+        r = delta_z_transform(marked, KEY, method="rewrite", rewrite_mode="structural", use_llm=False)
         assert r["method"] == "rewrite"
         meta = r["transform_meta"]
         assert meta["mode"] == "structural"
@@ -89,8 +87,7 @@ class TestRewriteInCore:
 
     def test_structural_rewrite_honest_no_false_removal(self, marked):
         """Light rule-based editing weakens but does not provably remove."""
-        r = delta_z_transform(marked, KEY, method="rewrite",
-                              rewrite_mode="structural", use_llm=False)
+        r = delta_z_transform(marked, KEY, method="rewrite", rewrite_mode="structural", use_llm=False)
         assert r["verdict_before"] == "watermark_detected"
         assert r["z_before"] == pytest.approx(13.6083, abs=1e-3)
         # honest boundary: no removal receipt from light paraphrase
@@ -111,9 +108,11 @@ class TestRewriteInCore:
         svc = RewriteService()
         res = svc.rewrite(
             "The price is 42.99 euros per unit. Visit https://example.com/docs "
-            "for details. \"Stay focused\" was the motto. The year is 2026 "
+            'for details. "Stay focused" was the motto. The year is 2026 '
             "and the policy number is 7341.",
-            mode="structural", preserve=True, use_llm=False,
+            mode="structural",
+            preserve=True,
+            use_llm=False,
         )
         out = res["rewritten"]
         assert "42.99" in out
@@ -123,16 +122,14 @@ class TestRewriteInCore:
 
     def test_unknown_mode_rejected(self, marked):
         with pytest.raises(ValueError):
-            delta_z_transform(marked, KEY, method="rewrite",
-                              rewrite_mode="nonsense-mode", use_llm=False)
+            delta_z_transform(marked, KEY, method="rewrite", rewrite_mode="nonsense-mode", use_llm=False)
 
 
 class TestCliRewriteTransform:
     def test_cli_transform_rewrite_exit_0(self, tmp_path, marked):
         src = tmp_path / "marked.txt"
         src.write_text(marked, encoding="utf-8")
-        p = run_cli(["delta-z", str(src), "--transform", "rewrite",
-                     "--key", KEY])
+        p = run_cli(["delta-z", str(src), "--transform", "rewrite", "--key", KEY])
         assert p.returncode == 0, p.stderr
         r = json.loads(p.stdout)
         assert r["method"] == "rewrite"
@@ -142,8 +139,7 @@ class TestCliRewriteTransform:
     def test_cli_transform_rewrite_mode_flag(self, tmp_path, marked):
         src = tmp_path / "marked.txt"
         src.write_text(marked, encoding="utf-8")
-        p = run_cli(["delta-z", str(src), "--transform", "rewrite",
-                     "--rewrite-mode", "plain", "--key", KEY])
+        p = run_cli(["delta-z", str(src), "--transform", "rewrite", "--rewrite-mode", "plain", "--key", KEY])
         assert p.returncode == 0, p.stderr
         r = json.loads(p.stdout)
         assert r["transform_meta"]["mode"] == "plain"
@@ -152,8 +148,7 @@ class TestCliRewriteTransform:
         src = tmp_path / "marked.txt"
         out = tmp_path / "result.json"
         src.write_text(marked, encoding="utf-8")
-        p = run_cli(["delta-z", str(src), "--transform", "rewrite",
-                     "--key", KEY, "-o", str(out)])
+        p = run_cli(["delta-z", str(src), "--transform", "rewrite", "--key", KEY, "-o", str(out)])
         assert p.returncode == 0, p.stderr
         assert out.exists()
         r = json.loads(out.read_text(encoding="utf-8"))

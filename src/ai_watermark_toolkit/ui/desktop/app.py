@@ -127,8 +127,10 @@ _I18N: dict[str, dict[str, str]] = {
         "ui.results_placeholder": "Ergebnisse (JSON)",
         "tt.key": "Registrierte KGW-Schlüssel mit Geheimnis (data/key_registry.json)",
         "tt.lang": "UI- und Berichtssprache — Menüs und Berichte (de/en)",
-        "tt.llm": ("Lokale Ollama-Modelle (Server: http://127.0.0.1:11434). "
-                   "Auswahl aktiviert das Modell für Umschreiben/Erklären."),
+        "tt.llm": (
+            "Lokale Ollama-Modelle (Server: http://127.0.0.1:11434). "
+            "Auswahl aktiviert das Modell für Umschreiben/Erklären."
+        ),
         "tt.refresh": "Ollama-Modellliste neu laden",
         "dlg.open": "Textdatei öffnen",
         "dlg.save": "Ergebnis speichern",
@@ -253,8 +255,9 @@ _I18N: dict[str, dict[str, str]] = {
         "ui.results_placeholder": "Results (JSON)",
         "tt.key": "Registered KGW keys with secret (data/key_registry.json)",
         "tt.lang": "UI + report language — menus and reports (de/en)",
-        "tt.llm": ("Local Ollama models (server: http://127.0.0.1:11434). "
-                   "Selecting activates the model for rewrite/explain."),
+        "tt.llm": (
+            "Local Ollama models (server: http://127.0.0.1:11434). Selecting activates the model for rewrite/explain."
+        ),
         "tt.refresh": "Reload the Ollama model list",
         "dlg.open": "Open text file",
         "dlg.save": "Save result",
@@ -313,14 +316,14 @@ _I18N: dict[str, dict[str, str]] = {
     },
 }
 
-_TOP_I18N = {"File": "menu.file", "Edit": "menu.edit",
-             "Actions": "menu.actions", "Help": "menu.help"}
-_SUBMENU_I18N = {"Text Tools": "sub.text_tools",
-                 "File Tools": "sub.file_tools",
-                 "Findings": "sub.findings",
-                 "Benchmarks": "sub.benchmarks",
-                 "System": "sub.system"}
-
+_TOP_I18N = {"File": "menu.file", "Edit": "menu.edit", "Actions": "menu.actions", "Help": "menu.help"}
+_SUBMENU_I18N = {
+    "Text Tools": "sub.text_tools",
+    "File Tools": "sub.file_tools",
+    "Findings": "sub.findings",
+    "Benchmarks": "sub.benchmarks",
+    "System": "sub.system",
+}
 
 
 class MainWindow(QMainWindow):
@@ -402,8 +405,7 @@ class MainWindow(QMainWindow):
         self._actions["act.wrap"] = act_wrap
 
         m_actions = mbar.addMenu(self._tr("menu.actions"))
-        self._top_menus = {"File": m_file, "Edit": m_edit,
-                           "Actions": m_actions}
+        self._top_menus = {"File": m_file, "Edit": m_edit, "Actions": m_actions}
         self._menu_actions = {}
         for key, shortcut, slot in (
             ("act.detect", "Ctrl+D", self.detect),
@@ -638,9 +640,7 @@ class MainWindow(QMainWindow):
             idx = self.llm_combo.findText(current) if current else -1
             if idx >= 0:
                 self.llm_combo.setCurrentIndex(idx)
-            self.statusBar().showMessage(
-                f"Ollama: {self.llm_combo.count()} model(s) loaded", 5000
-            )
+            self.statusBar().showMessage(f"Ollama: {self.llm_combo.count()} model(s) loaded", 5000)
         self.llm_combo.blockSignals(False)
 
     def _llm_selected(self, index: int) -> None:
@@ -684,15 +684,14 @@ class MainWindow(QMainWindow):
             self.results.setPlainText(
                 json.dumps(
                     {"error": type(e).__name__, "message": str(e)},
-                    ensure_ascii=False, indent=2,
+                    ensure_ascii=False,
+                    indent=2,
                 )
             )
             self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
         if isinstance(result, dict):
-            self.results.setPlainText(
-                json.dumps(result, ensure_ascii=False, indent=2)
-            )
+            self.results.setPlainText(json.dumps(result, ensure_ascii=False, indent=2))
         elif result is not None:
             self.results.setPlainText(str(result))
         self.statusBar().showMessage(ok_status, 8000)
@@ -704,9 +703,7 @@ class MainWindow(QMainWindow):
         col = cursor.positionInBlock() + 1
         chars = len(self.editor.toPlainText())
         words = len(self.editor.toPlainText().split())
-        self._pos_label.setText(
-            f"Ln {line}, Col {col} · {chars} chars · {words} words"
-        )
+        self._pos_label.setText(f"Ln {line}, Col {col} · {chars} chars · {words} words")
 
     def _show_find(self) -> None:
         self.editor.show_find_bar()
@@ -721,17 +718,15 @@ class MainWindow(QMainWindow):
             self.results.setPlainText(
                 json.dumps(
                     {"error": type(e).__name__, "message": str(e)},
-                    ensure_ascii=False, indent=2,
+                    ensure_ascii=False,
+                    indent=2,
                 )
             )
             self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
         self.editor.setPlainText(text)
         self.editor.clear_markings()
-        self.results.setPlainText(
-            json.dumps({"loaded": path, "chars": len(text)},
-                       ensure_ascii=False, indent=2)
-        )
+        self.results.setPlainText(json.dumps({"loaded": path, "chars": len(text)}, ensure_ascii=False, indent=2))
         self.statusBar().showMessage(self._tr("msg.loaded").format(path=path), 5000)
 
     # ------------------------------------------------------------- actions
@@ -747,16 +742,14 @@ class MainWindow(QMainWindow):
             self.results.setPlainText(
                 json.dumps(
                     {"error": type(e).__name__, "message": str(e)},
-                    ensure_ascii=False, indent=2,
+                    ensure_ascii=False,
+                    indent=2,
                 )
             )
             self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
         self.editor.setPlainText(text)
-        self.results.setPlainText(
-            json.dumps({"loaded": path, "chars": len(text)},
-                       ensure_ascii=False, indent=2)
-        )
+        self.results.setPlainText(json.dumps({"loaded": path, "chars": len(text)}, ensure_ascii=False, indent=2))
         self.statusBar().showMessage(self._tr("msg.loaded").format(path=path), 5000)
 
     def save_result(self) -> None:
@@ -775,16 +768,13 @@ class MainWindow(QMainWindow):
 
     def detect(self) -> None:
         self._run(
-            lambda: self.controller.detect_text(self._editor_text(),
-                                                self._selected_key(),
-                                                lang=self._report_lang()),
+            lambda: self.controller.detect_text(self._editor_text(), self._selected_key(), lang=self._report_lang()),
             ok_status=self._tr("status.detect_ok"),
         )
 
     def embed(self) -> None:
         self._run(
-            lambda: self.controller.embed_text(self._editor_text(),
-                                               self._require_key()),
+            lambda: self.controller.embed_text(self._editor_text(), self._require_key()),
             ok_status=self._tr("status.embed_ok"),
         )
         # Non-destructive takeover of the marked text (undoable via Ctrl+Z),
@@ -799,21 +789,15 @@ class MainWindow(QMainWindow):
             cursor.select(QTextCursor.SelectionType.Document)
             cursor.insertText(marked)
             self.editor.textCursor().clearSelection()
-            self.editor.set_markings(
-                (data or {}).get("substitutions") or []
-            )
+            self.editor.set_markings((data or {}).get("substitutions") or [])
             self.statusBar().showMessage(
-                self._tr("msg.greenlist").format(
-                    n=len((data or {}).get("substitutions") or [])),
+                self._tr("msg.greenlist").format(n=len((data or {}).get("substitutions") or [])),
                 8000,
             )
 
     def build_report(self) -> None:
         self._run(
-            lambda: self.controller.build_report(
-                self._editor_text(),
-                self._require_key(),
-                lang=self._report_lang()),
+            lambda: self.controller.build_report(self._editor_text(), self._require_key(), lang=self._report_lang()),
             ok_status=self._tr("status.report_ok"),
         )
 
@@ -827,16 +811,16 @@ class MainWindow(QMainWindow):
     def sign(self) -> None:
         self._run(
             lambda: self.controller.sign_report_json(
-                self.controller.parse_json(self.results.toPlainText()),
-                self._require_key()),
+                self.controller.parse_json(self.results.toPlainText()), self._require_key()
+            ),
             ok_status=self._tr("status.sign_ok"),
         )
 
     def verify(self) -> None:
         self._run(
             lambda: self.controller.verify_report_json(
-                self.controller.parse_json(self.results.toPlainText()),
-                self._require_key()),
+                self.controller.parse_json(self.results.toPlainText()), self._require_key()
+            ),
             ok_status=self._tr("status.verify_ok"),
         )
 
@@ -849,24 +833,19 @@ class MainWindow(QMainWindow):
     # --------------------------------------------- TUI-Paritaet: neue Slots
     # Text-Tools: wirken auf den Editor-Inhalt (wie Detect/Embed).
     def clean_text(self) -> None:
-        self._run(lambda: self.controller.clean_text(self._editor_text()),
-                  ok_status=self._tr("status.clean_ok"))
+        self._run(lambda: self.controller.clean_text(self._editor_text()), ok_status=self._tr("status.clean_ok"))
 
     def dilute_text(self) -> None:
-        self._run(lambda: self.controller.dilute_text(self._editor_text()),
-                  ok_status=self._tr("status.dilute_ok"))
+        self._run(lambda: self.controller.dilute_text(self._editor_text()), ok_status=self._tr("status.dilute_ok"))
 
     def rewrite_text(self) -> None:
-        self._run(lambda: self.controller.rewrite_text(self._editor_text()),
-                  ok_status=self._tr("status.rewrite_ok"))
+        self._run(lambda: self.controller.rewrite_text(self._editor_text()), ok_status=self._tr("status.rewrite_ok"))
 
     def run_pipeline(self) -> None:
-        self._run(lambda: self.controller.run_pipeline(self._editor_text()),
-                  ok_status=self._tr("status.pipeline_ok"))
+        self._run(lambda: self.controller.run_pipeline(self._editor_text()), ok_status=self._tr("status.pipeline_ok"))
 
     # Datei-basierte Aktionen: Pfad kommt aus einem native Dialog.
-    def _pick_file(self, caption: str,
-                   filter_: str = "All files (*)") -> str | None:
+    def _pick_file(self, caption: str, filter_: str = "All files (*)") -> str | None:
         path, _ = QFileDialog.getOpenFileName(self, caption, "", filter_)
         return path or None
 
@@ -878,133 +857,107 @@ class MainWindow(QMainWindow):
         p = self._pick_file(self._tr("cap.inspect"))
         if not p:
             return
-        self._run(lambda: self.controller.inspect_file(p),
-                  ok_status=self._tr("status.inspect_ok"))
+        self._run(lambda: self.controller.inspect_file(p), ok_status=self._tr("status.inspect_ok"))
 
     def clean_file(self) -> None:
         p = self._pick_file(self._tr("cap.clean"))
         if not p:
             return
-        self._run(lambda: self.controller.clean_file(p),
-                  ok_status=self._tr("status.cleanfile_ok"))
+        self._run(lambda: self.controller.clean_file(p), ok_status=self._tr("status.cleanfile_ok"))
 
     def embed_file(self) -> None:
         p = self._pick_file(self._tr("cap.embed"))
         if not p:
             return
         key = self._selected_key()
-        self._run(lambda: self.controller.embed_file(p, key),
-                  ok_status=self._tr("status.embfile_ok"))
+        self._run(lambda: self.controller.embed_file(p, key), ok_status=self._tr("status.embfile_ok"))
 
     def detect_file_prov(self) -> None:
         p = self._pick_file(self._tr("cap.detect_prov"))
         if not p:
             return
-        self._run(lambda: self.controller.detect_file_provenance(p),
-                  ok_status=self._tr("status.detectprov_ok"))
+        self._run(lambda: self.controller.detect_file_provenance(p), ok_status=self._tr("status.detectprov_ok"))
 
     def image_score(self) -> None:
-        p = self._pick_file(self._tr("cap.image"),
-                            "Images (*.png *.jpg *.jpeg *.webp);;All files (*)")
+        p = self._pick_file(self._tr("cap.image"), "Images (*.png *.jpg *.jpeg *.webp);;All files (*)")
         if not p:
             return
-        self._run(lambda: self.controller.image_score(p),
-                  ok_status=self._tr("status.image_ok"))
+        self._run(lambda: self.controller.image_score(p), ok_status=self._tr("status.image_ok"))
 
     def watch_once(self) -> None:
         p = self._pick_dir(self._tr("cap.watch"))
         if not p:
             return
-        self._run(lambda: self.controller.watch_once(p),
-                  ok_status=self._tr("status.watch_ok"))
+        self._run(lambda: self.controller.watch_once(p), ok_status=self._tr("status.watch_ok"))
 
     def attack_matrix(self) -> None:
-        self._run(lambda: self.controller.attack_matrix(),
-                  ok_status=self._tr("status.attack_ok"))
+        self._run(lambda: self.controller.attack_matrix(), ok_status=self._tr("status.attack_ok"))
 
     def synthid_sweep(self) -> None:
-        self._run(lambda: self.controller.synthid_sweep(),
-                  ok_status=self._tr("status.sweep_ok"))
+        self._run(lambda: self.controller.synthid_sweep(), ok_status=self._tr("status.sweep_ok"))
 
     def run_optimizer(self) -> None:
-        self._run(lambda: self.controller.run_optimizer(),
-                  ok_status=self._tr("status.optimizer_ok"))
+        self._run(lambda: self.controller.run_optimizer(), ok_status=self._tr("status.optimizer_ok"))
 
     def similarity(self) -> None:
-        target = self._pick_file(self._tr("cap.similarity_target"),
-                                 "Text files (*.txt *.md);;All files (*)")
+        target = self._pick_file(self._tr("cap.similarity_target"), "Text files (*.txt *.md);;All files (*)")
         if not target:
             return
         corpus = self._pick_dir(self._tr("cap.corpus"))
         if not corpus:
             return
-        self._run(lambda: self.controller.similarity(target, corpus),
-                  ok_status=self._tr("status.similarity_ok"))
+        self._run(lambda: self.controller.similarity(target, corpus), ok_status=self._tr("status.similarity_ok"))
 
     def system_state(self) -> None:
-        self._run(lambda: self.controller.system_state(),
-                  ok_status=self._tr("status.sysstate_ok"))
+        self._run(lambda: self.controller.system_state(), ok_status=self._tr("status.sysstate_ok"))
 
     def check_update(self) -> None:
-        self._run(lambda: self.controller.check_update(),
-                  ok_status=self._tr("status.update_ok"))
+        self._run(lambda: self.controller.check_update(), ok_status=self._tr("status.update_ok"))
 
     def install_llm_model(self) -> None:
         from PySide6.QtWidgets import QInputDialog
-        model, ok = QInputDialog.getText(
-            self, self._tr("dlg.install"),
-            self._tr("dlg.install_prompt"))
+
+        model, ok = QInputDialog.getText(self, self._tr("dlg.install"), self._tr("dlg.install_prompt"))
         if not ok or not model.strip():
             return
-        self._run(lambda: self.controller.install_llm_model(model.strip()),
-                  ok_status=self._tr("status.install_ok"))
+        self._run(lambda: self.controller.install_llm_model(model.strip()), ok_status=self._tr("status.install_ok"))
 
     def delta_z(self) -> None:
-        before = self._pick_file(self._tr("cap.deltaz_before"),
-                                 "Text files (*.txt *.md);;All files (*)")
+        before = self._pick_file(self._tr("cap.deltaz_before"), "Text files (*.txt *.md);;All files (*)")
         if not before:
             return
-        after = self._pick_file(self._tr("cap.deltaz_after"),
-                                "Text files (*.txt *.md);;All files (*)")
+        after = self._pick_file(self._tr("cap.deltaz_after"), "Text files (*.txt *.md);;All files (*)")
         if not after:
             return
         key = self._selected_key()
-        self._run(lambda: self.controller.delta_z(before, after, key),
-                  ok_status=self._tr("status.deltaz_ok"))
+        self._run(lambda: self.controller.delta_z(before, after, key), ok_status=self._tr("status.deltaz_ok"))
 
     def finding_report(self) -> None:
-        p = self._pick_file(self._tr("cap.finding"),
-                            "Text files (*.txt *.md);;All files (*)")
+        p = self._pick_file(self._tr("cap.finding"), "Text files (*.txt *.md);;All files (*)")
         if not p:
             return
         key = self._selected_key()
-        self._run(lambda: self.controller.finding_report(p, key_id=key),
-                  ok_status=self._tr("status.finding_ok"))
+        self._run(lambda: self.controller.finding_report(p, key_id=key), ok_status=self._tr("status.finding_ok"))
 
     def sign_report_file(self) -> None:
-        p = self._pick_file(self._tr("cap.sign_json"),
-                            "JSON (*.json);;All files (*)")
+        p = self._pick_file(self._tr("cap.sign_json"), "JSON (*.json);;All files (*)")
         if not p:
             return
         key = self._selected_key()
-        self._run(lambda: self.controller.sign_report_file(p, key_id=key),
-                  ok_status=self._tr("status.sign_ok"))
+        self._run(lambda: self.controller.sign_report_file(p, key_id=key), ok_status=self._tr("status.sign_ok"))
 
     def verify_report_file(self) -> None:
-        p = self._pick_file(self._tr("cap.verify_json"),
-                            "JSON (*.json);;All files (*)")
+        p = self._pick_file(self._tr("cap.verify_json"), "JSON (*.json);;All files (*)")
         if not p:
             return
         key = self._selected_key()
-        self._run(lambda: self.controller.verify_report_file(p, key_id=key),
-                  ok_status=self._tr("status.verify_ok"))
+        self._run(lambda: self.controller.verify_report_file(p, key_id=key), ok_status=self._tr("status.verify_ok"))
 
     def generate_keypair(self) -> None:
         target = self._pick_dir(self._tr("cap.keypair_dir"))
         if not target:
             return
-        self._run(lambda: self.controller.generate_keypair(target),
-                  ok_status=self._tr("status.keypair_ok"))
+        self._run(lambda: self.controller.generate_keypair(target), ok_status=self._tr("status.keypair_ok"))
 
     def about(self) -> None:
         self.results.setPlainText(_ABOUT)

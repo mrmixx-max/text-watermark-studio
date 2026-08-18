@@ -64,6 +64,7 @@ def scan_file(path: Path, *, kgw_keys: list[dict] | None = None) -> dict:
     if kgw_keys and path.suffix.lower() in {".txt", ".md", ".html", ".htm", ".rst"}:
         try:
             from ..forensics.kgw import detect_multi_key
+
             text = data.decode("utf-8", errors="replace")
             kgw_result = detect_multi_key(text, kgw_keys, level="word", context=1)
             best = kgw_result.get("best") or {}
@@ -80,8 +81,7 @@ def scan_file(path: Path, *, kgw_keys: list[dict] | None = None) -> dict:
     return result
 
 
-def watch_dir(directory: str, *, once: bool = False, interval: float = 5.0,
-              out=print, kgw: bool = False) -> int:
+def watch_dir(directory: str, *, once: bool = False, interval: float = 5.0, out=print, kgw: bool = False) -> int:
     """Poll a directory; report new/changed files as JSON lines.
 
     If kgw=True, also run KGW text detection on text files (requires
@@ -99,6 +99,7 @@ def watch_dir(directory: str, *, once: bool = False, interval: float = 5.0,
     def _shutdown(signum, frame):
         nonlocal stop
         stop = True
+
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
 
@@ -106,11 +107,12 @@ def watch_dir(directory: str, *, once: bool = False, interval: float = 5.0,
     kgw_keys = None
     if kgw:
         from ..forensics.key_registry import KeyRegistry
-        registry = KeyRegistry('data/key_registry.json')
-        kgw_keys = [k for k in registry.list_keys()
-                    if k.get('family') == 'kgw' and k.get('secret')]
+
+        registry = KeyRegistry("data/key_registry.json")
+        kgw_keys = [k for k in registry.list_keys() if k.get("family") == "kgw" and k.get("secret")]
         if not kgw_keys:
             import warnings
+
             warnings.warn("watch --kgw: no KGW keys with secrets registered — KGW detection skipped", stacklevel=2)
 
     def pass_once():
@@ -148,12 +150,14 @@ def watch_dir(directory: str, *, once: bool = False, interval: float = 5.0,
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
+
     ap = argparse.ArgumentParser(prog="ai-wm watch")
     ap.add_argument("directory")
     ap.add_argument("--once", action="store_true", help="single scan pass, then exit")
     ap.add_argument("--interval", type=float, default=5.0, help="poll seconds (default 5)")
-    ap.add_argument("--kgw", action="store_true",
-                    help="also run KGW text detection on text files (requires registered KGW keys)")
+    ap.add_argument(
+        "--kgw", action="store_true", help="also run KGW text detection on text files (requires registered KGW keys)"
+    )
     args = ap.parse_args(argv)
     try:
         watch_dir(args.directory, once=args.once, interval=args.interval, kgw=args.kgw)

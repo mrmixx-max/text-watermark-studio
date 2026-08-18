@@ -35,9 +35,7 @@ SMALL_VOCAB = {f"w{i}": 0.0 for i in range(100)}
 def _green_rate(rng, vocab, ctx, bias, n=5000):
     """Empirical green-rate of `n` samples from sample_with_kgw_bias."""
     green = sum(
-        1 for _ in range(n)
-        if green_token(sample_with_kgw_bias(rng, vocab, KEY, ctx, GAMMA, bias),
-                       ctx, KEY, GAMMA)
+        1 for _ in range(n) if green_token(sample_with_kgw_bias(rng, vocab, KEY, ctx, GAMMA, bias), ctx, KEY, GAMMA)
     )
     return green / n
 
@@ -76,44 +74,57 @@ class TestSampleWithKgwBias:
         # A token's green membership depends on the context window size.
         vocab = default_vocab()
         flips = [
-            t for t in vocab
-            if green_token(t, ["previous"], KEY, GAMMA)
-            != green_token(t, ["earlier", "previous"], KEY, GAMMA)
+            t
+            for t in vocab
+            if green_token(t, ["previous"], KEY, GAMMA) != green_token(t, ["earlier", "previous"], KEY, GAMMA)
         ]
         assert flips, "greenlist should differ between c=1 and c=2 contexts"
 
 
 class TestGenerateMarkedText:
     def test_generate_detect_roundtrip(self):
-        r = generate_marked_text(prefix="", vocab=default_vocab(), key=KEY,
-                                 gamma=GAMMA, bias_strength=2.0, n_tokens=200, seed=1)
+        r = generate_marked_text(
+            prefix="", vocab=default_vocab(), key=KEY, gamma=GAMMA, bias_strength=2.0, n_tokens=200, seed=1
+        )
         d = detect_kgw(r["text"], KEY, GAMMA)
         assert d["verdict"] == "watermark_detected", d
         assert d["z_score"] >= 4.0, d
 
     def test_wrong_key_not_detected(self):
-        r = generate_marked_text(prefix="", vocab=default_vocab(), key=KEY,
-                                 gamma=GAMMA, bias_strength=2.0, n_tokens=200, seed=1)
+        r = generate_marked_text(
+            prefix="", vocab=default_vocab(), key=KEY, gamma=GAMMA, bias_strength=2.0, n_tokens=200, seed=1
+        )
         d = detect_kgw(r["text"], WRONG, GAMMA)
         assert d["z_score"] < 4.0, d
 
     def test_zero_bias_not_detected(self):
-        r = generate_marked_text(prefix="", vocab=default_vocab(), key=KEY,
-                                 gamma=GAMMA, bias_strength=0.0, n_tokens=200, seed=1)
+        r = generate_marked_text(
+            prefix="", vocab=default_vocab(), key=KEY, gamma=GAMMA, bias_strength=0.0, n_tokens=200, seed=1
+        )
         d = detect_kgw(r["text"], KEY, GAMMA)
         assert d["z_score"] < 4.0, d
 
     def test_context_window_mismatch_collapses(self):
-        r = generate_marked_text(prefix="local models", vocab=default_vocab(), key=KEY,
-                                 gamma=GAMMA, bias_strength=2.0, n_tokens=300, seed=3, context=2)
+        r = generate_marked_text(
+            prefix="local models",
+            vocab=default_vocab(),
+            key=KEY,
+            gamma=GAMMA,
+            bias_strength=2.0,
+            n_tokens=300,
+            seed=3,
+            context=2,
+        )
         right = detect_kgw(r["text"], KEY, GAMMA, context=2)
         wrong = detect_kgw(r["text"], KEY, GAMMA, context=1)
         assert right["z_score"] >= 4.0, right
         assert wrong["z_score"] < 4.0, wrong
 
     def test_deterministic_with_seed(self):
-        a = generate_marked_text(prefix="", vocab=default_vocab(), key=KEY,
-                                 gamma=GAMMA, bias_strength=2.0, n_tokens=50, seed=7)
-        b = generate_marked_text(prefix="", vocab=default_vocab(), key=KEY,
-                                 gamma=GAMMA, bias_strength=2.0, n_tokens=50, seed=7)
+        a = generate_marked_text(
+            prefix="", vocab=default_vocab(), key=KEY, gamma=GAMMA, bias_strength=2.0, n_tokens=50, seed=7
+        )
+        b = generate_marked_text(
+            prefix="", vocab=default_vocab(), key=KEY, gamma=GAMMA, bias_strength=2.0, n_tokens=50, seed=7
+        )
         assert a["text"] == b["text"]

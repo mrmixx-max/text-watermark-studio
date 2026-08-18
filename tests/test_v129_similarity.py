@@ -106,8 +106,7 @@ class TestHonestBoundary:
         meaning. A paraphrased rewrite must NOT be reported as high."""
         c = _corpus(tmp_path)
         r = check_similarity(TEXT_PARAPHRASED, [c["dir"]])
-        assert r["top_similarity"] < 0.4, (
-            "paraphrase scored too high — the honest boundary regressed")
+        assert r["top_similarity"] < 0.4, "paraphrase scored too high — the honest boundary regressed"
         assert not r["findings"]
 
 

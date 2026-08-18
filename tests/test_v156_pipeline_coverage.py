@@ -8,8 +8,6 @@ happy path. This file targets:
   edge cases in nfkc/fold_confusables handling
 """
 
-
-
 from ai_watermark_toolkit.pipeline import detect_text, run_pipeline
 
 TEXT = (
@@ -23,6 +21,7 @@ TEXT = (
 # ---------------------------------------------------------------------------
 # detect_text edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestDetectTextEdgeCases:
     def test_empty_string(self):
@@ -76,9 +75,11 @@ class TestDetectTextEdgeCases:
 
     def test_german_ai_markers(self):
         """German AI-flavored text has high markers."""
-        text = ("In der heutigen digitalen Welt ist es wichtig zu betonen, "
-                "dass moderne Technologien eine entscheidende Rolle spielen. "
-                "Darüber hinaus eröffnet dies eine Vielzahl von Möglichkeiten.")
+        text = (
+            "In der heutigen digitalen Welt ist es wichtig zu betonen, "
+            "dass moderne Technologien eine entscheidende Rolle spielen. "
+            "Darüber hinaus eröffnet dies eine Vielzahl von Möglichkeiten."
+        )
         result = detect_text(text, lang="de")
         assert "markers" in result["layers"]
 
@@ -104,6 +105,7 @@ class TestDetectTextEdgeCases:
 # ---------------------------------------------------------------------------
 # run_pipeline edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestRunPipelineEdgeCases:
     def test_empty_text(self):
@@ -142,7 +144,7 @@ class TestRunPipelineEdgeCases:
 
     def test_both_nfkc_and_fold(self):
         """Both NFKC and fold-confusables can be active simultaneously."""
-        text = "Ŧhe ſentence has boTH ſpecial chars and fullwidth \" area\""
+        text = 'Ŧhe ſentence has boTH ſpecial chars and fullwidth " area"'
         out, report = run_pipeline(text, nfkc=True, fold_confusables=True)
         assert isinstance(out, str)
         assert "before" in report and "after" in report
@@ -170,8 +172,7 @@ class TestRunPipelineEdgeCases:
 
     def test_rewrite_mode_clarity(self):
         """rewrite_mode='clarity' works in pipeline (uses text with filler words)."""
-        text = ("It is very important to note that in order to properly "
-                "leverage the fact that this really matters.")
+        text = "It is very important to note that in order to properly leverage the fact that this really matters."
         out, report = run_pipeline(text, rewrite_mode="clarity")
         assert report["rewrite"] is not None
         assert report["rewrite"]["mode"] == "clarity"
@@ -179,8 +180,7 @@ class TestRunPipelineEdgeCases:
         assert out != text or report["rewrite"]["similarity_ratio"] < 1.0
 
     def test_rewrite_mode_concise(self):
-        text = ("It should be noted that this is a very important thing "
-                "in order to do the task.")
+        text = "It should be noted that this is a very important thing in order to do the task."
         out, report = run_pipeline(text, rewrite_mode="concise")
         assert report["rewrite"]["mode"] == "concise"
         # Concise mode removes hedge phrases, so similarity should be < 1.0
@@ -209,9 +209,11 @@ class TestRunPipelineEdgeCases:
     def test_detect_before_and_after_differ(self):
         """Before and after detection reports differ when pipeline changes text."""
         # Text with AI markers and filler words that actually get modified
-        text = ("In today's world, it is important to note that "
-                "modern technology leverages automation in order to "
-                "achieve the best results.")
+        text = (
+            "In today's world, it is important to note that "
+            "modern technology leverages automation in order to "
+            "achieve the best results."
+        )
         _, report = run_pipeline(text)
         assert report["before"]["input_hash"] != report["after"]["input_hash"]
 

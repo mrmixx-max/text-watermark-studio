@@ -42,8 +42,7 @@ def _minimal_avif_with_c2pa_and_xmp() -> bytes:
     jumb_sub = _box(b"jumb", b"c2pa.manifest.store.v1")
     xmp_uuid_sub = _box(
         b"uuid",
-        XMP_UUID
-        + b"<?xpacket begin='' id='W5M0MpCehiHzreSzNTczkc9d'?>"
+        XMP_UUID + b"<?xpacket begin='' id='W5M0MpCehiHzreSzNTczkc9d'?>"
         b"<x:xmpmeta xmlns:x='adobe:ns:meta/'><rdf:RDF "
         b"xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
         b"<rdf:Description rdf:about='' xmlns:ai='http://ns.adobe.com/ai/'>"
@@ -51,9 +50,10 @@ def _minimal_avif_with_c2pa_and_xmp() -> bytes:
         b"</rdf:RDF></x:xmpmeta>",
     )
     hdlr = _full_box(
-        b"hdlr", 0, 0,
-        b"\x00\x00\x00\x00pict\x00\x00\x00\x00\x00\x00\x00\x00"
-        b"\x00\x00\x00\x00PictureHandler\x00",
+        b"hdlr",
+        0,
+        0,
+        b"\x00\x00\x00\x00pict\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00PictureHandler\x00",
     )
     meta = _full_box(b"meta", 0, 0, hdlr + jumb_sub + xmp_uuid_sub)
     top_jumb = _box(b"jumb", b"c2pa.claim.v1 contentcredentials")
@@ -64,10 +64,12 @@ def _minimal_avif_with_c2pa_and_xmp() -> bytes:
 def _minimal_heic_plain() -> bytes:
     ftyp = _box(b"ftyp", b"heic\x00\x00\x00\x00mif1heic")
     meta = _full_box(
-        b"meta", 0, 0,
-        _full_box(b"hdlr", 0, 0,
-                  b"\x00\x00\x00\x00pict\x00\x00\x00\x00\x00\x00\x00\x00"
-                  b"\x00\x00\x00\x00PictureHandler\x00"),
+        b"meta",
+        0,
+        0,
+        _full_box(
+            b"hdlr", 0, 0, b"\x00\x00\x00\x00pict\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00PictureHandler\x00"
+        ),
     )
     mdat = _box(b"mdat", b"\x0a\x0b\x0c")
     return ftyp + meta + mdat

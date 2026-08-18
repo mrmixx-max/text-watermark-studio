@@ -40,7 +40,7 @@ def _shingles(text: str, k: int = _K_DEFAULT) -> list[tuple[str, ...]]:
     if not toks:
         return []
     kk = min(k, len(toks))
-    return [tuple(toks[i:i + kk]) for i in range(len(toks) - kk + 1)]
+    return [tuple(toks[i : i + kk]) for i in range(len(toks) - kk + 1)]
 
 
 def _shingle_digest(shingle: tuple[str, ...]) -> int:
@@ -95,8 +95,7 @@ def _jaccard(sig_a: tuple[int, ...], sig_b: tuple[int, ...]) -> float:
     return equal / len(sig_a)
 
 
-def _find_overlaps(sh_a: list[tuple[str, ...]], sh_b: list[tuple[str, ...]],
-                   limit: int = 3) -> list[str]:
+def _find_overlaps(sh_a: list[tuple[str, ...]], sh_b: list[tuple[str, ...]], limit: int = 3) -> list[str]:
     """Example matching shingles as fundstelle evidence (word-level quotes)."""
     set_b = set(sh_b)
     seen: set[str] = set()
@@ -181,9 +180,9 @@ def clear_signature_cache() -> None:
     _sig_cache.clear()
 
 
-def check_similarity(input_text: str, corpus_paths: list[Path],
-                     threshold: float = 0.4, top: int = 5,
-                     k: int = _K_DEFAULT) -> dict:
+def check_similarity(
+    input_text: str, corpus_paths: list[Path], threshold: float = 0.4, top: int = 5, k: int = _K_DEFAULT
+) -> dict:
     """Compare input_text against every readable file in the corpus.
 
     Returns a dict with per-document similarity, verdicts and fundstelle
@@ -202,18 +201,19 @@ def check_similarity(input_text: str, corpus_paths: list[Path],
         _, sig_b, sh_b = entry
         score = _jaccard(sig_a, sig_b)
         overlaps = _find_overlaps(sh_a, sh_b)
-        results.append({
-            "path": str(path),
-            "similarity": round(score, 4),
-            "verdict": _verdict(score, threshold),
-            "fundstellen": overlaps,
-        })
+        results.append(
+            {
+                "path": str(path),
+                "similarity": round(score, 4),
+                "verdict": _verdict(score, threshold),
+                "fundstellen": overlaps,
+            }
+        )
     results.sort(key=lambda r: r["similarity"], reverse=True)
     findings = [r for r in results if r["similarity"] >= threshold]
     return {
         "input": {"tokens": len(_tokens(input_text)), "threshold": threshold},
-        "corpus": {"files": len(results), "skipped": len(skipped),
-                   "skipped_paths": skipped},
+        "corpus": {"files": len(results), "skipped": len(skipped), "skipped_paths": skipped},
         "findings": findings[:top],
         "top_similarity": results[0]["similarity"] if results else 0.0,
     }
@@ -230,14 +230,15 @@ def _verdict(score: float, threshold: float) -> str:
 
 
 def render_text(report: dict) -> str:
-    lines = [f"Similarity check — {report['input']['tokens']} tokens input, "
-             f"threshold {report['input']['threshold']}",
-             f"Corpus: {report['corpus']['files']} files"
-             + (f", {report['corpus']['skipped']} skipped" if report["corpus"]["skipped"] else "")]
+    lines = [
+        f"Similarity check — {report['input']['tokens']} tokens input, threshold {report['input']['threshold']}",
+        f"Corpus: {report['corpus']['files']} files"
+        + (f", {report['corpus']['skipped']} skipped" if report["corpus"]["skipped"] else ""),
+    ]
     for f in report["findings"]:
         lines.append(f"  {f['similarity']:.2f}  {f['verdict']:<7} {f['path']}")
         for quote in f["fundstellen"]:
-            lines.append(f"        ~ \"{quote[:80]}\"")
+            lines.append(f'        ~ "{quote[:80]}"')
     if not report["findings"]:
         lines.append("  no findings above threshold")
     return "\n".join(lines)

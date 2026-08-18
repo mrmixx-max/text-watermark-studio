@@ -64,10 +64,7 @@ def get_stats() -> dict:
     now = time.time()
     uptime = now - _stats["start_ts"]
     # detections in last 60s
-    recent = [
-        d for d in _stats["recent_detections"]
-        if now - _iso_to_ts(d["ts"]) < 60
-    ]
+    recent = [d for d in _stats["recent_detections"] if now - _iso_to_ts(d["ts"]) < 60]
     _stats["detections_last_minute"] = len(recent)
     return {
         "detections_total": _stats["detections_total"],
@@ -125,37 +122,27 @@ async def sse_stats():
 # ---------------------------------------------------------------------------
 @router.get("/", response_class=HTMLResponse)
 async def page_overview(request: Request):
-    return templates.TemplateResponse(
-        request, "overview.html", {"stats": get_stats(), "page": "overview"}
-    )
+    return templates.TemplateResponse(request, "overview.html", {"stats": get_stats(), "page": "overview"})
 
 
 @router.get("/watermark", response_class=HTMLResponse)
 async def page_watermark(request: Request):
-    return templates.TemplateResponse(
-        request, "watermark.html", {"stats": get_stats(), "page": "watermark"}
-    )
+    return templates.TemplateResponse(request, "watermark.html", {"stats": get_stats(), "page": "watermark"})
 
 
 @router.get("/files", response_class=HTMLResponse)
 async def page_files(request: Request):
-    return templates.TemplateResponse(
-        request, "files.html", {"stats": get_stats(), "page": "files"}
-    )
+    return templates.TemplateResponse(request, "files.html", {"stats": get_stats(), "page": "files"})
 
 
 @router.get("/reports", response_class=HTMLResponse)
 async def page_reports(request: Request):
-    return templates.TemplateResponse(
-        request, "reports.html", {"stats": get_stats(), "page": "reports"}
-    )
+    return templates.TemplateResponse(request, "reports.html", {"stats": get_stats(), "page": "reports"})
 
 
 @router.get("/settings", response_class=HTMLResponse)
 async def page_settings(request: Request):
-    return templates.TemplateResponse(
-        request, "settings.html", {"stats": get_stats(), "page": "settings"}
-    )
+    return templates.TemplateResponse(request, "settings.html", {"stats": get_stats(), "page": "settings"})
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +152,7 @@ def mount_web_dashboard(app):
     """Include the dashboard router and serve static files."""
     # Form-data adapter endpoints for HTMX (mounted first so /dashboard/api/* works)
     from .forms import router as forms_router
+
     app.include_router(forms_router)
     # Page routes at /dashboard/
     app.include_router(router, prefix="/dashboard")

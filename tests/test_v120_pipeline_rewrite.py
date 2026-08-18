@@ -7,8 +7,6 @@ rewritten text differs and the report carries the rewrite phase. The API route
 exposes it.
 """
 
-
-
 from ai_watermark_toolkit.pipeline import run_pipeline
 
 TEXT = (
@@ -51,6 +49,7 @@ class TestPipelineApi:
         from fastapi.testclient import TestClient
 
         from ai_watermark_toolkit.api.fastapi_app import app
+
         c = TestClient(app)
         r = c.post("/api/pipeline", json={"text": TEXT, "rewrite_mode": "structural"})
         assert r.status_code == 200, r.text
@@ -62,6 +61,7 @@ class TestPipelineApi:
         from fastapi.testclient import TestClient
 
         from ai_watermark_toolkit.api.fastapi_app import app
+
         c = TestClient(app)
         r = c.post("/api/pipeline", json={"text": TEXT})
         assert r.status_code == 200

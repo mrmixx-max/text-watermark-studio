@@ -37,6 +37,7 @@ CLI_MODULE = "ai_watermark_toolkit.cli"
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def temp_key_file(tmp_path):
     """Write a key secret to a temp file and return (path, secret)."""
@@ -65,6 +66,7 @@ def input_file(tmp_path):
 # ---------------------------------------------------------------------------
 # _resolve_key_arg  ( --key-file wins over --key )
 # ---------------------------------------------------------------------------
+
 
 class TestResolveKeyArg:
     def test_key_only(self):
@@ -100,6 +102,7 @@ class TestResolveKeyArg:
 # _resolve_secret_arg  ( --secret-file wins over --secret )
 # ---------------------------------------------------------------------------
 
+
 class TestResolveSecretArg:
     def test_secret_only(self):
         args = argparse.Namespace(secret="inline-secret", secret_file=None)
@@ -131,13 +134,21 @@ class TestResolveSecretArg:
 # _resolve_key  (key_id lookup vs raw secret)
 # ---------------------------------------------------------------------------
 
+
 class TestResolveKey:
     def test_key_id_lookup(self, monkeypatch):
         """key_id found in registry returns (dict, True)."""
-        registry = MockRegistry([
-            {"key_id": "demo-kgw-1", "family": "kgw", "secret": "demo-secret",
-             "gamma": 0.25, "key_source": "registry"},
-        ])
+        registry = MockRegistry(
+            [
+                {
+                    "key_id": "demo-kgw-1",
+                    "family": "kgw",
+                    "secret": "demo-secret",
+                    "gamma": 0.25,
+                    "key_source": "registry",
+                },
+            ]
+        )
         key, from_registry = _resolve_key(registry, "demo-kgw-1")
         assert from_registry is True
         assert key["secret"] == "demo-secret"
@@ -169,6 +180,7 @@ class TestResolveKey:
 # _read  (stdin vs file path)
 # ---------------------------------------------------------------------------
 
+
 class TestRead:
     def test_file_path(self, input_file):
         """_read reads from a file when --stdin is not set."""
@@ -186,39 +198,50 @@ class TestRead:
 # main_entry  (error wrapper)
 # ---------------------------------------------------------------------------
 
+
 class TestMainEntry:
     def test_file_not_found(self, monkeypatch):
         """FileNotFoundError returns 2 with a clean stderr message."""
+
         def _raise(*a, **kw):
             raise FileNotFoundError(2, "No such file or directory", "missing.txt")
+
         monkeypatch.setattr("ai_watermark_toolkit.cli.main", _raise)
         assert main_entry() == 2
 
     def test_is_a_directory(self, monkeypatch):
         """IsADirectoryError returns 2."""
+
         def _raise(*a, **kw):
             raise IsADirectoryError("some_dir")
+
         monkeypatch.setattr("ai_watermark_toolkit.cli.main", _raise)
         assert main_entry() == 2
 
     def test_value_error(self, monkeypatch):
         """ValueError returns 2."""
+
         def _raise(*a, **kw):
             raise ValueError("bad value")
+
         monkeypatch.setattr("ai_watermark_toolkit.cli.main", _raise)
         assert main_entry() == 2
 
     def test_success(self, monkeypatch):
         """Zero return code propagates."""
+
         def _ok(*a, **kw):
             return 0
+
         monkeypatch.setattr("ai_watermark_toolkit.cli.main", _ok)
         assert main_entry() == 0
 
     def test_finding_return_code(self, monkeypatch):
         """Return code 1 (findings) propagates."""
+
         def _findings(*a, **kw):
             return 1
+
         monkeypatch.setattr("ai_watermark_toolkit.cli.main", _findings)
         assert main_entry() == 1
 
@@ -227,17 +250,14 @@ class TestMainEntry:
 # Subprocess-based CLI error path tests
 # ---------------------------------------------------------------------------
 
+
 def run_cli(args, stdin=None, cwd=None):
     """Run the CLI module as a subprocess, returning CompletedProcess."""
     env = dict(os.environ)
-    env["PYTHONPATH"] = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"
-    )
+    env["PYTHONPATH"] = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
     base = [sys.executable, "-m", CLI_MODULE]
     cwd = cwd or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return subprocess.run(
-        base + args, capture_output=True, text=True, input=stdin, env=env, cwd=cwd
-    )
+    return subprocess.run(base + args, capture_output=True, text=True, input=stdin, env=env, cwd=cwd)
 
 
 class TestCliDetectErrors:
@@ -310,16 +330,25 @@ class TestCliPipelineErrors:
     def test_pipeline_all_flags(self, tmp_path):
         """pipeline with all optional flags: nfkc, fold-confusables, aggressive, etc."""
         f = tmp_path / "in.txt"
-        f.write_text("Hello\u200b World! It is important to note that this leverages automation.",
-                     encoding="utf-8")
+        f.write_text("Hello\u200b World! It is important to note that this leverages automation.", encoding="utf-8")
         out = tmp_path / "out.txt"
         report = tmp_path / "report.json"
-        r = run_cli([
-            "pipeline", str(f), "--nfkc", "--fold-confusables",
-            "--intensity", "aggressive",
-            "--rewrite-mode", "structural",
-            "-o", str(out), "--report", str(report),
-        ])
+        r = run_cli(
+            [
+                "pipeline",
+                str(f),
+                "--nfkc",
+                "--fold-confusables",
+                "--intensity",
+                "aggressive",
+                "--rewrite-mode",
+                "structural",
+                "-o",
+                str(out),
+                "--report",
+                str(report),
+            ]
+        )
         assert r.returncode == 0
         assert out.exists()
         assert report.exists()
@@ -419,17 +448,28 @@ class TestCliDeltaZErrors:
         f2 = tmp_path / "after.txt"
         f1.write_text("Hello world", encoding="utf-8")
         f2.write_text("Hello world", encoding="utf-8")
-        r = run_cli([
-            "delta-z", str(f1), str(f2),
-            "--transform", "clean", "--key", "demo-kgw-1",
-        ])
+        r = run_cli(
+            [
+                "delta-z",
+                str(f1),
+                str(f2),
+                "--transform",
+                "clean",
+                "--key",
+                "demo-kgw-1",
+            ]
+        )
         assert r.returncode == 2
         assert "error" in r.stderr.lower()
 
     def test_delta_z_missing_before(self, tmp_path):
-        r = run_cli([
-            "delta-z", "--key", "demo-kgw-1",
-        ])
+        r = run_cli(
+            [
+                "delta-z",
+                "--key",
+                "demo-kgw-1",
+            ]
+        )
         assert r.returncode == 2
 
     def test_delta_z_with_output_flag(self, tmp_path):
@@ -438,10 +478,17 @@ class TestCliDeltaZErrors:
         f1.write_text("Hello world", encoding="utf-8")
         f2.write_text("Hello world", encoding="utf-8")
         out = tmp_path / "result.json"
-        r = run_cli([
-            "delta-z", str(f1), str(f2),
-            "--key", "demo-kgw-1", "-o", str(out),
-        ])
+        r = run_cli(
+            [
+                "delta-z",
+                str(f1),
+                str(f2),
+                "--key",
+                "demo-kgw-1",
+                "-o",
+                str(out),
+            ]
+        )
         # May succeed if key is valid, or fail if key has no secret
         if r.returncode == 0:
             assert out.exists()
@@ -476,8 +523,7 @@ class TestCliTraceErrors:
         f = tmp_path / "in.txt"
         f.write_text(TEXT, encoding="utf-8")
         out = tmp_path / "trace.json"
-        r = run_cli(["trace", str(f), "--key", "demo-kgw-1",
-                     "--json", "-o", str(out)])
+        r = run_cli(["trace", str(f), "--key", "demo-kgw-1", "--json", "-o", str(out)])
         if r.returncode == 0:
             assert out.exists()
         else:
@@ -553,8 +599,7 @@ class TestCliKgwSample:
         assert "detected" in data
 
     def test_kgw_sample_custom_prefix(self):
-        r = run_cli(["kgw-sample", "--n-tokens", "10", "--seed", "42",
-                     "--prefix", "Hello world"])
+        r = run_cli(["kgw-sample", "--n-tokens", "10", "--seed", "42", "--prefix", "Hello world"])
         assert r.returncode == 0
 
 
@@ -666,6 +711,7 @@ import io
 
 class MockRegistry:
     """Minimal mock of KeyRegistry for _resolve_key tests."""
+
     def __init__(self, keys):
         self._keys = keys
 

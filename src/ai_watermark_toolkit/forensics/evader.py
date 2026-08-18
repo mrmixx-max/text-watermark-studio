@@ -48,6 +48,7 @@ from .kgw import (
 # Candidate pools (non-green alternatives)
 # ---------------------------------------------------------------------------
 
+
 def _candidate_pool(word: str) -> list[str]:
     """Return replacement candidates for a word.
 
@@ -66,9 +67,22 @@ def _candidate_pool(word: str) -> list[str]:
             cands.extend(pool)
     # Generic content-word fallbacks (neutral, same frequency band).
     cands += [
-        "major", "general", "current", "specific", "certain", "various",
-        "significant", "substantial", "notable", "considerable",
-        "overall", "primary", "essential", "overall", "core", "main",
+        "major",
+        "general",
+        "current",
+        "specific",
+        "certain",
+        "various",
+        "significant",
+        "substantial",
+        "notable",
+        "considerable",
+        "overall",
+        "primary",
+        "essential",
+        "overall",
+        "core",
+        "main",
     ]
     # Dedupe, case-normalized, exclude the word itself.
     seen: set = set()
@@ -96,6 +110,7 @@ def _first_non_green(
 # ---------------------------------------------------------------------------
 # Core evader
 # ---------------------------------------------------------------------------
+
 
 def evade(
     text: str,
@@ -132,14 +147,23 @@ def evade(
     if before_z < target_z:
         # Already below target — nothing to do.
         return _result(
-            text, text, tokens, tokens, [], [], target_z,
-            before_z, 0, 1.0, "already_below",
+            text,
+            text,
+            tokens,
+            tokens,
+            [],
+            [],
+            target_z,
+            before_z,
+            0,
+            1.0,
+            "already_below",
         )
 
     # Score every token position against its greenlist context.
     scored: list[tuple[int, str, list[str], bool]] = []
     for i in range(1, n):
-        ctx = tokens[max(0, i - context):i]
+        ctx = tokens[max(0, i - context) : i]
         is_green = green_token(tokens[i], ctx, key, gamma)
         scored.append((i, tokens[i], ctx, is_green))
 
@@ -160,7 +184,7 @@ def evade(
     for pos in green_order:
         if used >= max_changes:
             break
-        ctx = work[max(0, pos - context):pos]
+        ctx = work[max(0, pos - context) : pos]
         if not green_token(work[pos], ctx, key, gamma):
             # Already flipped by a previous edit (context changed) — skip.
             continue
@@ -189,8 +213,16 @@ def evade(
     word_overlap = _word_overlap(text, evaded)
     after = detect_kgw(evaded, key, gamma=gamma, level=level, context=context)
     return _result(
-        text, evaded, tokens, work, changed, trajectory, target_z,
-        before_z, after.get("z_score") or 0.0, similarity,
+        text,
+        evaded,
+        tokens,
+        work,
+        changed,
+        trajectory,
+        target_z,
+        before_z,
+        after.get("z_score") or 0.0,
+        similarity,
         "evaded" if (after.get("z_score") or 0.0) < target_z else "budget_exhausted",
         word_overlap=word_overlap,
         verdict_after=after.get("verdict"),
@@ -234,19 +266,20 @@ def _result(
 def _similarity(a: str, b: str) -> float:
     """difflib ratio — character-level similarity (stdlib, deterministic)."""
     from difflib import SequenceMatcher
+
     return SequenceMatcher(None, a, b).ratio()
 
 
 def _word_overlap(a: str, b: str) -> float:
     """Fraction of original words that survived unchanged (position-insensitive)."""
     from collections import Counter
+
     ca, cb = Counter(a.split()), Counter(b.split())
     overlap = sum((ca & cb).values())
     return overlap / max(1, sum(ca.values()))
 
 
-def _ollama_candidates(sentence: str, mask_index: int, model: str,
-                       top_k: int = 3, timeout: float = 20.0) -> list[str]:
+def _ollama_candidates(sentence: str, mask_index: int, model: str, top_k: int = 3, timeout: float = 20.0) -> list[str]:
     """Ask a local Ollama model for natural alternatives at one position.
 
     Best effort: any failure returns [] and the deterministic pool takes
@@ -257,22 +290,23 @@ def _ollama_candidates(sentence: str, mask_index: int, model: str,
     import urllib.request
 
     tokens = sentence.split()
-    prompt_sentence = " ".join(
-        w if i != mask_index else "[MASK]" for i, w in enumerate(tokens)
-    )
-    payload = json.dumps({
-        "model": model,
-        "prompt": (
-            "List 3 natural words that fit the [MASK] in this sentence, "
-            "plain and neutral. Reply with ONLY the words, comma-separated, "
-            f"no explanation.\nText: {prompt_sentence}\nWords:"
-        ),
-        "stream": False,
-        "options": {"num_predict": 20, "temperature": 0.0},
-    }).encode("utf-8")
+    prompt_sentence = " ".join(w if i != mask_index else "[MASK]" for i, w in enumerate(tokens))
+    payload = json.dumps(
+        {
+            "model": model,
+            "prompt": (
+                "List 3 natural words that fit the [MASK] in this sentence, "
+                "plain and neutral. Reply with ONLY the words, comma-separated, "
+                f"no explanation.\nText: {prompt_sentence}\nWords:"
+            ),
+            "stream": False,
+            "options": {"num_predict": 20, "temperature": 0.0},
+        }
+    ).encode("utf-8")
     try:
         req = urllib.request.Request(
-            "http://localhost:11434/api/generate", data=payload,
+            "http://localhost:11434/api/generate",
+            data=payload,
             headers={"Content-Type": "application/json"},
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -291,11 +325,9 @@ def format_evade_report(result: dict[str, Any]) -> str:
     lines = [
         "KGW adversarial evaluation (white-box, own scheme)",
         f"  status:    {result['status']}",
-        f"  Z before:  {result['z_before']:+.2f}   Z after: {result['z_after']:+.2f}"
-        f"   (target < {result['target_z']})",
+        f"  Z before:  {result['z_before']:+.2f}   Z after: {result['z_after']:+.2f}   (target < {result['target_z']})",
         f"  verdict:   {result.get('verdict_after')}",
-        f"  changes:   {result['changes']} of {result['words_before']} words"
-        f"   ({result['change_ratio'] * 100:.1f}%)",
+        f"  changes:   {result['changes']} of {result['words_before']} words   ({result['change_ratio'] * 100:.1f}%)",
         f"  similarity: {result['similarity'] * 100:.1f}%"
         f"   word overlap: {(result.get('word_overlap') or 0) * 100:.1f}%",
     ]

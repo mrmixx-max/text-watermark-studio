@@ -34,10 +34,7 @@ _PLAIN_LOGO = r"""
            ╚═╝    ╚══╝╚══╝ ╚══════╝
 """.strip("\n")
 
-_PLAIN_SCAN = (
-    "[ scan ]  \"Hello\" U+200B \"World\" U+202E \" hidden\"\n"
-    "[ run  ]  5 markers (3 high) -> 0 markers\n"
-)
+_PLAIN_SCAN = '[ scan ]  "Hello" U+200B "World" U+202E " hidden"\n[ run  ]  5 markers (3 high) -> 0 markers\n'
 
 _TAGLINE = "detect . clean . dilute . embed . rewrite"
 
@@ -49,6 +46,7 @@ def _ansi_on() -> None:
             # Enable ANSI escape sequences on Windows 10+
             # Using ctypes instead of os.system("") for safety
             import ctypes
+
             kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
             # Enable ENABLE_VIRTUAL_TERMINAL_PROCESSING
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
@@ -62,23 +60,31 @@ def render_banner(color: bool = True) -> str:
         logo = "\n".join(TEAL + line + RESET for line in _PLAIN_LOGO.splitlines())
         scan = ""
         for line in _PLAIN_SCAN.splitlines():
-            scan += line.replace("U+200B", RED + "U+200B" + TEAL).replace(
-                "U+202E", RED + "U+202E" + TEAL) + RESET + "\n"
+            scan += (
+                line.replace("U+200B", RED + "U+200B" + TEAL).replace("U+202E", RED + "U+202E" + TEAL) + RESET + "\n"
+            )
         scan = scan.replace("[ scan ]", DIM + "[ scan ]" + RESET)
         scan = scan.replace("[ run  ]", DIM + "[ run  ]" + RESET)
         scan = scan.replace("0 markers", GREEN + "0 markers" + TEAL)
         return (
-            logo + "\n"
-            + BOLD + "  -- TEXT WATERMARK STUDIO" + RESET + DIM + "  v" + __version__ + "  --" + RESET + "\n"
+            logo
+            + "\n"
+            + BOLD
+            + "  -- TEXT WATERMARK STUDIO"
+            + RESET
+            + DIM
+            + "  v"
+            + __version__
+            + "  --"
+            + RESET
+            + "\n"
             + scan
-            + DIM + "  " + _TAGLINE + RESET
+            + DIM
+            + "  "
+            + _TAGLINE
+            + RESET
         )
-    return (
-        _PLAIN_LOGO + "\n"
-        + "  -- TEXT WATERMARK STUDIO  v" + __version__ + "  --\n"
-        + _PLAIN_SCAN
-        + "  " + _TAGLINE
-    )
+    return _PLAIN_LOGO + "\n" + "  -- TEXT WATERMARK STUDIO  v" + __version__ + "  --\n" + _PLAIN_SCAN + "  " + _TAGLINE
 
 
 def render_detect_report(report: dict, color: bool = True) -> str:

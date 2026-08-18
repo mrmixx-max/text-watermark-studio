@@ -30,8 +30,7 @@ PROMPTS: dict[str, str] = {
         "and name. Return only the final text in the original language."
     ),
     "backtranslate_phase1": (
-        "Translate the user's text into English. Keep every fact, number and name. "
-        "Return only the English translation."
+        "Translate the user's text into English. Keep every fact, number and name. Return only the English translation."
     ),
     "backtranslate_phase2": (
         "Translate the user's English text back into its original language. Keep every "
@@ -40,11 +39,7 @@ PROMPTS: dict[str, str] = {
 }
 
 
-def build_rewrite_prompt(text: str, style: str = 'clarity', instruction: str | None = None) -> dict[str, Any]:
-    base = PROMPTS.get(style, PROMPTS['clarity'])
-    prompt = (
-        f"{base} "
-        f"Additional instruction: {instruction or 'none'}.\n\n"
-        f"TEXT:\n{text}"
-    )
-    return {'style': style, 'instruction': instruction, 'prompt': prompt}
+def build_rewrite_prompt(text: str, style: str = "clarity", instruction: str | None = None) -> dict[str, Any]:
+    base = PROMPTS.get(style, PROMPTS["clarity"])
+    prompt = f"{base} Additional instruction: {instruction or 'none'}.\n\nTEXT:\n{text}"
+    return {"style": style, "instruction": instruction, "prompt": prompt}

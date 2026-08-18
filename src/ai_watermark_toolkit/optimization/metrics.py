@@ -14,8 +14,7 @@ Metrics (0..1 each):
 from __future__ import annotations
 
 
-def protected_term_preservation(original: str, rewritten: str,
-                                terms: list[str]) -> float:
+def protected_term_preservation(original: str, rewritten: str, terms: list[str]) -> float:
     """1.0 if every protected term survives verbatim, else 0.0 (hard rule)."""
     if not terms:
         return 1.0
@@ -67,9 +66,12 @@ def marker_reduction(original: str, rewritten: str) -> float:
 def lexical_balance(original: str, rewritten: str) -> float:
     """Rewritten enough to matter (Jaccard < 0.85) but not drifted
     (Jaccard >= 0.25). 1.0 inside the band, decaying outside."""
+
     def tokens(s: str) -> set:
         import re
+
         return {t.lower() for t in re.findall(r"[A-Za-z0-9\u00C0-\u024F]+", s)}
+
     o, r = tokens(original), tokens(rewritten)
     if not o:
         return 0.0
@@ -90,9 +92,11 @@ def composite(original: str, rewritten: str, terms: list[str]) -> dict:
         "marker_reduction": marker_reduction(original, rewritten),
         "lexical_balance": lexical_balance(original, rewritten),
     }
-    weights = {"protected_term_preservation": 0.4,
-               "length_ratio": 0.15,
-               "marker_reduction": 0.25,
-               "lexical_balance": 0.2}
+    weights = {
+        "protected_term_preservation": 0.4,
+        "length_ratio": 0.15,
+        "marker_reduction": 0.25,
+        "lexical_balance": 0.2,
+    }
     score = 0.0 if guard < 1.0 else sum(m[k] * weights[k] for k in weights)
     return {"metrics": m, "score": round(score, 4), "guardrail_passed": guard >= 1.0}

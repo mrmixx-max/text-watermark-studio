@@ -19,10 +19,12 @@ class DiluteResult:
 
 def _freeze_codeblocks(text: str) -> tuple[str, dict[str, str]]:
     blocks = {}
+
     def repl(m):
         key = f"__CODEBLOCK_{len(blocks)}__"
         blocks[key] = m.group(0)
         return key
+
     frozen = re.sub(r"```.*?```", repl, text, flags=re.DOTALL)
     return frozen, blocks
 
@@ -44,4 +46,6 @@ def dilute_text(text: str, intensity: str = "standard") -> DiluteResult:
         out = re.sub(r"\s*—\s*", ". ", out)
         out = re.sub(r"\.{2,}", ".", out)
     out = _unfreeze(out, blocks)
-    return DiluteResult(text=out.strip(), intensity=intensity, changed=(out.strip() != text.strip()), frozen_blocks=len(blocks))
+    return DiluteResult(
+        text=out.strip(), intensity=intensity, changed=(out.strip() != text.strip()), frozen_blocks=len(blocks)
+    )

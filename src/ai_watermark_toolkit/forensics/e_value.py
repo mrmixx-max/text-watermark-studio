@@ -79,11 +79,10 @@ def _iter_scored(text: str, key: str, gamma: float, level: str, context: int):
     else:
         tokens = tokenize(text, level=level)
         for i in range(1, len(tokens)):
-            yield tokens[i], tokens[max(0, i - context):i]
+            yield tokens[i], tokens[max(0, i - context) : i]
 
 
-def _log_process(text: str, key: str, gamma: float, delta: float,
-                 level: str, context: int) -> tuple[list[bool], float]:
+def _log_process(text: str, key: str, gamma: float, delta: float, level: str, context: int) -> tuple[list[bool], float]:
     """Green flags + per-token log-ratio contributions for the whole text.
 
     Returns (flags, log_denom) where log_denom = log(gamma*e^delta + 1-gamma)
@@ -96,9 +95,14 @@ def _log_process(text: str, key: str, gamma: float, delta: float,
     return flags, log_denom
 
 
-def e_process(text: str, key: str, gamma: float = DEFAULT_GAMMA,
-              delta: float = DEFAULT_DELTA, level: str = "word",
-              context: int = 1) -> float:
+def e_process(
+    text: str,
+    key: str,
+    gamma: float = DEFAULT_GAMMA,
+    delta: float = DEFAULT_DELTA,
+    level: str = "word",
+    context: int = 1,
+) -> float:
     """Run the e-process over the whole text; return E_n (the product).
 
     Computed in log space and capped at the largest finite float: for long
@@ -112,10 +116,16 @@ def e_process(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     return math.exp(min(log_e, _LOG_MAX))
 
 
-def e_detect(text: str, key: str, gamma: float = DEFAULT_GAMMA,
-             delta: float = DEFAULT_DELTA, alpha: float = 0.05,
-             level: str = "word", context: int = 1,
-             early_stop: bool = False) -> dict:
+def e_detect(
+    text: str,
+    key: str,
+    gamma: float = DEFAULT_GAMMA,
+    delta: float = DEFAULT_DELTA,
+    alpha: float = 0.05,
+    level: str = "word",
+    context: int = 1,
+    early_stop: bool = False,
+) -> dict:
     """E-process detection for one key: E_n >= 1/alpha (anytime-valid).
 
     `early_stop=True` stops as soon as log_e >= log(1/alpha) — Ville's
@@ -132,10 +142,18 @@ def e_detect(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     n_total = len(flags)
     if n_total == 0:
         return {
-            "e_value": 1.0, "log_e": 0.0, "threshold": round(1.0 / alpha, 6),
-            "detected": False, "n_tokens": 0, "tokens_processed": 0,
-            "stopped_at": None, "green_count": 0, "green_rate": None,
-            "delta": delta, "alpha": alpha, "verdict": "too_short",
+            "e_value": 1.0,
+            "log_e": 0.0,
+            "threshold": round(1.0 / alpha, 6),
+            "detected": False,
+            "n_tokens": 0,
+            "tokens_processed": 0,
+            "stopped_at": None,
+            "green_count": 0,
+            "green_rate": None,
+            "delta": delta,
+            "alpha": alpha,
+            "verdict": "too_short",
             "signal": None,
         }
     log_threshold = math.log(1.0 / alpha)
@@ -173,10 +191,16 @@ def e_detect(text: str, key: str, gamma: float = DEFAULT_GAMMA,
     }
 
 
-def e_detect_multi(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA,
-                   delta: float = DEFAULT_DELTA, alpha: float = 0.05,
-                   level: str = "word", context: int = 1,
-                   early_stop: bool = False) -> dict:
+def e_detect_multi(
+    text: str,
+    keys: list[dict],
+    gamma: float = DEFAULT_GAMMA,
+    delta: float = DEFAULT_DELTA,
+    alpha: float = 0.05,
+    level: str = "word",
+    context: int = 1,
+    early_stop: bool = False,
+) -> dict:
     """Test K keys with Bonferroni correction: E_max >= K/alpha.
 
     keys: list of dicts with at least {'key_id': str, 'secret': str}; keys
@@ -194,14 +218,17 @@ def e_detect_multi(text: str, keys: list[dict], gamma: float = DEFAULT_GAMMA,
         family = k.get("family", "")
         if not secret or (family and family != "kgw"):
             continue
-        r = e_detect(text, secret, gamma, delta, alpha,
-                     level=level, context=context, early_stop=early_stop)
+        r = e_detect(text, secret, gamma, delta, alpha, level=level, context=context, early_stop=early_stop)
         r["key_id"] = k.get("key_id", "unknown")
         results.append(r)
     if not results:
         return {
-            "tested_keys": 0, "alpha": alpha, "best": None, "detected": False,
-            "note": "no_kgw_keys_registered", "results": [],
+            "tested_keys": 0,
+            "alpha": alpha,
+            "best": None,
+            "detected": False,
+            "note": "no_kgw_keys_registered",
+            "results": [],
         }
     k_count = len(results)
     log_threshold_bonf = math.log(k_count) - math.log(alpha)

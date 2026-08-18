@@ -37,7 +37,7 @@ from .routes.studio import router as studio_router
 from .routes.text import router as text_router
 
 setup_logging(settings.log_level)
-WEB_ROOT = Path(__file__).resolve().parents[1] / 'web'
+WEB_ROOT = Path(__file__).resolve().parents[1] / "web"
 
 
 @asynccontextmanager
@@ -61,9 +61,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version='2.3.0',
-    summary='Text Watermark Studio v2.3.0 Watermarking Lab Edition',
-    description='Adds a modular watermarking lab with taxonomy-driven family plugins, capabilities, demo embed/detect routines, and a lab UI.',
+    version="2.3.0",
+    summary="Text Watermark Studio v2.3.0 Watermarking Lab Edition",
+    description="Adds a modular watermarking lab with taxonomy-driven family plugins, capabilities, demo embed/detect routines, and a lab UI.",
     lifespan=lifespan,
 )
 app.add_middleware(RequestIDMiddleware)
@@ -72,30 +72,32 @@ app.add_middleware(PrometheusMiddleware)
 # wird ausschließlich die konfigurierte Origin-Liste erlaubt (Default leer =>
 # keine Cross-Origin-Freigabe; ein '*' wäre auf einer non-dev-Instanz ein
 # offenes Forensik-/Marking-API für jede Website).
-if settings.cors_origins and settings.cors_origins != '*':
-    _origins = [o.strip() for o in settings.cors_origins.split(',')]
-elif settings.app_env == 'development':
-    _origins = ['*']
+if settings.cors_origins and settings.cors_origins != "*":
+    _origins = [o.strip() for o in settings.cors_origins.split(",")]
+elif settings.app_env == "development":
+    _origins = ["*"]
 else:
     _origins = []
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
     allow_credentials=False,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.add_middleware(RateLimitMiddleware, limit=settings.rate_limit_requests, window_sec=settings.rate_limit_window_sec)
 
 # P0-1: Sichtbare Startwarnung, wenn eine non-dev-Instanz ohne API-Key läuft.
 # Die fail-closed-Middleware schützt bereits (401 überall), aber ein Operator
 # soll es sofort sehen — stiller 401-Regen ist schwerer zu diagnostizieren.
-if settings.app_env != 'development' and not settings.api_key:
+if settings.app_env != "development" and not settings.api_key:
     import logging
-    logging.getLogger('uvicorn.error').warning(
-        'AI_WM_API_KEY ist nicht gesetzt und AI_WM_ENV != development: '
-        'die API ist FAIL-CLOSED (jeder Request wird mit 401 abgelehnt), '
-        'bis AI_WM_API_KEY konfiguriert wird.')
+
+    logging.getLogger("uvicorn.error").warning(
+        "AI_WM_API_KEY ist nicht gesetzt und AI_WM_ENV != development: "
+        "die API ist FAIL-CLOSED (jeder Request wird mit 401 abgelehnt), "
+        "bis AI_WM_API_KEY konfiguriert wird."
+    )
 
 app.include_router(text_router)
 app.include_router(jobs_router)
@@ -121,20 +123,26 @@ app.include_router(cloud_router)
 app.include_router(metadata_router)
 
 
-@app.get('/health', tags=['system'])
+@app.get("/health", tags=["system"])
 async def health():
-    return {'ok': True, 'env': settings.app_env, 'redis': settings.redis_url, 'version': '0.8.0', 'mode': 'watermark_lab'}
+    return {
+        "ok": True,
+        "env": settings.app_env,
+        "redis": settings.redis_url,
+        "version": "0.8.0",
+        "mode": "watermark_lab",
+    }
 
 
-@app.get('/ready', tags=['system'])
+@app.get("/ready", tags=["system"])
 async def ready(request: Request):
     try:
         await request.app.state.redis.ping()
-        return {'ready': True}
+        return {"ready": True}
     except Exception as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 
 
-@app.get('/', include_in_schema=False)
+@app.get("/", include_in_schema=False)
 async def root():
-    return FileResponse(WEB_ROOT / 'index.html')
+    return FileResponse(WEB_ROOT / "index.html")

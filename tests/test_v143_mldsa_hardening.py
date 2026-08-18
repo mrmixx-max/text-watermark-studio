@@ -82,9 +82,10 @@ def _supports(algorithm: str) -> bool:
 
 def _find_cli_python():
     """Find the Python executable that can import cryptography."""
-    import sys
+
     try:
         import cryptography  # noqa: F401
+
         return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
     except ImportError:
         pass
@@ -99,7 +100,9 @@ def _find_cli_python():
                 try:
                     result = subprocess.run(
                         [str(py), "-c", "import cryptography; print(cryptography.__version__)"],
-                        capture_output=True, text=True, timeout=10
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
                     )
                     if result.returncode == 0:
                         return [str(py), "-m", "ai_watermark_toolkit.cli"]
@@ -110,9 +113,10 @@ def _find_cli_python():
 
 def _find_cli_python():
     """Find the Python executable that can import cryptography."""
-    import sys
+
     try:
         import cryptography  # noqa: F401
+
         return [sys.executable, "-m", "ai_watermark_toolkit.cli"]
     except ImportError:
         pass
@@ -132,8 +136,10 @@ def _find_cli_python():
             try:
                 result = subprocess.run(
                     [str(py), "-c", "import cryptography; print(cryptography.__version__)"],
-                    capture_output=True, text=True, timeout=10,
-                    env={**os.environ, "PYTHONPATH": str(SRC)}
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    env={**os.environ, "PYTHONPATH": str(SRC)},
                 )
                 if result.returncode == 0:
                     return [str(py), "-m", "ai_watermark_toolkit.cli"]
@@ -150,8 +156,7 @@ def run_cli(args, stdin=None, cwd=None):
         env["VIRTUAL_ENV"] = venv
         env["PATH"] = str(Path(venv) / "Scripts") + os.pathsep + env.get("PATH", "")
     base = _find_cli_python()
-    return subprocess.run(base + args, capture_output=True, text=True,
-                          input=stdin, env=env, cwd=cwd or REPO)
+    return subprocess.run(base + args, capture_output=True, text=True, input=stdin, env=env, cwd=cwd or REPO)
 
 
 def _sig_bytes(signed: dict) -> int:
@@ -165,13 +170,15 @@ class TestPemRoundTrip:
         pair = generate_mldsa_keypair()
         from cryptography.hazmat.primitives import serialization
 
-        loaded = serialization.load_pem_private_key(
-            pair["private_key_pem"].encode("utf-8"), password=None
+        loaded = serialization.load_pem_private_key(pair["private_key_pem"].encode("utf-8"), password=None)
+        reloaded_pub = (
+            loaded.public_key()
+            .public_bytes(
+                serialization.Encoding.PEM,
+                serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+            .decode("utf-8")
         )
-        reloaded_pub = loaded.public_key().public_bytes(
-            serialization.Encoding.PEM,
-            serialization.PublicFormat.SubjectPublicKeyInfo,
-        ).decode("utf-8")
         # The private PEM is a seed; the public key is derived at load time.
         assert reloaded_pub == pair["public_key_pem"]
 
@@ -179,22 +186,17 @@ class TestPemRoundTrip:
         from cryptography.hazmat.primitives import serialization
 
         pair = generate_mldsa_keypair()
-        loaded = serialization.load_pem_private_key(
-            pair["private_key_pem"].encode("utf-8"), password=None
-        )
+        loaded = serialization.load_pem_private_key(pair["private_key_pem"].encode("utf-8"), password=None)
         data = canonical_json(PAYLOAD)
         sig = loaded.sign(data)
         # no exception = valid against the ORIGINAL public key PEM
-        serialization.load_pem_public_key(
-            pair["public_key_pem"].encode("utf-8")
-        ).verify(sig, data)
+        serialization.load_pem_public_key(pair["public_key_pem"].encode("utf-8")).verify(sig, data)
 
     def test_sign_report_with_private_pem_string_verifies(self):
         # sign_report takes the PEM as a string — the same reload path the
         # CLI uses after report-keygen wrote the file.
         pair = generate_mldsa_keypair()
-        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44",
-                             private_key_pem=pair["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44", private_key_pem=pair["private_key_pem"])
         assert verify_report(signed)["valid"] is True
 
     def test_private_pem_is_seed_sized(self):
@@ -220,10 +222,8 @@ class TestNonDeterminism:
         if not _supports(algorithm):
             pytest.skip(f"{algorithm} not supported by installed cryptography")
         pair = generate_mldsa_keypair(algorithm)
-        s1 = sign_report(PAYLOAD, SECRET, algorithm=algorithm,
-                         private_key_pem=pair["private_key_pem"])
-        s2 = sign_report(PAYLOAD, SECRET, algorithm=algorithm,
-                         private_key_pem=pair["private_key_pem"])
+        s1 = sign_report(PAYLOAD, SECRET, algorithm=algorithm, private_key_pem=pair["private_key_pem"])
+        s2 = sign_report(PAYLOAD, SECRET, algorithm=algorithm, private_key_pem=pair["private_key_pem"])
         # FIPS 204 signing is randomized: same payload, different signature
         assert s1["signature"]["signature_b64"] != s2["signature"]["signature_b64"]
         # ...and BOTH must verify (same public key, same payload)
@@ -239,10 +239,8 @@ class TestVerifyOrderRegression:
         data = canonical_json(PAYLOAD)
         from cryptography.hazmat.primitives import serialization
 
-        private_key = serialization.load_pem_private_key(
-            pair["private_key_pem"].encode("utf-8"), password=None)
-        public_key = serialization.load_pem_public_key(
-            pair["public_key_pem"].encode("utf-8"))
+        private_key = serialization.load_pem_private_key(pair["private_key_pem"].encode("utf-8"), password=None)
+        public_key = serialization.load_pem_public_key(pair["public_key_pem"].encode("utf-8"))
         signature = private_key.sign(data)
         # signature FIRST — no exception expected
         _mldsa_verify(public_key, signature, data)
@@ -252,10 +250,8 @@ class TestVerifyOrderRegression:
         data = canonical_json(PAYLOAD)
         from cryptography.hazmat.primitives import serialization
 
-        private_key = serialization.load_pem_private_key(
-            pair["private_key_pem"].encode("utf-8"), password=None)
-        public_key = serialization.load_pem_public_key(
-            pair["public_key_pem"].encode("utf-8"))
+        private_key = serialization.load_pem_private_key(pair["private_key_pem"].encode("utf-8"), password=None)
+        public_key = serialization.load_pem_public_key(pair["public_key_pem"].encode("utf-8"))
         signature = private_key.sign(data)
         # the classic API trap: (data, signature) instead of (signature, data)
         # must NOT verify — otherwise the trap would be harmless and the
@@ -274,24 +270,21 @@ class TestContextPureMode:
         data = canonical_json(PAYLOAD)
         from cryptography.hazmat.primitives import serialization
 
-        private_key = serialization.load_pem_private_key(
-            pair["private_key_pem"].encode("utf-8"), password=None)
-        public_key = serialization.load_pem_public_key(
-            pair["public_key_pem"].encode("utf-8"))
+        private_key = serialization.load_pem_private_key(pair["private_key_pem"].encode("utf-8"), password=None)
+        public_key = serialization.load_pem_public_key(pair["public_key_pem"].encode("utf-8"))
         # default (context=None) and explicit pure mode (context=b"") are
         # interchangeable — FIPS 204 pure mode, no pre-hash
         sig_default = private_key.sign(data)
         sig_explicit = private_key.sign(data, context=b"")
-        public_key.verify(sig_default, data, context=b"")     # default == b""
-        public_key.verify(sig_explicit, data)                 # b"" == default
+        public_key.verify(sig_default, data, context=b"")  # default == b""
+        public_key.verify(sig_explicit, data)  # b"" == default
         assert sig_default != sig_explicit  # still non-deterministic
 
     def test_signed_report_uses_pure_mode(self):
         # sign_report does not expose a context parameter; the round-trip
         # through verify_report proves the pure-mode default works end to end.
         pair = generate_mldsa_keypair()
-        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44",
-                             private_key_pem=pair["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44", private_key_pem=pair["private_key_pem"])
         assert verify_report(signed)["valid"] is True
 
 
@@ -304,9 +297,13 @@ class TestMldsa65_87:
             pytest.skip(f"{algorithm} not supported by installed cryptography")
         pair = generate_mldsa_keypair(algorithm)
         assert pair["algorithm"] == algorithm
-        signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm,
-                             private_key_pem=pair["private_key_pem"],
-                             key_id="mldsa-" + algorithm[-2:])
+        signed = sign_report(
+            PAYLOAD,
+            SECRET,
+            algorithm=algorithm,
+            private_key_pem=pair["private_key_pem"],
+            key_id="mldsa-" + algorithm[-2:],
+        )
         assert signed["signature"]["algorithm"] == algorithm
         res = verify_report(signed)
         assert res["valid"] is True
@@ -318,8 +315,7 @@ class TestMldsa65_87:
         if not _supports(algorithm):
             pytest.skip(f"{algorithm} not supported by installed cryptography")
         pair = generate_mldsa_keypair(algorithm)
-        signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm,
-                             private_key_pem=pair["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm, private_key_pem=pair["private_key_pem"])
         size = _sig_bytes(signed)
         lo, hi = SIG_SIZE_RANGES[algorithm]
         assert lo <= size <= hi
@@ -328,8 +324,7 @@ class TestMldsa65_87:
         if not _supports(algorithm):
             pytest.skip(f"{algorithm} not supported by installed cryptography")
         pair = generate_mldsa_keypair(algorithm)
-        signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm,
-                             private_key_pem=pair["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm, private_key_pem=pair["private_key_pem"])
         signed["z_score"] = -7.0
         res = verify_report(signed)
         assert res["valid"] is False
@@ -340,8 +335,7 @@ class TestMldsa65_87:
             pytest.skip(f"{algorithm} not supported by installed cryptography")
         pair = generate_mldsa_keypair(algorithm)
         other = generate_mldsa_keypair(algorithm)
-        signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm,
-                             private_key_pem=pair["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm, private_key_pem=pair["private_key_pem"])
         res = verify_report(signed, public_key_pem=other["public_key_pem"])
         assert res["valid"] is False
         # P0-2: fremder externer Key = Trust-Anker, Identität nicht verankert
@@ -357,8 +351,7 @@ class TestAlgorithmLabelTrust:
             if not _supports(algorithm):
                 pytest.skip(f"{algorithm} not supported by installed cryptography")
             pair = generate_mldsa_keypair(algorithm)
-            signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm,
-                                 private_key_pem=pair["private_key_pem"])
+            signed = sign_report(PAYLOAD, SECRET, algorithm=algorithm, private_key_pem=pair["private_key_pem"])
             sizes[algorithm] = _sig_bytes(signed)
         assert sizes["mldsa-44"] < sizes["mldsa-65"] < sizes["mldsa-87"]
 
@@ -367,8 +360,7 @@ class TestAlgorithmLabelTrust:
         # mldsa-44 key + signature must not pass as-is: the label advertises
         # the security level, so label and actual key type have to agree.
         pair44 = generate_mldsa_keypair("mldsa-44")
-        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44",
-                             private_key_pem=pair44["private_key_pem"])
+        signed = sign_report(PAYLOAD, SECRET, algorithm="mldsa-44", private_key_pem=pair44["private_key_pem"])
         relabeled = json.loads(json.dumps(signed))
         relabeled["signature"]["algorithm"] = "mldsa-87"
         res = verify_report(relabeled)
@@ -394,21 +386,29 @@ class TestAlgorithmSurface:
 class TestCliMldsa65:
     @pytest.mark.skipif(not mldsa_available(), reason="cryptography mldsa module not installed")
     def test_cli_keygen_sign_verify_roundtrip(self, tmp_path):
-        r = run_cli(["report-keygen", "--algorithm", "mldsa-65",
-                     "--output-dir", str(tmp_path)], cwd=tmp_path)
+        r = run_cli(["report-keygen", "--algorithm", "mldsa-65", "--output-dir", str(tmp_path)], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         priv = tmp_path / "mldsa_private.pem"
         pub = tmp_path / "mldsa_public.pem"
         assert priv.exists() and pub.exists()
         payload = tmp_path / "payload.json"
         payload.write_text(json.dumps(PAYLOAD), encoding="utf-8")
-        r = run_cli(["report-sign", str(payload), "--algorithm", "mldsa-65",
-                     "--private-key", str(priv), "--key-id", "mldsa65-1"],
-                    cwd=tmp_path)
+        r = run_cli(
+            [
+                "report-sign",
+                str(payload),
+                "--algorithm",
+                "mldsa-65",
+                "--private-key",
+                str(priv),
+                "--key-id",
+                "mldsa65-1",
+            ],
+            cwd=tmp_path,
+        )
         assert r.returncode == 0, r.stderr
         signed = json.loads((tmp_path / "report-signed.json").read_text(encoding="utf-8"))
         assert signed["signature"]["algorithm"] == "mldsa-65"
-        r = run_cli(["report-verify", str(tmp_path / "report-signed.json"),
-                     "--public-key", str(pub)], cwd=tmp_path)
+        r = run_cli(["report-verify", str(tmp_path / "report-signed.json"), "--public-key", str(pub)], cwd=tmp_path)
         assert r.returncode == 0, r.stderr
         assert json.loads(r.stdout)["valid"] is True

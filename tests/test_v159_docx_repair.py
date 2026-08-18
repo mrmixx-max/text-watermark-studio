@@ -27,26 +27,38 @@ def _make_minimal_docx() -> bytes:
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
         # [Content_Types].xml
-        zf.writestr("[Content_Types].xml", b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        zf.writestr(
+            "[Content_Types].xml",
+            b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-</Types>""")
+</Types>""",
+        )
         # _rels/.rels
-        zf.writestr("_rels/.rels", b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        zf.writestr(
+            "_rels/.rels",
+            b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>""")
+</Relationships>""",
+        )
         # word/document.xml
-        zf.writestr("word/document.xml", b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        zf.writestr(
+            "word/document.xml",
+            b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body><w:p><w:r><w:t>Hello World</w:t></w:r></w:p></w:body>
-</w:document>""")
+</w:document>""",
+        )
         # word/_rels/document.xml.rels
-        zf.writestr("word/_rels/document.xml.rels", b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        zf.writestr(
+            "word/_rels/document.xml.rels",
+            b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-</Relationships>""")
+</Relationships>""",
+        )
     return out.getvalue()
 
 
@@ -56,10 +68,13 @@ def _make_broken_docx() -> bytes:
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
         # Missing [Content_Types].xml
         # Missing _rels/.rels
-        zf.writestr("word/document.xml", b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        zf.writestr(
+            "word/document.xml",
+            b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body><w:p><w:r><w:t>Hello</w:t></w:r></w:p></w:body>
-</w:document>""")
+</w:document>""",
+        )
     return out.getvalue()
 
 

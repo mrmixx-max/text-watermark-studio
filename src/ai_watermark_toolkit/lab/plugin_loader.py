@@ -12,7 +12,13 @@ from .families.unicode_zero_width import FamilyPlugin as UnicodeZeroWidth
 
 def get_family_plugins():
     items = [
-        UnicodeZeroWidth(), LexicalChoice(), SyntacticPattern(), FormatLayout(),
-        SamplingBias(), SemanticStructure(), LocalizedProvenance(), TrainingTime(),
+        UnicodeZeroWidth(),
+        LexicalChoice(),
+        SyntacticPattern(),
+        FormatLayout(),
+        SamplingBias(),
+        SemanticStructure(),
+        LocalizedProvenance(),
+        TrainingTime(),
     ]
     return {item.slug: item for item in items}

@@ -43,9 +43,7 @@ def _tiktoken_gpt2():
         try:
             import tiktoken
         except ImportError as e:  # pragma: no cover
-            raise ImportError(
-                "MarkLLM interop needs tiktoken: pip install text-watermark-studio[bpe]"
-            ) from e
+            raise ImportError("MarkLLM interop needs tiktoken: pip install text-watermark-studio[bpe]") from e
         _TIKTOKEN_ENC = tiktoken.get_encoding("gpt2")
     return _TIKTOKEN_ENC
 
@@ -54,9 +52,7 @@ def _torch():
     try:
         import torch
     except ImportError as e:  # pragma: no cover
-        raise ImportError(
-            "MarkLLM interop needs torch: pip install text-watermark-studio[markllm]"
-        ) from e
+        raise ImportError("MarkLLM interop needs torch: pip install text-watermark-studio[markllm]") from e
     return torch
 
 
@@ -108,9 +104,7 @@ def _score_ids(
     """Score token ids with the MarkLLM scheme. Returns (green_count, T, z_score)."""
     num_scored = len(token_ids) - prefix_length
     if num_scored < 1:
-        raise ValueError(
-            f"Must have at least 1 token to score after prefix_length={prefix_length}"
-        )
+        raise ValueError(f"Must have at least 1 token to score after prefix_length={prefix_length}")
     green = 0
     for idx in range(prefix_length, len(token_ids)):
         context = token_ids[:idx]

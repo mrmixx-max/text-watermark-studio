@@ -42,8 +42,7 @@ class EmbedResult:
     data: bytes | None = None
 
     def to_dict(self) -> dict:
-        return {"format": self.format, "key_id": self.key_id,
-                "embedded": self.embedded, "mark_size": self.mark_size}
+        return {"format": self.format, "key_id": self.key_id, "embedded": self.embedded, "mark_size": self.mark_size}
 
 
 @dataclass
@@ -56,8 +55,14 @@ class DetectResult:
     marks: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
-        return {"format": self.format, "found": self.found, "key_id": self.key_id,
-                "valid": self.valid, "reason": self.reason, "marks": self.marks}
+        return {
+            "format": self.format,
+            "found": self.found,
+            "key_id": self.key_id,
+            "valid": self.valid,
+            "reason": self.reason,
+            "marks": self.marks,
+        }
 
 
 def _sign(secret: str, payload: bytes) -> str:
@@ -65,8 +70,7 @@ def _sign(secret: str, payload: bytes) -> str:
 
 
 def _packet(key_id: str, sig: str) -> bytes:
-    return json.dumps({"name": MARK_NAME, "key_id": key_id,
-                       "sig": sig, "v": 1}, separators=(",", ":")).encode()
+    return json.dumps({"name": MARK_NAME, "key_id": key_id, "sig": sig, "v": 1}, separators=(",", ":")).encode()
 
 
 def _packet_dict(packet: bytes) -> dict:
@@ -90,17 +94,17 @@ def _detect_png(data: bytes, secrets: dict[str, str]) -> DetectResult:
     res = DetectResult(format="png", found=False)
     i = 8
     while i + 12 <= len(data):
-        length = int.from_bytes(data[i:i + 4], "big")
-        ctype = data[i + 4:i + 8]
+        length = int.from_bytes(data[i : i + 4], "big")
+        ctype = data[i + 4 : i + 8]
         if i + 12 + length > len(data):
             break
-        payload = data[i + 8:i + 8 + length]
+        payload = data[i + 8 : i + 8 + length]
         if ctype == b"iTXt" and payload.startswith(b"XML:com.adobe.xmp\x00"):
             packet = _packet_dict(payload.split(b"\x00", 1)[1])
             if packet.get("name") == MARK_NAME:
                 res.found = True
                 res.marks.append(packet)
-                restored = data[:i] + data[i + 12 + length:]
+                restored = data[:i] + data[i + 12 + length :]
                 sig_ok = packet.get("sig") and packet["sig"] == _sign(secrets.get(packet.get("key_id"), ""), restored)
                 if sig_ok:
                     res.valid, res.key_id = True, packet.get("key_id")
@@ -131,16 +135,16 @@ def _detect_jpeg(data: bytes, secrets: dict[str, str]) -> DetectResult:
         if marker in (0xD8, 0xD9) or 0xD0 <= marker <= 0xD7:
             i += 2
             continue
-        seg_len = int.from_bytes(data[i + 2:i + 4], "big")
+        seg_len = int.from_bytes(data[i + 2 : i + 4], "big")
         if seg_len < 2 or i + 2 + seg_len > len(data):
             break
-        seg = data[i:i + 2 + seg_len]
+        seg = data[i : i + 2 + seg_len]
         if marker == 0xE1 and seg[4:33] == b"http://ns.adobe.com/xap/1.0/\x00":
             packet = _packet_dict(seg[33:])
             if packet.get("name") == MARK_NAME:
                 res.found = True
                 res.marks.append(packet)
-                restored = data[:i] + data[i + 2 + seg_len:]
+                restored = data[:i] + data[i + 2 + seg_len :]
                 sig_ok = packet.get("sig") and packet["sig"] == _sign(secrets.get(packet.get("key_id"), ""), restored)
                 if sig_ok:
                     res.valid, res.key_id = True, packet.get("key_id")
@@ -160,8 +164,9 @@ def _embed_text(data: bytes, key_id: str, secret: str, fmt: str) -> bytes:
         return mark + data
     if fmt == "html":
         import html as _html_mod
+
         escaped = _html_mod.escape(packet, quote=True)
-        mark = f"<meta name=\"{MARK_NAME}\" content=\"{escaped}\" />".encode()
+        mark = f'<meta name="{MARK_NAME}" content="{escaped}" />'.encode()
         return mark + data
     if fmt in ("md", "markdown", "txt"):
         mark = f"---\nai_wm_studio: {packet}\n---\n".encode()
@@ -179,7 +184,7 @@ def _detect_text(data: bytes, secrets: dict[str, str], fmt: str) -> DetectResult
             if packet.get("name") == MARK_NAME:
                 res.found = True
                 res.marks.append(packet)
-                restored = text[m.end():]
+                restored = text[m.end() :]
                 if packet.get("sig") and packet["sig"] == _sign(secrets.get(packet.get("key_id"), ""), restored):
                     res.valid, res.key_id = True, packet.get("key_id")
                     res.reason = "hmac_valid"
@@ -189,11 +194,12 @@ def _detect_text(data: bytes, secrets: dict[str, str], fmt: str) -> DetectResult
         m = _AIWM_META_RE.search(text)
         if m:
             import html as _html_mod
+
             packet = _packet_dict(_html_mod.unescape(m.group(1).decode()).encode())
             if packet.get("name") == MARK_NAME:
                 res.found = True
                 res.marks.append(packet)
-                restored = text[:m.start()] + text[m.end():]
+                restored = text[: m.start()] + text[m.end() :]
                 if packet.get("sig") and packet["sig"] == _sign(secrets.get(packet.get("key_id"), ""), restored):
                     res.valid, res.key_id = True, packet.get("key_id")
                     res.reason = "hmac_valid"
@@ -206,7 +212,7 @@ def _detect_text(data: bytes, secrets: dict[str, str], fmt: str) -> DetectResult
             if packet.get("name") == MARK_NAME:
                 res.found = True
                 res.marks.append(packet)
-                restored = text[m.end():]
+                restored = text[m.end() :]
                 if packet.get("sig") and packet["sig"] == _sign(secrets.get(packet.get("key_id"), ""), restored):
                     res.valid, res.key_id = True, packet.get("key_id")
                     res.reason = "hmac_valid"
@@ -262,20 +268,27 @@ def _detect_docx(data: bytes, secrets: dict[str, str], fmt: str) -> DetectResult
 def _embed_pdf(data: bytes, key_id: str, secret: str) -> bytes:
     sig = _sign(secret, data)
     packet = _packet(key_id, sig)
-    stream = (b"<< /Type /Metadata /Subtype /XML /Length " + str(len(packet)).encode()
-              + b" >>\nstream\n" + packet + b"\nendstream")
+    stream = (
+        b"<< /Type /Metadata /Subtype /XML /Length "
+        + str(len(packet)).encode()
+        + b" >>\nstream\n"
+        + packet
+        + b"\nendstream"
+    )
     return data + stream
 
 
 def _detect_pdf(data: bytes, secrets: dict[str, str]) -> DetectResult:
     res = DetectResult(format="pdf", found=False)
-    m = re.search(rb"<<\s*/Type\s*/Metadata\s*/Subtype\s*/XML\s*/Length\s+\d+\s*>>\s*stream\s*([\s\S]*?)endstream", data)
+    m = re.search(
+        rb"<<\s*/Type\s*/Metadata\s*/Subtype\s*/XML\s*/Length\s+\d+\s*>>\s*stream\s*([\s\S]*?)endstream", data
+    )
     if m:
         packet = _packet_dict(m.group(1).strip())
         if packet.get("name") == MARK_NAME:
             res.found = True
             res.marks.append(packet)
-            restored = data[:m.start()] + data[m.end():]
+            restored = data[: m.start()] + data[m.end() :]
             if packet.get("sig") and packet["sig"] == _sign(secrets.get(packet.get("key_id"), ""), restored):
                 res.valid, res.key_id = True, packet.get("key_id")
                 res.reason = "hmac_valid"
@@ -308,8 +321,7 @@ def embed_provenance(data: bytes, filename: str, key_id: str, secret: str) -> Em
             return EmbedResult(format=ext, key_id=key_id, embedded=False)
     except Exception:
         return EmbedResult(format=ext, key_id=key_id, embedded=False)
-    return EmbedResult(format=ext, key_id=key_id, embedded=True,
-                       mark_size=len(out) - len(data), data=out)
+    return EmbedResult(format=ext, key_id=key_id, embedded=True, mark_size=len(out) - len(data), data=out)
 
 
 def detect_provenance(data: bytes, filename: str, secrets: dict[str, str]) -> DetectResult:

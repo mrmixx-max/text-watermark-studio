@@ -44,12 +44,14 @@ def _windows(tokens: list[str], window: int, step: int) -> list[dict[str, Any]]:
     idx = 0
     while start < n:
         end = min(start + window, n)
-        out.append({
-            'index': idx,
-            'start_word': start,
-            'end_word': end,
-            'text': ' '.join(tokens[start:end]),
-        })
+        out.append(
+            {
+                "index": idx,
+                "start_word": start,
+                "end_word": end,
+                "text": " ".join(tokens[start:end]),
+            }
+        )
         idx += 1
         if end >= n:
             break
@@ -61,7 +63,7 @@ def trace_kgw(
     text: str,
     key: str,
     gamma: float = DEFAULT_GAMMA,
-    level: str = 'word',
+    level: str = "word",
     context: int = 1,
     window: int = 500,
     step: int | None = None,
@@ -79,10 +81,15 @@ def trace_kgw(
     tokens = tokenize(text, level=level)
     if not tokens:
         return {
-            'windows': [], 'spans': [], 'whole_doc': None,
-            'total_windows': 0, 'finding_windows': 0,
-            'window_words': window, 'step_words': step or window,
-            'threshold': threshold, 'level': level,
+            "windows": [],
+            "spans": [],
+            "whole_doc": None,
+            "total_windows": 0,
+            "finding_windows": 0,
+            "window_words": window,
+            "step_words": step or window,
+            "threshold": threshold,
+            "level": level,
         }
     step = step or window
     windows = _windows(tokens, window, step)
@@ -90,23 +97,29 @@ def trace_kgw(
     finding_windows: list[int] = []
     for w in windows:
         r = detect_kgw(
-            w['text'], key, gamma=gamma, level=level,
-            context=context, signature_filter=signature_filter,
+            w["text"],
+            key,
+            gamma=gamma,
+            level=level,
+            context=context,
+            signature_filter=signature_filter,
         )
-        z = r.get('z_score')
-        reliable = r.get('verdict') != 'too_short'
+        z = r.get("z_score")
+        reliable = r.get("verdict") != "too_short"
         is_finding = reliable and z is not None and z >= threshold
         if is_finding:
-            finding_windows.append(w['index'])
-        results.append({
-            'index': w['index'],
-            'start_word': w['start_word'],
-            'end_word': w['end_word'],
-            'z_score': z,
-            'verdict': r.get('verdict'),
-            'reliable': reliable,
-            'finding': bool(is_finding),
-        })
+            finding_windows.append(w["index"])
+        results.append(
+            {
+                "index": w["index"],
+                "start_word": w["start_word"],
+                "end_word": w["end_word"],
+                "z_score": z,
+                "verdict": r.get("verdict"),
+                "reliable": reliable,
+                "finding": bool(is_finding),
+            }
+        )
     # Merge adjacent finding windows into spans.
     spans: list[dict[str, Any]] = []
     if finding_windows:
@@ -119,74 +132,81 @@ def trace_kgw(
                 cur = [i]
         spans.append(_span_from_windows(cur, results))
     whole = detect_kgw(
-        text, key, gamma=gamma, level=level,
-        context=context, signature_filter=signature_filter,
+        text,
+        key,
+        gamma=gamma,
+        level=level,
+        context=context,
+        signature_filter=signature_filter,
     )
     return {
-        'windows': results,
-        'spans': spans,
-        'whole_doc': whole,
-        'total_windows': len(results),
-        'finding_windows': len(finding_windows),
-        'window_words': window,
-        'step_words': step,
-        'threshold': threshold,
-        'level': level,
+        "windows": results,
+        "spans": spans,
+        "whole_doc": whole,
+        "total_windows": len(results),
+        "finding_windows": len(finding_windows),
+        "window_words": window,
+        "step_words": step,
+        "threshold": threshold,
+        "level": level,
     }
 
 
 def _span_from_windows(indexes: list[int], results: list[dict[str, Any]]) -> dict[str, Any]:
     """Build a span (start/end word offsets + peak z) from window indexes."""
-    entries = [r for r in results if r['index'] in indexes]
+    entries = [r for r in results if r["index"] in indexes]
     if not entries:
-        return {'start_word': 0, 'end_word': 0, 'peak_z': None, 'windows': indexes}
-    start = min(e['start_word'] for e in entries)
-    end = max(e['end_word'] for e in entries)
-    zs = [e['z_score'] for e in entries if e['z_score'] is not None]
+        return {"start_word": 0, "end_word": 0, "peak_z": None, "windows": indexes}
+    start = min(e["start_word"] for e in entries)
+    end = max(e["end_word"] for e in entries)
+    zs = [e["z_score"] for e in entries if e["z_score"] is not None]
     peak = max(zs) if zs else None
     return {
-        'start_word': start,
-        'end_word': end,
-        'peak_z': peak,
-        'windows': indexes,
+        "start_word": start,
+        "end_word": end,
+        "peak_z": peak,
+        "windows": indexes,
     }
 
 
-def format_trace(trace: dict[str, Any], text: str | None = None,
-                 context_chars: int = 80) -> str:
+def format_trace(trace: dict[str, Any], text: str | None = None, context_chars: int = 80) -> str:
     """Human-readable trajectory report for CLI output."""
     lines: list[str] = []
-    lines.append(f"KGW Z-score trajectory: {trace['total_windows']} windows"
-                 f" (window={trace['window_words']}w, step={trace['step_words']}w,"
-                 f" threshold z>={trace['threshold']})")
-    w = trace.get('whole_doc') or {}
-    wz = w.get('z_score')
-    lines.append(f"Whole document: z={wz} ({w.get('verdict')})"
-                 + (" — note how the global view dilutes local spikes" if wz is not None and wz < trace['threshold'] else ""))
-    if not trace['windows']:
+    lines.append(
+        f"KGW Z-score trajectory: {trace['total_windows']} windows"
+        f" (window={trace['window_words']}w, step={trace['step_words']}w,"
+        f" threshold z>={trace['threshold']})"
+    )
+    w = trace.get("whole_doc") or {}
+    wz = w.get("z_score")
+    lines.append(
+        f"Whole document: z={wz} ({w.get('verdict')})"
+        + (" — note how the global view dilutes local spikes" if wz is not None and wz < trace["threshold"] else "")
+    )
+    if not trace["windows"]:
         lines.append("(empty text)")
-        return '\n'.join(lines)
+        return "\n".join(lines)
     # Compact per-window line: index, word range, z, marker.
-    for e in trace['windows']:
-        z = e['z_score']
+    for e in trace["windows"]:
+        z = e["z_score"]
         zs = f"{z:+.2f}" if z is not None else "  n/a"
-        mark = "  <<< FINDING" if e['finding'] else ""
+        mark = "  <<< FINDING" if e["finding"] else ""
         lines.append(f"  w{e['index']:>3} words {e['start_word']:>5}-{e['end_word']:>5}  z={zs}{mark}")
-    if trace['spans']:
+    if trace["spans"]:
         lines.append("")
         lines.append("Spans above threshold:")
-        for s in trace['spans']:
-            peak = f"{s['peak_z']:+.2f}" if s['peak_z'] is not None else "n/a"
+        for s in trace["spans"]:
+            peak = f"{s['peak_z']:+.2f}" if s["peak_z"] is not None else "n/a"
             excerpt = ""
             if text is not None:
-                excerpt = _excerpt(text, s['start_word'], s['end_word'], context_chars)
+                excerpt = _excerpt(text, s["start_word"], s["end_word"], context_chars)
             lines.append(f"  words {s['start_word']}-{s['end_word']}  peak z={peak}  windows={s['windows']}")
             if excerpt:
                 lines.append(f"    …{excerpt}…")
     else:
         lines.append("")
         lines.append("No window above threshold.")
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def _excerpt(text: str, start_word: int, end_word: int, context_chars: int) -> str:
@@ -194,8 +214,8 @@ def _excerpt(text: str, start_word: int, end_word: int, context_chars: int) -> s
     words = text.split()
     span_words = words[start_word:end_word]
     if not span_words:
-        return ''
-    snippet = ' '.join(span_words)
+        return ""
+    snippet = " ".join(span_words)
     if len(snippet) <= context_chars * 2:
         return snippet
     return snippet[:context_chars]

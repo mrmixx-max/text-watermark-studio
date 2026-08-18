@@ -117,8 +117,7 @@ class EditorPane(QPlainTextEdit):
         mono.setStyleHint(QFont.Monospace)
         mono.setPointSize(10)
         self.setFont(mono)
-        self.setLineWrapMode(QPlainTextEdit.WidgetWidth if self._wrap
-                             else QPlainTextEdit.NoWrap)
+        self.setLineWrapMode(QPlainTextEdit.WidgetWidth if self._wrap else QPlainTextEdit.NoWrap)
         self.setAcceptDrops(True)
 
     # ------------------------------------------------------------- layout
@@ -129,9 +128,7 @@ class EditorPane(QPlainTextEdit):
 
     def _position_find_bar(self) -> None:
         w = self._find_bar.sizeHint().width()
-        self._find_bar.setGeometry(
-            self.width() - w - 12, 8, w, self._find_bar.sizeHint().height()
-        )
+        self._find_bar.setGeometry(self.width() - w - 12, 8, w, self._find_bar.sizeHint().height())
         self._find_bar.raise_()
 
     def show_find_bar(self) -> None:
@@ -154,17 +151,19 @@ class EditorPane(QPlainTextEdit):
         if dy:
             self._line_numbers.scroll(0, dy)
         else:
-            self._line_numbers.update(0, rect.y(), self._line_numbers.width(),
-                                      rect.height())
+            self._line_numbers.update(0, rect.y(), self._line_numbers.width(), rect.height())
         if rect.contains(self.viewport().rect()):
             self._update_line_numbers()
 
     def _update_line_numbers(self) -> None:
         self._line_numbers.setGeometry(
-            QRect(self.contentsRect().left(),
-                  self.contentsRect().top(),
-                  self._line_number_area_size().x(),
-                  self.contentsRect().height()))
+            QRect(
+                self.contentsRect().left(),
+                self.contentsRect().top(),
+                self._line_number_area_size().x(),
+                self.contentsRect().height(),
+            )
+        )
         self._line_numbers.update()
 
     def _line_number_area_paint(self, event) -> None:
@@ -172,18 +171,15 @@ class EditorPane(QPlainTextEdit):
         painter.fillRect(event.rect(), QColor("#2B2B2B"))
         block = self.firstVisibleBlock()
         number = block.blockNumber()
-        top = round(self.blockBoundingGeometry(block).translated(
-            self.contentOffset()).top())
+        top = round(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
         bottom = top + round(self.blockBoundingRect(block).height())
         current = self.textCursor().blockNumber()
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
-                painter.setPen(QColor("#7F7F7F") if number != current
-                               else QColor("#E0E0E0"))
+                painter.setPen(QColor("#7F7F7F") if number != current else QColor("#E0E0E0"))
                 painter.drawText(
-                    0, top, self._line_numbers.width() - 6,
-                    self.fontMetrics().height(), Qt.AlignRight,
-                    str(number + 1))
+                    0, top, self._line_numbers.width() - 6, self.fontMetrics().height(), Qt.AlignRight, str(number + 1)
+                )
             block = block.next()
             top = bottom
             bottom = top + round(self.blockBoundingRect(block).height())
@@ -231,8 +227,7 @@ class EditorPane(QPlainTextEdit):
                     start = pos + idx
                     end = start + len(search)
                     fmt = QTextCharFormat()
-                    fmt.setBackground(_SEARCH_ALL_BG if start != cur_pos
-                                      else _SEARCH_BG)
+                    fmt.setBackground(_SEARCH_ALL_BG if start != cur_pos else _SEARCH_BG)
                     c = QTextCursor(doc)
                     c.setPosition(start)
                     c.setPosition(end, QTextCursor.KeepAnchor)
@@ -250,6 +245,7 @@ class EditorPane(QPlainTextEdit):
     @staticmethod
     def _selection_from(cursor: QTextCursor, fmt: QTextCharFormat):
         from PySide6.QtWidgets import QTextEdit
+
         sel = QTextEdit.ExtraSelection()
         sel.cursor = cursor
         sel.format = fmt
@@ -305,8 +301,7 @@ class EditorPane(QPlainTextEdit):
     def set_wrap(self, enabled: bool) -> None:
         """Set wrap explicitly (idempotent) — used by the menu action."""
         self._wrap = bool(enabled)
-        self.setLineWrapMode(QPlainTextEdit.WidgetWidth if self._wrap
-                             else QPlainTextEdit.NoWrap)
+        self.setLineWrapMode(QPlainTextEdit.WidgetWidth if self._wrap else QPlainTextEdit.NoWrap)
 
     @property
     def wrap_enabled(self) -> bool:
@@ -328,6 +323,3 @@ class EditorPane(QPlainTextEdit):
                 event.acceptProposedAction()
                 return
         super().dropEvent(event)
-
-
-
