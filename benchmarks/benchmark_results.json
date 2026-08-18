@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "project": "Text Watermark Studio v108",
+    "python": "3.11.15 (main, Aug  7 2026, 02:24:19) [MSC v.1944 64 bit (AMD64)]",
+    "timestamp": "2026-08-18T17:06:41"
+  },
+  "results": {
+    "embed": {
+      "benchmark": "embed",
+      "n": 1000,
+      "words_per_text": 200,
+      "total_chars": 1361669,
+      "elapsed_sec": 175.6357,
+      "throughput_files_per_sec": 5.69,
+      "avg_ms_per_file": 175.636,
+      "peak_memory_mb": 1.772,
+      "current_memory_mb": 1.742,
+      "chars_per_sec": 7753.0,
+      "wall_time_sec": 175.891
+    },
+    "detect": {
+      "benchmark": "detect",
+      "n": 1000,
+      "words_per_text": 200,
+      "total_chars": 1723238,
+      "elapsed_sec": 5.497,
+      "throughput_files_per_sec": 181.92,
+      "avg_ms_per_file": 5.497,
+      "peak_memory_mb": 4.773,
+      "current_memory_mb": 4.747,
+      "chars_per_sec": 313487.0,
+      "wall_time_sec": 5.745
+    },
+    "batch": {
+      "benchmark": "batch",
+      "mode": "detect",
+      "n": 10000,
+      "words_per_text": 100,
+      "files_created": 10000,
+      "create_elapsed_sec": 16.177,
+      "process_elapsed_sec": 67.2503,
+      "throughput_files_per_sec": 148.7,
+      "avg_ms_per_file": 6.725,
+      "peak_memory_mb": 21.28,
+      "current_memory_mb": 10.125,
+      "workdir": "C:\\Users\\webma\\AppData\\Local\\Temp\\tws_bench_batch_09ht30r8",
+      "wall_time_sec": 95.531
+    },
+    "watch": {
+      "benchmark": "watch",
+      "n": 1000,
+      "words_per_text": 100,
+      "files_reported": 1000,
+      "create_elapsed_sec": 1.634,
+      "scan_elapsed_sec": 0.7474,
+      "throughput_files_per_sec": 1337.93,
+      "avg_ms_per_file": 0.747,
+      "peak_memory_mb": 1.895,
+      "current_memory_mb": 0.405,
+      "workdir": "C:\\Users\\webma\\AppData\\Local\\Temp\\tws_bench_watch_g7kgrd0t",
+      "wall_time_sec": 3.238
+    }
+  }
+}

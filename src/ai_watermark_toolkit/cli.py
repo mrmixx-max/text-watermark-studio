@@ -389,6 +389,19 @@ def main() -> int:
 
     args = p.parse_args()
 
+    # Guard: output path same as input path would destroy the source file.
+    # Check before any processing so we fail fast instead of after a
+    # potentially expensive operation.
+    input_path = getattr(args, "input", None)
+    output_path = getattr(args, "output", None)
+    if input_path and output_path:
+        try:
+            if Path(input_path).resolve() == Path(output_path).resolve():
+                print(f"ai-wm: error: output path is the same as input path ({input_path}) — refusing to overwrite the source", file=sys.stderr)
+                return 2
+        except OSError:
+            pass  # If we can't resolve paths, let the command handle it
+
     # --quiet: suppress stderr status messages for scripted use. Errors
     # printed via print(..., file=sys.stderr) are silenced; stdout JSON is
     # untouched so pipelines keep working.
@@ -417,7 +430,7 @@ def main() -> int:
 
     if args.cmd == "detect":
         text = _read(args)
-        key_arg = getattr(args, "key", None)
+        key_arg = _resolve_key_arg(args)
         if getattr(args, "e_value", False) and not key_arg:
             print("ai-wm: error: --e-value requires --key (e-process detection is keyed)", file=sys.stderr)
             return 2
@@ -895,6 +908,9 @@ def main() -> int:
         if args.gamma is not None and not (0 < args.gamma <= 0.5):
             print("ai-wm: error: --gamma must be in (0, 0.5]", file=sys.stderr)
             return 2
+        if not Path(args.input_dir).is_dir():
+            print(f"ai-wm: error: input directory not found: {args.input_dir}", file=sys.stderr)
+            return 2
         report = process_batch(args.input_dir, args.output_dir, mode=args.mode, intensity=args.intensity, lang=args.lang,
                                key_id=getattr(args, "key", None), level=getattr(args, "level", "word"),
                                context=getattr(args, "context", 1), gamma=getattr(args, "gamma", None),
@@ -1217,16 +1233,29 @@ def main_entry() -> int:
         | ``1`` — findings / processing result.
         | ``2`` — usage or input error.
     """
+    # Save original stderr so --quiet (which replaces sys.stderr with a
+    # StringIO inside main()) cannot silence our error messages. Errors
+    # must always reach the real stderr.
+    original_stderr = sys.stderr
     try:
         return main()
     except FileNotFoundError as e:
-        print(f"ai-wm: error: file not found: {e.filename or e}", file=sys.stderr)
+        print(f"ai-wm: error: file not found: {e.filename or e}", file=original_stderr)
         return 2
     except IsADirectoryError as e:
-        print(f"ai-wm: error: expected a file, got a directory: {e.filename}", file=sys.stderr)
+        print(f"ai-wm: error: expected a file, got a directory: {e.filename}", file=original_stderr)
+        return 2
+    except PermissionError as e:
+        print(f"ai-wm: error: permission denied: {e.filename or e}", file=original_stderr)
         return 2
     except ValueError as e:
-        print(f"ai-wm: error: {e}", file=sys.stderr)
+        print(f"ai-wm: error: {e}", file=original_stderr)
+        return 2
+    except UnicodeDecodeError as e:
+        print(f"ai-wm: error: cannot decode file as UTF-8: {e.object if hasattr(e, 'object') else e}", file=original_stderr)
+        return 2
+    except OSError as e:
+        print(f"ai-wm: error: {e.strerror or e}", file=original_stderr)
         return 2
 
 
