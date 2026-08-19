@@ -56,7 +56,6 @@ from .kgw import DEFAULT_GAMMA, detect_multi_key
 TRANSFORM_METHODS = ("clean", "truncate", "shuffle", "reformat", "rewrite")
 
 
-
 _TRANSFORM_META = {
     "clean": "unicode/metadata hygiene (sanitize_unicode, ZWSP/bidi/control removal)",
     "truncate": "first N word tokens (fraction)",

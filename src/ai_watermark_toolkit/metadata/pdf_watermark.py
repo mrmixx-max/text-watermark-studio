@@ -36,7 +36,6 @@ WM_METADATA = "metadata"
 WM_COLOR = "color"
 
 
-
 # Marker prefix for metadata watermark
 WM_MARKER = "TWS-PDF-WM"
 
