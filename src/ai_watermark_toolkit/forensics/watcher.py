@@ -40,7 +40,7 @@ def scan_file(path: Path, *, kgw_keys: list[dict] | None = None) -> dict:
     }
     data = path.read_bytes()
     try:
-        _cleaned, report = inspect(data, path.name)
+        report = inspect(data, path.name)
         result["metadata"] = {
             "actions": report.get("actions", []),
             "format": report.get("format"),
