@@ -57,9 +57,10 @@ def test_evade_trajectory_monotone():
     assert len(result["trajectory"]) >= 1
     zs = [t["z_score"] for t in result["trajectory"]]
     assert zs[-1] < 3.9
-    # Z must be non-increasing overall (edits only remove green tokens).
-    # Allow small tolerance due to kgw.py shuffle→offset reordering.
-    assert all(zs[i] >= zs[i + 1] - 0.5 for i in range(len(zs) - 1))
+    # Z must be non-increasing: each edit removes at least one green token
+    # and single-word replacements keep n constant, so context flips can
+    # only plateau (delta=0), never increase z. No tolerance needed.
+    assert all(zs[i] >= zs[i + 1] for i in range(len(zs) - 1))
 
 
 def test_evade_unmarked_text_is_noop():

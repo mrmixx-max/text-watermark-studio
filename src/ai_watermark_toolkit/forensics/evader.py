@@ -91,7 +91,15 @@ def _candidate_pool(word: str) -> list[str]:
         if c.lower() != low and c.lower() not in seen:
             seen.add(c.lower())
             out.append(c)
-    return out
+    # Keep single-word candidates only. Multi-word replacements (e.g.
+    # "in this place") change the token count, which can make the Z-score
+    # trajectory non-monotonic: _first_non_green checks the multi-word
+    # string as a single token, but detect_kgw scores each word separately,
+    # so 1 green token can be replaced by N>1 green tokens and the green
+    # count rises. Single-word replacements keep n constant and each edit
+    # removes at most 1 green token (context flips can plateau but never
+    # increase z), guaranteeing a non-increasing trajectory.
+    return [c for c in out if len(c.split()) == 1]
 
 
 def _first_non_green(
