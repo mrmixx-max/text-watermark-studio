@@ -25,6 +25,7 @@ coverage.xml
 test-results.xml
 bandit-results.json
 trivy-results.sarif
+benchmark-reports/
 .ai_wm_jobs/
 output/
 *.report.json

@@ -119,3 +119,40 @@ jobs:
           name: trivy-results
           path: trivy-results.sarif
           retention-days: 30
+
+  benchmarks:
+    needs: lint
+    runs-on: ubuntu-latest
+    # Benchmarks must never block CI — failures are collected as artifacts
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev,tui]
+      - name: Run micro-benchmarks (hot paths)
+        run: |
+          mkdir -p benchmark-reports
+          python benchmarks/micro_bench_hotpaths.py > benchmark-reports/micro_bench_hotpaths.txt 2>&1
+      - name: Run optimization validation benchmarks
+        run: |
+          python benchmarks/micro_bench_optimizations.py > benchmark-reports/micro_bench_optimizations.txt 2>&1
+      - name: Run full benchmark suite (structured JSON report)
+        run: |
+          mkdir -p benchmark-reports
+          python benchmarks/run_all_benchmarks.py --output benchmark-reports/benchmark_results.json
+      - name: List benchmark reports
+        if: always()
+        run: ls -la benchmark-reports/
+      - name: Upload benchmark reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports
+          path: benchmark-reports/
+          retention-days: 30
