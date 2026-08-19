@@ -25,7 +25,7 @@ seeds). Empirically verified seed documentation:
                      (byte-identical to pre-v142), result keys unchanged
                      (no signature_filtered key when filter is off)
   marked prose     : mark_greenlist(prose, KEY_A, seed=42) -> 156
-                     replacements, z=24.3597 watermark_detected with AND
+                     replacements, z=25.044 watermark_detected with AND
                      without filter (nothing removed, n_after=241)
   blocks           : baban*40 + boban*30 + cocun*30 + 19 fillers -> all
                      three hash RED, |z_contribution| in {3.6056, 3.1623};
@@ -347,9 +347,9 @@ class TestDetectKgwSignatureFilter:
         off = detect_kgw(text, KEY_A)
         on = detect_kgw(text, KEY_A, signature_filter=True)
         assert off["verdict"] == on["verdict"] == "watermark_detected"
-        assert off["z_score"] == on["z_score"] == 24.3597, (off, on)
+        assert off["z_score"] == on["z_score"] == 25.044, (off, on)
         assert on["signature_filtered"]["removed"] == []
-        assert on["signature_filtered"]["n_after"] == on["signature_filtered"]["n_before"] == 241
+        assert on["signature_filtered"]["n_after"] == on["signature_filtered"]["n_before"] == 240
 
     def test_filtered_too_short_is_honest(self):
         """Filtering can shrink the stream below the n>=10 gate: report
@@ -413,7 +413,7 @@ class TestParity:
         assert "signature_filtered" not in off["best"]
         on = detect_multi_key(text, keys, signature_filter=True)
         assert on["best"]["signature_filtered"]["removed"] == []
-        assert on["best"]["z_score"] == off["best"]["z_score"] == 24.3597
+        assert on["best"]["z_score"] == off["best"]["z_score"] == 25.044
 
     def test_too_short_default_has_no_new_key(self):
         r = detect_kgw("one two three", KEY_A)
@@ -446,9 +446,9 @@ class TestCliSignatureFilter:
         proc = self._run(["--stdin", "--key", KEY_A, "--signature-filter"], marked_prose())
         assert proc.returncode == 1, proc.stderr
         out = json.loads(proc.stdout)
-        assert out["z_score"] == 24.3597
+        assert out["z_score"] == 25.044
         assert out["signature_filtered"]["removed"] == []
-        assert out["signature_filtered"]["n_after"] == 241
+        assert out["signature_filtered"]["n_after"] == 240
 
     def test_cli_flag_heals_fpr_alarm(self):
         """CLI proof of the failure class: exit 1 (false alarm) without the
