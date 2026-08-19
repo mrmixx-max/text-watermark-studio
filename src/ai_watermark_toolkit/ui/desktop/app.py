@@ -669,7 +669,7 @@ class MainWindow(QMainWindow):
             raise ValueError(
                 "No registered KGW key selected — create one "
                 "(POST /api/forensics/keys via `ai-wm serve`) or add it to "
-                "data/key_registry.json."
+                "data/key_registry.json.",
             )
         return key
 
@@ -686,7 +686,7 @@ class MainWindow(QMainWindow):
                     {"error": type(e).__name__, "message": str(e)},
                     ensure_ascii=False,
                     indent=2,
-                )
+                ),
             )
             self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
@@ -720,7 +720,7 @@ class MainWindow(QMainWindow):
                     {"error": type(e).__name__, "message": str(e)},
                     ensure_ascii=False,
                     indent=2,
-                )
+                ),
             )
             self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
@@ -732,7 +732,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------- actions
     def open_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, self._tr("dlg.open"), "", "Text files (*.txt *.md *.json);;All files (*)"
+            self, self._tr("dlg.open"), "", "Text files (*.txt *.md *.json);;All files (*)",
         )
         if not path:
             return
@@ -744,7 +744,7 @@ class MainWindow(QMainWindow):
                     {"error": type(e).__name__, "message": str(e)},
                     ensure_ascii=False,
                     indent=2,
-                )
+                ),
             )
             self.statusBar().showMessage(self._tr("msg.error").format(e=e), 8000)
             return
@@ -754,7 +754,7 @@ class MainWindow(QMainWindow):
 
     def save_result(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
-            self, self._tr("dlg.save"), "tws-result.json", "JSON (*.json);;All files (*)"
+            self, self._tr("dlg.save"), "tws-result.json", "JSON (*.json);;All files (*)",
         )
         if not path:
             return
@@ -811,7 +811,7 @@ class MainWindow(QMainWindow):
     def sign(self) -> None:
         self._run(
             lambda: self.controller.sign_report_json(
-                self.controller.parse_json(self.results.toPlainText()), self._require_key()
+                self.controller.parse_json(self.results.toPlainText()), self._require_key(),
             ),
             ok_status=self._tr("status.sign_ok"),
         )
@@ -819,7 +819,7 @@ class MainWindow(QMainWindow):
     def verify(self) -> None:
         self._run(
             lambda: self.controller.verify_report_json(
-                self.controller.parse_json(self.results.toPlainText()), self._require_key()
+                self.controller.parse_json(self.results.toPlainText()), self._require_key(),
             ),
             ok_status=self._tr("status.verify_ok"),
         )

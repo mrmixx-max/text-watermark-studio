@@ -78,7 +78,7 @@ def _greenlist_ids(
     torch = _torch()
     if f_scheme != "time" or window_scheme != "left":
         raise NotImplementedError(
-            f"MarkLLM interop supports f_scheme='time' window_scheme='left'; got {f_scheme}/{window_scheme}"
+            f"MarkLLM interop supports f_scheme='time' window_scheme='left'; got {f_scheme}/{window_scheme}",
         )
     rng = torch.Generator(device="cpu")
     # Reference: self.prf = randperm(vocab_size, seed=hash_key)

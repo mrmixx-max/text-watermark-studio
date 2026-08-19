@@ -105,7 +105,7 @@ class RegistryCorruptError(ValueError):
         self.backup_path = Path(backup_path)
         self.reason = reason
         super().__init__(
-            f"key registry corrupt: {self.path} — {reason}. Safety backup: {self.backup_path} (restore it, then retry)."
+            f"key registry corrupt: {self.path} — {reason}. Safety backup: {self.backup_path} (restore it, then retry).",
         )
 
 

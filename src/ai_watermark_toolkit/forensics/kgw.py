@@ -228,7 +228,7 @@ def _type_stats(pairs: list, key: str, gamma: float) -> dict:
                 "green_count": gc,
                 "green_rate": gc / count if count else None,
                 "z_contribution": zc,
-            }
+            },
         )
     types.sort(key=lambda t: -t["count"])
     return {
@@ -285,7 +285,7 @@ def signature_token_stats(tokens: list[str], context_seq: int, key: str, gamma: 
 
 
 def _filter_pairs(
-    pairs: list, key: str, gamma: float, min_share: float, max_filter: int, tokens: list[str] | None = None
+    pairs: list, key: str, gamma: float, min_share: float, max_filter: int, tokens: list[str] | None = None,
 ) -> dict:
     """Shared signature-filter core over scored pairs (see signature_filter)."""
     stats = _type_stats(pairs, key, gamma)
@@ -690,7 +690,7 @@ def mark_greenlist(
                     "end": offset + len(rep),
                     "original": orig,
                     "replacement": rep,
-                }
+                },
             )
         offset += len(part)
     if level == "bpe":

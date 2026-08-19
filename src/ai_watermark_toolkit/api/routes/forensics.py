@@ -146,7 +146,7 @@ def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
     # results; the ensemble reuses them instead of re-hashing every key
     # (audit 2026-08-13: was 2x tokenize+hash per request).
     kgw = detect_multi_key(
-        req.text, registry, level=req.level, context=req.context, signature_filter=req.signature_filter
+        req.text, registry, level=req.level, context=req.context, signature_filter=req.signature_filter,
     )
     kgw_keys = [k for k in registry if k.get("family") == "kgw" and k.get("secret")]
     kgw_results = {k["key_id"]: r for k, r in zip(kgw_keys, kgw.get("results", []), strict=False)}
@@ -188,7 +188,7 @@ def detect(req: DetectRequest, _auth: None = Depends(require_api_key)):
             "operator": req.operator,
             "keys_used": [k.get("key_id") for k in registry],
             "verdict": top_verdict,
-        }
+        },
     )
     return payload
 
@@ -210,7 +210,7 @@ def embed(req: EmbedRequest, _auth: None = Depends(require_api_key)):
 
 
 @router.post(
-    "/report-sign", summary="Sign a forensic findings payload with a registered key (secret stays server-side)"
+    "/report-sign", summary="Sign a forensic findings payload with a registered key (secret stays server-side)",
 )
 def report_sign(req: ReportSignRequest, _auth: None = Depends(require_api_key)):
     """Sign a findings payload server-side.
@@ -308,7 +308,7 @@ def delta_z_endpoint(req: DeltaZRequest, _auth: None = Depends(require_api_key))
         if req.text_before is None or req.text_after is None:
             raise HTTPException(status_code=400, detail="text_before_and_text_after_required (or text+transform)")
         result = delta_z(
-            req.text_before, req.text_after, req.key_id, level=req.level, context=req.context, registry=keys
+            req.text_before, req.text_after, req.key_id, level=req.level, context=req.context, registry=keys,
         )
     if req.sign:
         result = delta_z_report(result, key["secret"], key_id=req.key_id)
@@ -319,13 +319,13 @@ def delta_z_endpoint(req: DeltaZRequest, _auth: None = Depends(require_api_key))
             "transform": req.transform,
             "removed": result.get("removed"),
             "delta_z": result.get("delta_z"),
-        }
+        },
     )
     return result
 
 
 @router.post(
-    "/finding", summary="KI-Erklärungs-Befund: Evidenzklassen A-D, Prüfpriorität 0-5, ehrlicher verdict_text (C5)"
+    "/finding", summary="KI-Erklärungs-Befund: Evidenzklassen A-D, Prüfpriorität 0-5, ehrlicher verdict_text (C5)",
 )
 def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)):
     """KI-Erklärungs-Befund als Service (C5, Blaupause:
@@ -387,7 +387,7 @@ def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)
             if req.delta_z.text_after is None:
                 raise HTTPException(status_code=400, detail="text_after_required")
             results["delta_z"] = delta_z(
-                req.text, req.delta_z.text_after, req.key_id, level=req.level, context=kgw_context, registry=keys
+                req.text, req.delta_z.text_after, req.key_id, level=req.level, context=kgw_context, registry=keys,
             )
     report = build_finding_report(
         results,
@@ -407,6 +407,6 @@ def finding_endpoint(req: FindingRequest, _auth: None = Depends(require_api_key)
             "signed": req.sign,
             "context_provided": bool(evidence_context),
             "frs": req.frs,
-        }
+        },
     )
     return report

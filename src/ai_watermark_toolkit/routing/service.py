@@ -32,7 +32,7 @@ DEFAULT = {
                 "on_context_overflow": "use_larger_context",
                 "on_invalid_output": "fallback",
             },
-        }
+        },
     },
     "last_decision": None,
     "history": [],

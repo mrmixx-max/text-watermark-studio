@@ -363,7 +363,7 @@ def detect_repetition(text: str, min_phrase_len: int = 3) -> dict:
                         "phrase": " ".join(ngram),
                         "count": count,
                         "length": n,
-                    }
+                    },
                 )
 
     # Score based on repetition density

@@ -1,4 +1,5 @@
 """Tests for metadata/service.py"""
+
 import struct
 
 
@@ -66,12 +67,12 @@ class TestJpegClean:
 
 class TestSvgClean:
     def test_svg_clean_strips_metadata(self):
-        svg = b'<svg><metadata>test</metadata><rect/></svg>'
+        svg = b"<svg><metadata>test</metadata><rect/></svg>"
         cleaned, report = service.clean(svg, "test.svg")
         assert b"metadata" not in cleaned
 
     def test_svg_clean_no_metadata(self):
-        svg = b'<svg><rect/></svg>'
+        svg = b"<svg><rect/></svg>"
         cleaned, report = service.clean(svg, "test.svg")
         assert cleaned == svg
 
@@ -130,6 +131,6 @@ class TestHtmlJsonLd:
 
 class TestSvgRdf:
     def test_svg_clean_strips_rdf(self):
-        svg = b'<svg><rdf:RDF>c2pa</rdf:RDF><rect/></svg>'
+        svg = b"<svg><rdf:RDF>c2pa</rdf:RDF><rect/></svg>"
         cleaned, report = service.clean(svg, "test.svg")
         assert b"rdf" not in cleaned

@@ -167,7 +167,7 @@ def _parse_rels_xml(data: bytes) -> list[dict]:
                     "Type": elem.get("Type", ""),
                     "Target": elem.get("Target", ""),
                     "TargetMode": elem.get("TargetMode", "Internal"),
-                }
+                },
             )
     return rels
 
@@ -291,7 +291,7 @@ def repair_docx(data: bytes) -> RepairReport:
                         "Id": "rId1",
                         "Type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
                         "Target": "word/document.xml",
-                    }
+                    },
                 )
             if "docProps/core.xml" in valid_parts:
                 rels.append(
@@ -299,7 +299,7 @@ def repair_docx(data: bytes) -> RepairReport:
                         "Id": "rId2",
                         "Type": "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
                         "Target": "docProps/core.xml",
-                    }
+                    },
                 )
             rels_xml = _build_rels_xml(rels)
             zout.writestr("_rels/.rels", rels_xml)

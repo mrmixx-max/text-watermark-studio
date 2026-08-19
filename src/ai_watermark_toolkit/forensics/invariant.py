@@ -113,7 +113,7 @@ _STOPWORDS = frozenset(
         "zum",
         "zur",
         "über",
-    ]
+    ],
 )
 
 
@@ -292,7 +292,7 @@ def _ollama_infill(
             ),
             "stream": False,
             "options": {"num_predict": 24, "temperature": 0.0},
-        }
+        },
     ).encode("utf-8")
     req = urllib.request.Request(
         "http://localhost:11434/api/generate",

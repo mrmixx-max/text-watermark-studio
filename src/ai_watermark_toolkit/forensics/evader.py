@@ -309,7 +309,7 @@ def _ollama_candidates(sentence: str, mask_index: int, model: str, top_k: int = 
             ),
             "stream": False,
             "options": {"num_predict": 20, "temperature": 0.0},
-        }
+        },
     ).encode("utf-8")
     try:
         req = urllib.request.Request(

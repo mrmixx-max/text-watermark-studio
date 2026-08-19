@@ -1,4 +1,5 @@
 """Tests for ui/web/forms.py"""
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -24,9 +25,7 @@ class TestFormDetect:
     @pytest.mark.anyio
     async def test_form_detect(self):
         with patch.object(forms.text_svc, "detect", return_value={"verdict": "clean"}):
-            response = await forms.form_detect(
-                text="hello world", lang="en", aggressive=""
-            )
+            response = await forms.form_detect(text="hello world", lang="en", aggressive="")
         assert response.status_code == 200
         body = response.body.decode()
         assert "clean" in body
@@ -51,9 +50,7 @@ class TestFormDilute:
 class TestFormEmbed:
     @pytest.mark.anyio
     async def test_form_embed_missing_key(self):
-        response = await forms.form_embed(
-            text="hello", key="", gamma="", level="word", context="1"
-        )
+        response = await forms.form_embed(text="hello", key="", gamma="", level="word", context="1")
         assert response.status_code == 200
         body = response.body.decode()
         assert "key is required" in body
@@ -77,9 +74,7 @@ class TestFormAddKey:
             mock_reg = MagicMock()
             mock_reg.add_key.return_value = {"key_id": "new_key"}
             mock_cls.return_value = mock_reg
-            response = await forms.form_add_key(
-                key_id="new_key", family="kgw", status="active", owner="local"
-            )
+            response = await forms.form_add_key(key_id="new_key", family="kgw", status="active", owner="local")
         assert response.status_code == 200
 
 

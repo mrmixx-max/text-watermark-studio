@@ -240,7 +240,7 @@ def _detect_mixed_encoding(data: bytes, window_size: int = 64) -> EncodingResult
                         "start": current_start,
                         "end": i,
                         "encoding": current_encoding,
-                    }
+                    },
                 )
             current_encoding = window_enc
             current_start = i
@@ -252,7 +252,7 @@ def _detect_mixed_encoding(data: bytes, window_size: int = 64) -> EncodingResult
                 "start": current_start,
                 "end": len(data),
                 "encoding": current_encoding,
-            }
+            },
         )
 
     # Filter: only "mixed" if we have segments with genuinely different encodings
@@ -325,7 +325,7 @@ def _detect_conversion_attack(data: bytes) -> EncodingResult:
     # Common: Cyrillic 'а' (U+0430) replacing Latin 'a' (U+0061)
     # In UTF-8: Cyrillic 'а' = D0 B0
     cyrillic_homoglyphs = re.compile(
-        b"[\xd0-\xd3][\x80-\xbf]"  # Cyrillic range in UTF-8
+        b"[\xd0-\xd3][\x80-\xbf]",  # Cyrillic range in UTF-8
     )
     if cyrillic_homoglyphs.search(data):
         # Check if there's also Latin text (suspicious mix)

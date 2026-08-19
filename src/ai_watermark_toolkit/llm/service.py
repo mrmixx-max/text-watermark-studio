@@ -36,7 +36,7 @@ class LocalLLMService:
         return cfg
 
     def configure(
-        self, server_base_url: str | None = None, model_variant: str | None = None, installed: bool | None = None
+        self, server_base_url: str | None = None, model_variant: str | None = None, installed: bool | None = None,
     ):
         cfg = self.load()
         if server_base_url:

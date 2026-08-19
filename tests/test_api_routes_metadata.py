@@ -1,7 +1,6 @@
 """Tests for api/routes/metadata.py"""
+
 from unittest.mock import patch
-
-
 
 
 class TestMetadataRoutes:
@@ -15,6 +14,7 @@ class TestMetadataRoutes:
 class TestMetadataInspect:
     def test_metadata_inspect_unsupported(self):
         from ai_watermark_toolkit.metadata.service import inspect
+
         result = inspect(b"data", "test.xyz")
         assert result["format"] == "xyz"
 
@@ -22,5 +22,6 @@ class TestMetadataInspect:
 class TestMetadataClean:
     def test_metadata_clean_unsupported(self):
         from ai_watermark_toolkit.metadata.service import clean
+
         cleaned, report = clean(b"data", "test.xyz")
         assert report["format"] == "xyz"

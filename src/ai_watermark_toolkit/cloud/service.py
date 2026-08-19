@@ -20,7 +20,7 @@ class CloudUploadService:
         UPLOADS.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def request_upload(
-        self, filename: str, content_type: str, size_bytes: int, provider: str = "s3", purpose: str = "general"
+        self, filename: str, content_type: str, size_bytes: int, provider: str = "s3", purpose: str = "general",
     ) -> dict[str, Any]:
         safe_name = filename.replace("..", "").replace("/", "_").replace("\\", "_")
         item = {

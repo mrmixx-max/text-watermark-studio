@@ -162,7 +162,7 @@ class EditorPane(QPlainTextEdit):
                 self.contentsRect().top(),
                 self._line_number_area_size().x(),
                 self.contentsRect().height(),
-            )
+            ),
         )
         self._line_numbers.update()
 
@@ -178,7 +178,7 @@ class EditorPane(QPlainTextEdit):
             if block.isVisible() and bottom >= event.rect().top():
                 painter.setPen(QColor("#7F7F7F") if number != current else QColor("#E0E0E0"))
                 painter.drawText(
-                    0, top, self._line_numbers.width() - 6, self.fontMetrics().height(), Qt.AlignRight, str(number + 1)
+                    0, top, self._line_numbers.width() - 6, self.fontMetrics().height(), Qt.AlignRight, str(number + 1),
                 )
             block = block.next()
             top = bottom

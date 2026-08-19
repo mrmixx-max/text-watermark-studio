@@ -56,7 +56,7 @@ _BOILERPLATE_PATTERNS = [
 
 # Function-above-comment density: AI tends to comment EVERY function
 _FN_DEF_RE = re.compile(
-    r"^\s*(def\s+\w+|class\s+\w+|function\s+\w+|public\s+|private\s+|protected\s+|static\s+)", re.MULTILINE
+    r"^\s*(def\s+\w+|class\s+\w+|function\s+\w+|public\s+|private\s+|protected\s+|static\s+)", re.MULTILINE,
 )
 _COMMENT_LINE_RE = re.compile(r"^\s*(#|//|/\*|\*|<!--)", re.MULTILINE)
 _DOCSTRING_RE = re.compile(r"(\"\"\"|\'\'\')")
@@ -142,7 +142,7 @@ class CodeWatermarkPlugin(DetectorPlugin):
             notes.append("low_ai_markers")
 
         notes.append(
-            f"stats:lines={total_lines},comments={comment_lines},functions={fn_count},ai_hits={ai_hits},boilerplate={boilerplate_hits}"
+            f"stats:lines={total_lines},comments={comment_lines},functions={fn_count},ai_hits={ai_hits},boilerplate={boilerplate_hits}",
         )
 
         return {

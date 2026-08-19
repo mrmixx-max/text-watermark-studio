@@ -92,7 +92,7 @@ def process_batch(
 
                 effective_gamma = gamma if gamma is not None else (embed_key.get("gamma") or DEFAULT_GAMMA)
                 result = mark_greenlist(
-                    text, embed_key["secret"], gamma=effective_gamma, level=level, context=context, seed=seed
+                    text, embed_key["secret"], gamma=effective_gamma, level=level, context=context, seed=seed,
                 )
                 dst.write_text(result["text"], encoding="utf-8")
                 changed = result["text"] != text
@@ -106,7 +106,7 @@ def process_batch(
                     from .forensics.kgw import detect_kgw
 
                     det = detect_kgw(
-                        result["text"], embed_key["secret"], gamma=effective_gamma, level=level, context=context
+                        result["text"], embed_key["secret"], gamma=effective_gamma, level=level, context=context,
                     )
                     z_score = det.get("z_score")
                     green_rate = det.get("green_rate")
@@ -126,7 +126,7 @@ def process_batch(
                     verified=verified if mode == "embed" and verify else None,
                     z_score=z_score if mode == "embed" and verify else None,
                     green_rate=green_rate if mode == "embed" and verify else None,
-                ).to_dict()
+                ).to_dict(),
             )
         except UnicodeDecodeError:
             items.append(BatchItemResult(str(src), str(dst), mode, False).to_dict())

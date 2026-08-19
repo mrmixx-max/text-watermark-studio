@@ -84,7 +84,7 @@ def ensemble_detect(
             r = (kgw_results or {}).get(key.get("key_id"))
             if r is None:
                 r = detect_kgw(
-                    text, key["secret"], gamma=key.get("gamma") or DEFAULT_GAMMA, level=level, context=context
+                    text, key["secret"], gamma=key.get("gamma") or DEFAULT_GAMMA, level=level, context=context,
                 )
             z = r["z_score"] or 0.0
             per_key.append(
@@ -97,7 +97,7 @@ def ensemble_detect(
                     "signal": r["signal"],
                     "segments": [r],
                     "is_demo": bool(key.get("is_demo")),
-                }
+                },
             )
             continue
         seg_scores = [score_segment(seg, key) for seg in segments] or [score_segment(text, key)]
@@ -109,7 +109,7 @@ def ensemble_detect(
                 "avg_score": round(avg, 4),
                 "segments": seg_scores,
                 "is_demo": bool(key.get("is_demo")),
-            }
+            },
         )
     ensemble_score = mean([k["avg_score"] for k in per_key]) if per_key else 0.0
     kgw_keys = [k for k in per_key if k.get("family") == "kgw"]

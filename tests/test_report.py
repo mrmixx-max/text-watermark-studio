@@ -1,4 +1,5 @@
 """Tests for report.py"""
+
 import json
 
 from ai_watermark_toolkit.report import sha256_text, write_json

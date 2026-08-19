@@ -96,7 +96,7 @@ if settings.app_env != "development" and not settings.api_key:
     logging.getLogger("uvicorn.error").warning(
         "AI_WM_API_KEY ist nicht gesetzt und AI_WM_ENV != development: "
         "die API ist FAIL-CLOSED (jeder Request wird mit 401 abgelehnt), "
-        "bis AI_WM_API_KEY konfiguriert wird."
+        "bis AI_WM_API_KEY konfiguriert wird.",
     )
 
 app.include_router(text_router)

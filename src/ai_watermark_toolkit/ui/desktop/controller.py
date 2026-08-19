@@ -180,7 +180,7 @@ class DesktopController:
 
     # ------------------------------------------------------------- embed
     def embed_text(
-        self, text: str, key_id: str, gamma: float | None = None, level: str = "word", context: int = 1
+        self, text: str, key_id: str, gamma: float | None = None, level: str = "word", context: int = 1,
     ) -> dict:
         """Greenlist-mark the text with a REGISTERED key (mark_greenlist).
 
@@ -195,7 +195,7 @@ class DesktopController:
             raise ValueError(
                 f"Key '{key_id}' ist nicht in der Registry — Embed benoetigt "
                 "einen registrierten Key mit Secret (raw Secrets koennen nur "
-                "detektieren)."
+                "detektieren).",
             )
         eff_gamma = gamma if gamma is not None else (key.get("gamma") or DEFAULT_GAMMA)
         result = mark_greenlist(text, key["secret"], gamma=eff_gamma, level=level, context=context)
@@ -237,7 +237,7 @@ class DesktopController:
         key, from_registry = self._resolve_key(key_id)
         if not from_registry:
             raise ValueError(
-                f"Key '{key_id}' ist nicht in der Registry — der Bericht benoetigt einen registrierten Key mit Secret."
+                f"Key '{key_id}' ist nicht in der Registry — der Bericht benoetigt einen registrierten Key mit Secret.",
             )
         html = _build_report_html(text, key["secret"], key_label=key_id, lang=lang)
         target = Path(output_dir) if output_dir is not None else (self.report_dir or _default_report_dir())
@@ -265,7 +265,7 @@ class DesktopController:
         key, from_registry = self._resolve_key(key_id)
         if not from_registry:
             raise ValueError(
-                f"Key '{key_id}' ist nicht in der Registry — Signieren benoetigt einen registrierten Key mit Secret."
+                f"Key '{key_id}' ist nicht in der Registry — Signieren benoetigt einen registrierten Key mit Secret.",
             )
         return sign_report(payload, key["secret"], key_id=key_id)
 
@@ -276,7 +276,7 @@ class DesktopController:
         key, from_registry = self._resolve_key(key_id)
         if not from_registry:
             raise ValueError(
-                f"Key '{key_id}' ist nicht in der Registry — Verifizieren benoetigt einen registrierten Key mit Secret."
+                f"Key '{key_id}' ist nicht in der Registry — Verifizieren benoetigt einen registrierten Key mit Secret.",
             )
         return verify_report(signed, key["secret"])
 
@@ -290,7 +290,7 @@ class DesktopController:
         walk over a synthetic vocabulary (documented honest limit).
         """
         gen = generate_marked_text(
-            prefix=text or "", key=SAMPLE_KEY, gamma=0.25, bias_strength=2.0, n_tokens=200, seed=int(seed), context=1
+            prefix=text or "", key=SAMPLE_KEY, gamma=0.25, bias_strength=2.0, n_tokens=200, seed=int(seed), context=1,
         )
         det = detect_kgw(gen["text"], SAMPLE_KEY, 0.25, context=1)
         return {
@@ -383,7 +383,7 @@ class DesktopController:
         key, from_registry = self._resolve_key(key_id)
         if not from_registry:
             raise ValueError(
-                f"Key '{key_id}' ist nicht in der Registry — File-Embed benoetigt einen registrierten Key mit Secret."
+                f"Key '{key_id}' ist nicht in der Registry — File-Embed benoetigt einen registrierten Key mit Secret.",
             )
         emb = embed_provenance(src.read_bytes(), src.name, key["key_id"], key["secret"])
         out = src.with_name(src.stem + "-signed" + src.suffix)

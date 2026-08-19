@@ -141,7 +141,7 @@ class PromptOptimizationService:
     # ---- promotion / versioning --------------------------------------------
 
     def promote(
-        self, system: str, template_id: str, candidate_variant: str | None = None, version: str | None = None
+        self, system: str, template_id: str, candidate_variant: str | None = None, version: str | None = None,
     ) -> dict[str, Any]:
         """Promote the best (or a named) candidate into the registry as an
         immutable new version — only if it beats the baseline AND passes the

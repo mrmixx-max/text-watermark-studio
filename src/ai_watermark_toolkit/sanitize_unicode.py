@@ -122,7 +122,7 @@ CONFUSABLES = str.maketrans(
         "ν": "v",
         "ι": "i",
         "κ": "k",
-    }
+    },
 )
 
 
@@ -181,7 +181,7 @@ def analyze(text: str, *, aggressive: bool = False) -> list[Finding]:
 
 
 def sanitize(
-    text: str, *, nfkc: bool = False, fold_confusables: bool = False, aggressive: bool = False
+    text: str, *, nfkc: bool = False, fold_confusables: bool = False, aggressive: bool = False,
 ) -> SanitizeResult:
     findings = analyze(text, aggressive=aggressive)
     drop = {f.index for f in findings if f.category in {"invisible", "aggressive_filler", "tag_or_vs"}}

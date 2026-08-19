@@ -271,7 +271,7 @@ class StudioTUI(App):
             self._out(
                 f"[green]Keyed detect ({r.get('tested_keys', 0)} keys).[/] "
                 f"best={best.get('key_id')} z={best.get('z_score')} "
-                f"verdict={best.get('verdict')}"
+                f"verdict={best.get('verdict')}",
             )
             if flags["signature_filter"]:
                 sf = best.get("signature_filtered")
@@ -279,7 +279,7 @@ class StudioTUI(App):
                     self._out(
                         f"[cyan]Signature filter:[/] "
                         f"{sf.get('removed_types')} removed "
-                        f"({sf.get('before_n')} -> {sf.get('after_n')} tokens)"
+                        f"({sf.get('before_n')} -> {sf.get('after_n')} tokens)",
                     )
             if flags["e_value"]:
                 from ..forensics.e_value import e_detect
@@ -372,7 +372,7 @@ class StudioTUI(App):
                 self._out(f"[red]{e}[/]")
                 return
             results["delta_z"] = delta_z(
-                text, after_text, key_id, level=level, context=context, registry=KeyRegistry("data/key_registry.json")
+                text, after_text, key_id, level=level, context=context, registry=KeyRegistry("data/key_registry.json"),
             )
         ctx = None
         m = _re.search(r"--institutional-rule\s+(.+?)(?:\s+--|\s*$)", p)
@@ -412,7 +412,7 @@ class StudioTUI(App):
         out = Path(flags["path"]).with_suffix(".signed.json")
         out.write_text(json.dumps(signed, ensure_ascii=False, indent=2), encoding="utf-8")
         self._out(
-            f"[green]Signed[/] {out} (HMAC-SHA256, key_id={key_id}) — Secret bleibt in der Registry, nie im Report."
+            f"[green]Signed[/] {out} (HMAC-SHA256, key_id={key_id}) — Secret bleibt in der Registry, nie im Report.",
         )
 
     def action_report_verify(self) -> None:
@@ -482,7 +482,7 @@ class StudioTUI(App):
         cleaned = clean_text(text)
         self._out(
             f"[green]Cleaned.[/] {cleaned.unicode_removed} unicode removed, "
-            f"{cleaned.confusable_folds} confusable folds."
+            f"{cleaned.confusable_folds} confusable folds.",
         )
         self._out(cleaned.text[:2000])
 
@@ -522,7 +522,7 @@ class StudioTUI(App):
             f"[green]Embedded (key {key['key_id']}, level={level}, "
             f"context={context}).[/] "
             f"{emb.get('replacements', 0)} replacements, "
-            f"green_rate {emb.get('green_rate_after')}."
+            f"green_rate {emb.get('green_rate_after')}.",
         )
         self._out(emb["text"][:2000])
 
@@ -634,7 +634,7 @@ class StudioTUI(App):
             self._out(
                 f"[green]Signed file written:[/] {out} "
                 f"(mark {emb.mark_size} bytes, format {emb.format}, "
-                f"key {key['key_id']})."
+                f"key {key['key_id']}).",
             )
         except Exception as e:
             self._out(f"[red]{type(e).__name__}: {e}[/]")
@@ -650,7 +650,7 @@ class StudioTUI(App):
         secrets = self._provenance_secrets()
         if not secrets:
             self._out(
-                "[red]No provenance keys with secrets registered — a signed file can't be verified without them.[/]"
+                "[red]No provenance keys with secrets registered — a signed file can't be verified without them.[/]",
             )
             return
         src = P(p)
@@ -661,7 +661,7 @@ class StudioTUI(App):
                 "found": getattr(det, "found", None),
                 "valid": getattr(det, "valid", None),
                 "key_id": getattr(det, "key_id", None),
-            }
+            },
         )
 
     def action_image_score(self) -> None:
@@ -735,7 +735,7 @@ class StudioTUI(App):
         self._out(f"[cyan]Installed:[/] {installed}")
         try:
             with urllib.request.urlopen(  # nosec B310  # hardcoded HTTPS URL to PyPI
-                "https://pypi.org/pypi/text-watermark-studio/json", timeout=15
+                "https://pypi.org/pypi/text-watermark-studio/json", timeout=15,
             ) as r:
                 import json as _json
 
@@ -802,14 +802,14 @@ class StudioTUI(App):
             return
         self._out(
             f"Backend: {r['backend']} · Evals: {r['eval_count']} · "
-            f"Baseline: {r['baseline_score']} ({r['baseline_hash'][:8]})"
+            f"Baseline: {r['baseline_score']} ({r['baseline_hash'][:8]})",
         )
         for row in r["ranking"]:
             g = "OK" if row["guardrail_passed"] else "VERLETZT"
             self._out(f"  {row['variant']:<20} {row['avg_score']:<6} guardrail={g}")
         w = r["winner"]
         self._out(
-            f"[green]Gewinner:[/] {w['candidate']['variant']} ({w['avg_score']}) — {w['candidate']['changed_variable']}"
+            f"[green]Gewinner:[/] {w['candidate']['variant']} ({w['avg_score']}) — {w['candidate']['changed_variable']}",
         )
 
     def action_similarity(self) -> None:

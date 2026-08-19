@@ -487,7 +487,7 @@ def _observation(result: dict, cls: str, category: str, lang: str = "de") -> str
         removed = result.get("removed")
         if removed:
             return _lang_text(lang, "obs_delta_removed").format(
-                delta_z=result.get("delta_z"), z_before=result.get("z_before"), z_after=result.get("z_after")
+                delta_z=result.get("delta_z"), z_before=result.get("z_before"), z_after=result.get("z_after"),
             )
         return _lang_text(lang, "obs_delta_kept").format(delta_z=result.get("delta_z"))
     if category == "E-Wert":

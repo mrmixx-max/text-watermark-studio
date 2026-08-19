@@ -1,4 +1,5 @@
 """Tests for ui/web/dashboard.py"""
+
 import time
 
 import pytest

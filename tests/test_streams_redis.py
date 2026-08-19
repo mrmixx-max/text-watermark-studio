@@ -1,4 +1,5 @@
 """Tests for streams/redis_streams.py"""
+
 import json
 from unittest.mock import AsyncMock
 
@@ -10,9 +11,13 @@ from ai_watermark_toolkit.streams import redis_streams
 @pytest.fixture
 def mock_redis():
     redis = AsyncMock()
-    redis.get = AsyncMock(side_effect=lambda k: {
-        "tws:v6:job:abc": json.dumps({"job_id": "abc", "status": "queued", "attempts": 0, "payload": {"text": "hi"}})
-    }.get(k))
+    redis.get = AsyncMock(
+        side_effect=lambda k: {
+            "tws:v6:job:abc": json.dumps(
+                {"job_id": "abc", "status": "queued", "attempts": 0, "payload": {"text": "hi"}}
+            )
+        }.get(k)
+    )
     return redis
 
 
@@ -47,14 +52,18 @@ async def test_get_job_missing(mock_redis, svc):
 
 @pytest.mark.anyio
 async def test_set_status(mock_redis, svc):
-    mock_redis.get = AsyncMock(return_value=json.dumps({"job_id": "abc", "status": "queued", "attempts": 0, "payload": {}}))
+    mock_redis.get = AsyncMock(
+        return_value=json.dumps({"job_id": "abc", "status": "queued", "attempts": 0, "payload": {}})
+    )
     await svc.set_status("abc", "done", result={"text": "clean"})
     mock_redis.set.assert_awaited()
 
 
 @pytest.mark.anyio
 async def test_mark_retry(mock_redis, svc):
-    mock_redis.get = AsyncMock(return_value=json.dumps({"job_id": "abc", "status": "queued", "attempts": 0, "payload": {}}))
+    mock_redis.get = AsyncMock(
+        return_value=json.dumps({"job_id": "abc", "status": "queued", "attempts": 0, "payload": {}})
+    )
     await svc.mark_retry("abc", "boom")
     calls = mock_redis.set.await_args_list
     assert len(calls) >= 1
@@ -62,7 +71,9 @@ async def test_mark_retry(mock_redis, svc):
 
 @pytest.mark.anyio
 async def test_move_to_dlq(mock_redis, svc):
-    mock_redis.get = AsyncMock(return_value=json.dumps({"job_id": "abc", "status": "queued", "attempts": 0, "payload": {}}))
+    mock_redis.get = AsyncMock(
+        return_value=json.dumps({"job_id": "abc", "status": "queued", "attempts": 0, "payload": {}})
+    )
     await svc.move_to_dlq("abc", "too many retries")
     mock_redis.xadd.assert_awaited()
 

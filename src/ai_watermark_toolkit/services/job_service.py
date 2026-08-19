@@ -41,7 +41,7 @@ class JobService:
         job["status"] = "running"
         job_path.write_text(json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8")
         result = process_batch(
-            job["input_dir"], job["output_dir"], mode=job["mode"], intensity=job["intensity"], lang=job["lang"]
+            job["input_dir"], job["output_dir"], mode=job["mode"], intensity=job["intensity"], lang=job["lang"],
         )
         job["status"] = "done"
         job["result"] = result

@@ -152,7 +152,7 @@ def _mldsa_import_error() -> RuntimeError:
     return RuntimeError(
         "ML-DSA (mldsa-44/65/87) requires the cryptography library with the "
         "mldsa module — pip install 'cryptography>=50' (stdlib HMAC stays "
-        "available as hmac-sha256)"
+        "available as hmac-sha256)",
     )
 
 
@@ -282,7 +282,7 @@ def sign_report(
         if not private_key_pem:
             raise ValueError(
                 f"{algorithm} requires private_key_pem (generate a keypair "
-                "with ai-wm report-keygen --algorithm mldsa-44|65|87)"
+                "with ai-wm report-keygen --algorithm mldsa-44|65|87)",
             )
         private_key = serialization.load_pem_private_key(private_key_pem.encode("utf-8"), password=None)
         sig["signature_b64"] = base64.b64encode(_mldsa_sign(private_key, canonical)).decode("ascii")

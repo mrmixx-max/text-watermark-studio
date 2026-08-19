@@ -224,7 +224,7 @@ class VideoWatermarkPlugin(DetectorPlugin):
                     sub_boxes = list(self._iter_isobmff_boxes(payload, start=sub_start))
                     if sub_boxes:
                         score, notes, c2pa_boxes, xmp_found = self._scan_boxes_recursive(
-                            sub_boxes, score, notes, c2pa_boxes, xmp_found
+                            sub_boxes, score, notes, c2pa_boxes, xmp_found,
                         )
                 except (ValueError, TypeError, AttributeError):
                     pass

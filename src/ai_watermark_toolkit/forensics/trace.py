@@ -50,7 +50,7 @@ def _windows(tokens: list[str], window: int, step: int) -> list[dict[str, Any]]:
                 "start_word": start,
                 "end_word": end,
                 "text": " ".join(tokens[start:end]),
-            }
+            },
         )
         idx += 1
         if end >= n:
@@ -118,7 +118,7 @@ def trace_kgw(
                 "verdict": r.get("verdict"),
                 "reliable": reliable,
                 "finding": bool(is_finding),
-            }
+            },
         )
     # Merge adjacent finding windows into spans.
     spans: list[dict[str, Any]] = []
@@ -175,13 +175,13 @@ def format_trace(trace: dict[str, Any], text: str | None = None, context_chars: 
     lines.append(
         f"KGW Z-score trajectory: {trace['total_windows']} windows"
         f" (window={trace['window_words']}w, step={trace['step_words']}w,"
-        f" threshold z>={trace['threshold']})"
+        f" threshold z>={trace['threshold']})",
     )
     w = trace.get("whole_doc") or {}
     wz = w.get("z_score")
     lines.append(
         f"Whole document: z={wz} ({w.get('verdict')})"
-        + (" — note how the global view dilutes local spikes" if wz is not None and wz < trace["threshold"] else "")
+        + (" — note how the global view dilutes local spikes" if wz is not None and wz < trace["threshold"] else ""),
     )
     if not trace["windows"]:
         lines.append("(empty text)")

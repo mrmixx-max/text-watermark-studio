@@ -88,7 +88,7 @@ async def form_clean(
     fold_confusables: str = Form(""),
 ):
     result = text_svc.clean(
-        text, nfkc=nfkc in ("true", "on", "1"), fold_confusables=fold_confusables in ("true", "on", "1")
+        text, nfkc=nfkc in ("true", "on", "1"), fold_confusables=fold_confusables in ("true", "on", "1"),
     )
     return HTMLResponse(_render(result))
 
@@ -279,7 +279,7 @@ async def form_report(
         '<div class="text-[var(--color-success)]">Report generated (HTML length: '
         + str(len(html_out))
         + ")</div>"
-        + _render({"html_length": len(html_out), "lang": lang})
+        + _render({"html_length": len(html_out), "lang": lang}),
     )
 
 

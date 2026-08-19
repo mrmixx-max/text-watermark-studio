@@ -58,7 +58,7 @@ class CommunityService:
                     "members": members,
                     "size": len(members),
                     "top_types": dict(type_counts.most_common(5)),
-                }
+                },
             )
         result = {"communities": communities}
         self._save_communities(result)
@@ -76,12 +76,12 @@ class CommunityService:
             dominant = ", ".join(f"{k} ({v})" for k, v in types.most_common(3))
             summary = f"Cluster around {', '.join(labels[:3])}. Dominant types: {dominant}. Members: {len(members)}."
             summaries.append(
-                {"community_id": c["id"], "summary": summary, "members_preview": labels[:10], "size": c["size"]}
+                {"community_id": c["id"], "summary": summary, "members_preview": labels[:10], "size": c["size"]},
             )
         payload = {
             "communities": [
                 c | next((s for s in summaries if s["community_id"] == c["id"]), {}) for c in data["communities"]
-            ]
+            ],
         }
         self._save_communities(payload)
         return payload

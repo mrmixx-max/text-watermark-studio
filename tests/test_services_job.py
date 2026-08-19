@@ -1,4 +1,5 @@
 """Tests for services/job_service.py"""
+
 from unittest.mock import patch
 
 import pytest

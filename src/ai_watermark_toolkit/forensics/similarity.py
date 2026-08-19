@@ -181,7 +181,7 @@ def clear_signature_cache() -> None:
 
 
 def check_similarity(
-    input_text: str, corpus_paths: list[Path], threshold: float = 0.4, top: int = 5, k: int = _K_DEFAULT
+    input_text: str, corpus_paths: list[Path], threshold: float = 0.4, top: int = 5, k: int = _K_DEFAULT,
 ) -> dict:
     """Compare input_text against every readable file in the corpus.
 
@@ -207,7 +207,7 @@ def check_similarity(
                 "similarity": round(score, 4),
                 "verdict": _verdict(score, threshold),
                 "fundstellen": overlaps,
-            }
+            },
         )
     results.sort(key=lambda r: r["similarity"], reverse=True)
     findings = [r for r in results if r["similarity"] >= threshold]

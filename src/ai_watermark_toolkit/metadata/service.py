@@ -310,7 +310,7 @@ def _odt(data: bytes, clean: bool) -> MetaReport:
 
 
 def _zip_container(
-    data: bytes, clean: bool, fmt: str, core_path: str, app_path: str | None, custom_dir: str | None
+    data: bytes, clean: bool, fmt: str, core_path: str, app_path: str | None, custom_dir: str | None,
 ) -> MetaReport:
     rep = MetaReport(format=fmt)
     try:
@@ -526,7 +526,7 @@ def _html(data: bytes, clean: bool) -> MetaReport:
             rep.removed_keys.append(
                 re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE).group(1)
                 if re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE)
-                else "meta"
+                else "meta",
             )
             rep.actions.append("removed_ai_meta_tag")
             return ""

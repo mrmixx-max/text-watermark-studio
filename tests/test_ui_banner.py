@@ -1,4 +1,5 @@
 """Tests for ui/banner.py"""
+
 from ai_watermark_toolkit.ui import banner
 
 

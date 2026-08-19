@@ -115,7 +115,7 @@ def _register_commands(sub) -> None:
     d.add_argument("--aggressive", action="store_true", help="also flag script fillers (Braille blank, Hangul, ...)")
     d.add_argument("-o", "--output")
     d.add_argument(
-        "--key", default=None, help="key_id / secret for the keyed KGW test (enables real Z-score detection)"
+        "--key", default=None, help="key_id / secret for the keyed KGW test (enables real Z-score detection)",
     )
     d.add_argument(
         "--key-file",
@@ -123,7 +123,7 @@ def _register_commands(sub) -> None:
         help="read the raw secret from a file (keeps it out of shell history); overrides --key",
     )
     d.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)",
     )
     d.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     d.add_argument(
@@ -165,7 +165,7 @@ def _register_commands(sub) -> None:
     )
     em.add_argument("--gamma", type=float, default=None)
     em.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for greenlist marking (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for greenlist marking (default word)",
     )
     em.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     em.add_argument("--seed", type=int, default=None, help="RNG seed for deterministic marking")
@@ -205,7 +205,7 @@ def _register_commands(sub) -> None:
     )
     rp.add_argument("--lang", default="de", choices=["en", "de"])
     rp.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)",
     )
     rp.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     rp.add_argument("--pdf", action="store_true", help="render to PDF via Edge headless (Windows)")
@@ -232,7 +232,7 @@ def _register_commands(sub) -> None:
     rs.add_argument("-o", "--output", default="report-signed.json", help="output path (default report-signed.json)")
 
     rv = sub.add_parser(
-        "report-verify", help="verify a signed forensic findings document (exit 0 valid / 1 invalid / 2 usage)"
+        "report-verify", help="verify a signed forensic findings document (exit 0 valid / 1 invalid / 2 usage)",
     )
     rv.add_argument("input", help="signed JSON file")
     rv.add_argument("--secret", default=None, help="HMAC secret")
@@ -245,12 +245,12 @@ def _register_commands(sub) -> None:
     rv.add_argument("--json", action="store_true", help="machine-readable output (JSON is the default)")
 
     rk = sub.add_parser(
-        "report-keygen", help="generate an ML-DSA keypair for signing forensic findings (FIPS 204, needs cryptography)"
+        "report-keygen", help="generate an ML-DSA keypair for signing forensic findings (FIPS 204, needs cryptography)",
     )
     rk.add_argument("--algorithm", default="mldsa-44", choices=["mldsa-44", "mldsa-65", "mldsa-87"])
     rk.add_argument("--output-dir", default=".", help="directory for the PEM files (default: current directory)")
     rk.add_argument(
-        "--prefix", default="mldsa", help="file name prefix (default mldsa -> mldsa_private.pem / mldsa_public.pem)"
+        "--prefix", default="mldsa", help="file name prefix (default mldsa -> mldsa_private.pem / mldsa_public.pem)",
     )
 
     wc = sub.add_parser("watch")
@@ -285,7 +285,7 @@ def _register_commands(sub) -> None:
     rw.add_argument("input", nargs="?")
     rw.add_argument("--stdin", action="store_true")
     rw.add_argument(
-        "--mode", default="clarity", choices=["clarity", "concise", "plain", "formal", "structural", "backtranslate"]
+        "--mode", default="clarity", choices=["clarity", "concise", "plain", "formal", "structural", "backtranslate"],
     )
     rw.add_argument("--use-llm", action="store_true", help="force the local LLM backend")
     rw.add_argument("--no-preserve", action="store_true", help="disable protected-token preservation")
@@ -347,11 +347,11 @@ def _register_commands(sub) -> None:
     bt.add_argument("--intensity", default="standard", choices=["light", "standard", "aggressive"])
     bt.add_argument("--key", default=None, help="key_id for --mode embed (must carry a secret)")
     bt.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for --mode embed (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for --mode embed (default word)",
     )
     bt.add_argument("--context", type=int, default=1, help="greenlist context window c for --mode embed (default 1)")
     bt.add_argument(
-        "--gamma", type=float, default=None, help="greenlist fraction for --mode embed (default: key's gamma or 0.25)"
+        "--gamma", type=float, default=None, help="greenlist fraction for --mode embed (default: key's gamma or 0.25)",
     )
     bt.add_argument("--seed", type=int, default=None, help="RNG seed for deterministic --mode embed")
     bt.add_argument(
@@ -362,7 +362,7 @@ def _register_commands(sub) -> None:
     bt.add_argument("--report")
 
     ks = sub.add_parser(
-        "kgw-sample", help="generate synthetic KGW-bias text and detect it (experimental generation-time bias demo)"
+        "kgw-sample", help="generate synthetic KGW-bias text and detect it (experimental generation-time bias demo)",
     )
     ks.add_argument("--key", default="demo-sampling-bias-key", help="secret key (default: demo key)")
     ks.add_argument("--gamma", type=float, default=0.5, help="greenlist fraction (default 0.5)")
@@ -378,15 +378,15 @@ def _register_commands(sub) -> None:
     sv.add_argument("--port", type=int, default=8080)
 
     dz = sub.add_parser(
-        "delta-z", help="ΔZ check: measure KGW watermark strength before vs after (removal with receipt)"
+        "delta-z", help="ΔZ check: measure KGW watermark strength before vs after (removal with receipt)",
     )
     dz.add_argument(
-        "before", nargs="?", help="file with the text BEFORE cleaning/attack (single file when --transform is used)"
+        "before", nargs="?", help="file with the text BEFORE cleaning/attack (single file when --transform is used)",
     )
     dz.add_argument("after", nargs="?", help="file with the text AFTER cleaning/attack (omitted with --transform)")
     dz.add_argument("--stdin", action="store_true")
     dz.add_argument(
-        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret"
+        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret",
     )
     dz.add_argument(
         "--key-file",
@@ -394,7 +394,7 @@ def _register_commands(sub) -> None:
         help="read the raw secret from a file (keeps it out of shell history); overrides --key",
     )
     dz.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)",
     )
     dz.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     dz.add_argument(
@@ -422,7 +422,7 @@ def _register_commands(sub) -> None:
     )
     dz.add_argument("--seed", type=int, default=42, help="RNG seed for --transform shuffle (default 42)")
     dz.add_argument(
-        "--sign", default=None, help="HMAC secret: sign the ΔZ result (signed_report) for an auditable document"
+        "--sign", default=None, help="HMAC secret: sign the ΔZ result (signed_report) for an auditable document",
     )
     dz.add_argument("--sign-file", default=None, help="read the HMAC signing secret from a file; overrides --sign")
     dz.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
@@ -434,7 +434,7 @@ def _register_commands(sub) -> None:
     fi.add_argument("input", nargs="?")
     fi.add_argument("--stdin", action="store_true")
     fi.add_argument(
-        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret"
+        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret",
     )
     fi.add_argument(
         "--key-file",
@@ -442,11 +442,11 @@ def _register_commands(sub) -> None:
         help="read the raw secret from a file (keeps it out of shell history); overrides --key",
     )
     fi.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)",
     )
     fi.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     fi.add_argument(
-        "--e-value", action="store_true", help="also run the anytime-valid e-process (E-Wert-Befund, Klasse C)"
+        "--e-value", action="store_true", help="also run the anytime-valid e-process (E-Wert-Befund, Klasse C)",
     )
     fi.add_argument(
         "--delta-z",
@@ -481,7 +481,7 @@ def _register_commands(sub) -> None:
     tr.add_argument("input", nargs="?")
     tr.add_argument("--stdin", action="store_true")
     tr.add_argument(
-        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret"
+        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret",
     )
     tr.add_argument(
         "--key-file",
@@ -489,12 +489,12 @@ def _register_commands(sub) -> None:
         help="read the raw secret from a file (keeps it out of shell history); overrides --key",
     )
     tr.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)",
     )
     tr.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     tr.add_argument("--window", type=int, default=500, help="sliding window size in words (default 500)")
     tr.add_argument(
-        "--step", type=int, default=0, help="step between windows in words (default = window, i.e. non-overlapping)"
+        "--step", type=int, default=0, help="step between windows in words (default = window, i.e. non-overlapping)",
     )
     tr.add_argument("--threshold", type=float, default=4.0, help="Z threshold for a finding window (default 4.0)")
     tr.add_argument("--json", action="store_true", help="emit the full JSON trajectory instead of the human report")
@@ -517,15 +517,15 @@ def _register_commands(sub) -> None:
     )
     mb_emb.add_argument("-o", "--output", required=True, help="write the watermarked text here")
     mb_ext = mb_sub.add_parser(
-        "extract", help="recover the payload from a watermarked text (needs the ORIGINAL text as reference state)"
+        "extract", help="recover the payload from a watermarked text (needs the ORIGINAL text as reference state)",
     )
     mb_ext.add_argument("input", nargs="?", help="watermarked text file")
     mb_ext.add_argument("--stdin", action="store_true")
     mb_ext.add_argument(
-        "--reference", required=True, help="the ORIGINAL text file (both parties share the invariant anchor state)"
+        "--reference", required=True, help="the ORIGINAL text file (both parties share the invariant anchor state)",
     )
     mb_ext.add_argument(
-        "--reference-stdin", action="store_true", help="read the original text from stdin instead of a file"
+        "--reference-stdin", action="store_true", help="read the original text from stdin instead of a file",
     )
     mb_ext.add_argument("--json", action="store_true", help="emit the full JSON extraction result")
     mb_ext.add_argument("-o", "--output", default=None, help="write the JSON result to a file instead of stdout")
@@ -537,7 +537,7 @@ def _register_commands(sub) -> None:
     ev.add_argument("input", nargs="?")
     ev.add_argument("--stdin", action="store_true")
     ev.add_argument(
-        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret"
+        "--key", default=None, help="key_id from data/key_registry.json (must carry a secret) or a raw secret",
     )
     ev.add_argument(
         "--key-file",
@@ -545,15 +545,15 @@ def _register_commands(sub) -> None:
         help="read the raw secret from a file (keeps it out of shell history); overrides --key",
     )
     ev.add_argument(
-        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)"
+        "--level", default="word", choices=["word", "bpe"], help="token level for KGW detection (default word)",
     )
     ev.add_argument("--context", type=int, default=1, help="greenlist context window c (default 1)")
     ev.add_argument("--target-z", type=float, default=3.9, help="Z threshold to get below (default 3.9)")
     ev.add_argument(
-        "--max-changes", type=int, default=None, help="cap the edit budget (default: unlimited until target)"
+        "--max-changes", type=int, default=None, help="cap the edit budget (default: unlimited until target)",
     )
     ev.add_argument(
-        "--ollama-model", default=None, help="optional local Ollama model for natural candidates per position"
+        "--ollama-model", default=None, help="optional local Ollama model for natural candidates per position",
     )
     ev.add_argument("--seed", type=int, default=0, help="RNG seed for green-position order (default 0)")
     ev.add_argument("--json", action="store_true", help="emit the full JSON measurement instead of the human report")
@@ -578,7 +578,7 @@ def _handle_splash(args: argparse.Namespace) -> int:
 
         llm = _json.loads(open("data/local_llm.json", encoding="utf-8").read())
         print(
-            f"  local llm       : {llm.get('model_variant', llm.get('model_family', 'unconfigured'))} @ {llm.get('server_base_url', 'unconfigured')}"
+            f"  local llm       : {llm.get('model_variant', llm.get('model_family', 'unconfigured'))} @ {llm.get('server_base_url', 'unconfigured')}",
         )
     except Exception:
         print("  local llm       : unconfigured")
@@ -802,7 +802,7 @@ def _handle_file_detect(args: argparse.Namespace) -> int:
         print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
     else:
         print(
-            f"format: {result.format} | found: {result.found} | key_id: {result.key_id} | valid: {result.valid} | reason: {result.reason}"
+            f"format: {result.format} | found: {result.found} | key_id: {result.key_id} | valid: {result.valid} | reason: {result.reason}",
         )
     return 0 if (result.found and result.valid) else 1
 
@@ -922,7 +922,7 @@ def _handle_report_sign(args: argparse.Namespace) -> int:
             return 2
         private_key_pem = Path(args.private_key).read_text(encoding="utf-8")
     signed = sign_report(
-        payload, secret or "", key_id=args.key_id, algorithm=args.algorithm, private_key_pem=private_key_pem
+        payload, secret or "", key_id=args.key_id, algorithm=args.algorithm, private_key_pem=private_key_pem,
     )
     Path(args.output).write_text(json.dumps(signed, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
@@ -936,7 +936,7 @@ def _handle_report_sign(args: argparse.Namespace) -> int:
             },
             ensure_ascii=False,
             indent=2,
-        )
+        ),
     )
     return 0
 
@@ -986,7 +986,7 @@ def _handle_report_keygen(args: argparse.Namespace) -> int:
             {"ok": True, "algorithm": pair["algorithm"], "private_key": str(priv), "public_key": str(pub)},
             ensure_ascii=False,
             indent=2,
-        )
+        ),
     )
     return 0
 
@@ -1005,7 +1005,7 @@ def _handle_similarity(args: argparse.Namespace) -> int:
         print("error: no corpus path exists", file=sys.stderr)
         return 2
     report = check_similarity(
-        inp.read_text(encoding="utf-8", errors="replace"), corpus, threshold=args.threshold, top=args.top
+        inp.read_text(encoding="utf-8", errors="replace"), corpus, threshold=args.threshold, top=args.top,
     )
     if args.json:
         print(render_json(report))
@@ -1122,7 +1122,7 @@ def _handle_remove(args: argparse.Namespace) -> int:
     svc = RewriteService(llm_backend=bool(_os.getenv("LOCAL_LLM_ENABLED", "0") == "1"))
     use_llm = True if getattr(args, "use_llm", False) else None
     rewritten = svc.rewrite(
-        diluted.text, mode=args.rewrite_mode, preserve=not getattr(args, "no_preserve", False), use_llm=use_llm
+        diluted.text, mode=args.rewrite_mode, preserve=not getattr(args, "no_preserve", False), use_llm=use_llm,
     )
     out = rewritten["rewritten"]
     if args.json:
@@ -1433,7 +1433,7 @@ def _handle_payload(args: argparse.Namespace) -> int:
         print(
             f"embedded {result['bits_embedded']} bits"
             f" (payload '{args.payload}': {len(result['payload_bits'])} bits requested)"
-            f" -> {args.output}"
+            f" -> {args.output}",
         )
         if result["bits_embedded"] < len(result["payload_bits"]):
             print(
@@ -1586,7 +1586,7 @@ def main() -> int:
     """
     p = argparse.ArgumentParser(prog="ai-wm")
     p.add_argument(
-        "--quiet", "-q", action="store_true", help="suppress status messages on stderr (machine-readable output only)"
+        "--quiet", "-q", action="store_true", help="suppress status messages on stderr (machine-readable output only)",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
