@@ -5,66 +5,66 @@ import unicodedata
 from dataclasses import asdict, dataclass, field
 
 INVISIBLE_CPS = {
-    0x00AD,   # soft hyphen
-    0x034F,   # combining grapheme joiner
-    0x061C,   # arabic letter mark
-    0x180E,   # mongolian vowel separator
-    0x200B,   # zero width space
-    0x200C,   # zero width non-joiner
-    0x200D,   # zero width joiner
-    0x200E,   # left-to-right mark
-    0x200F,   # right-to-left mark
-    0x202A,   # left-to-right embedding
-    0x202B,   # right-to-left embedding
-    0x202C,   # pop directional formatting
-    0x202D,   # left-to-right override
-    0x202E,   # right-to-left override
-    0x2060,   # word joiner
-    0x2061,   # function application
-    0x2062,   # invisible times
-    0x2063,   # invisible separator
-    0x2064,   # invisible plus
-    0x2066,   # left-to-right isolate
-    0x2067,   # right-to-left isolate
-    0x2068,   # first strong isolate
-    0x2069,   # pop directional isolate
-    0x206A,   # inhibit symmetric swapping
-    0x206B,   # activate symmetric swapping
-    0x206C,   # inhibit arabic form shaping
-    0x206D,   # activate arabic form shaping
-    0x206E,   # national digit shapes
-    0x206F,   # nominal digit shapes
-    0xFEFF,   # zero width no-break space (BOM)
-    0xFFF9,   # interlinear annotation anchor
-    0xFFFA,   # interlinear annotation separator
-    0xFFFB,   # interlinear annotation terminator
+    0x00AD,  # soft hyphen
+    0x034F,  # combining grapheme joiner
+    0x061C,  # arabic letter mark
+    0x180E,  # mongolian vowel separator
+    0x200B,  # zero width space
+    0x200C,  # zero width non-joiner
+    0x200D,  # zero width joiner
+    0x200E,  # left-to-right mark
+    0x200F,  # right-to-left mark
+    0x202A,  # left-to-right embedding
+    0x202B,  # right-to-left embedding
+    0x202C,  # pop directional formatting
+    0x202D,  # left-to-right override
+    0x202E,  # right-to-left override
+    0x2060,  # word joiner
+    0x2061,  # function application
+    0x2062,  # invisible times
+    0x2063,  # invisible separator
+    0x2064,  # invisible plus
+    0x2066,  # left-to-right isolate
+    0x2067,  # right-to-left isolate
+    0x2068,  # first strong isolate
+    0x2069,  # pop directional isolate
+    0x206A,  # inhibit symmetric swapping
+    0x206B,  # activate symmetric swapping
+    0x206C,  # inhibit arabic form shaping
+    0x206D,  # activate arabic form shaping
+    0x206E,  # national digit shapes
+    0x206F,  # nominal digit shapes
+    0xFEFF,  # zero width no-break space (BOM)
+    0xFFF9,  # interlinear annotation anchor
+    0xFFFA,  # interlinear annotation separator
+    0xFFFB,  # interlinear annotation terminator
 }
 
 # Exotic spaces: fancy separators that should be normalized to ASCII space.
 # From markscrub's unicode.ts — keep space semantics instead of stripping.
 EXOTIC_SPACE_CPS = {
-    0x00A0,   # no-break space
-    0x1680,   # ogham space mark
-    0x2000,   # en quad
-    0x2001,   # em quad
-    0x2002,   # en space
-    0x2003,   # em space
-    0x2004,   # three-per-em space
-    0x2005,   # four-per-em space
-    0x2006,   # six-per-em space
-    0x2007,   # figure space
-    0x2008,   # punctuation space
-    0x2009,   # thin space
-    0x200A,   # hair space
-    0x202F,   # narrow no-break space
-    0x205F,   # medium mathematical space
-    0x3000,   # ideographic space
+    0x00A0,  # no-break space
+    0x1680,  # ogham space mark
+    0x2000,  # en quad
+    0x2001,  # em quad
+    0x2002,  # en space
+    0x2003,  # em space
+    0x2004,  # three-per-em space
+    0x2005,  # four-per-em space
+    0x2006,  # six-per-em space
+    0x2007,  # figure space
+    0x2008,  # punctuation space
+    0x2009,  # thin space
+    0x200A,  # hair space
+    0x202F,  # narrow no-break space
+    0x205F,  # medium mathematical space
+    0x3000,  # ideographic space
 }
 
 # Line/paragraph separators (distinct from newline/carriage return).
 LINE_SEP_CPS = {
-    0x2028,   # line separator
-    0x2029,   # paragraph separator
+    0x2028,  # line separator
+    0x2029,  # paragraph separator
 }
 
 # Aggressive-only fillers: script-specific, invisible in most fonts, and
@@ -188,9 +188,7 @@ def sanitize(
     space_replace = {f.index for f in findings if f.category == "exotic_space"}
     newline_replace = {f.index for f in findings if f.category == "line_sep"}
     s = "".join(
-        " " if i in space_replace
-        else "\n" if i in newline_replace
-        else ch
+        " " if i in space_replace else "\n" if i in newline_replace else ch
         for i, ch in enumerate(text)
         if i not in drop
     )
