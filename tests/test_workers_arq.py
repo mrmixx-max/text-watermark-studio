@@ -1,6 +1,6 @@
 """Tests for workers/arq_worker.py"""
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 

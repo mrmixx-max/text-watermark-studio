@@ -1,7 +1,4 @@
 """Tests for routing/service.py"""
-import json
-import tempfile
-from pathlib import Path
 
 import pytest
 

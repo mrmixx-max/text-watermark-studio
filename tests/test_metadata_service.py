@@ -1,7 +1,6 @@
 """Tests for metadata/service.py"""
 import struct
 
-import pytest
 
 from ai_watermark_toolkit.metadata import service
 

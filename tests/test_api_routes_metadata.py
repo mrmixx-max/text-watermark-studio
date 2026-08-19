@@ -1,9 +1,7 @@
 """Tests for api/routes/metadata.py"""
 from unittest.mock import patch
 
-import pytest
 
-from ai_watermark_toolkit.api.routes import metadata as meta_routes
 
 
 class TestMetadataRoutes:

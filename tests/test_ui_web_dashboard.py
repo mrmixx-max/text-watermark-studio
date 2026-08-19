@@ -1,7 +1,5 @@
 """Tests for ui/web/dashboard.py"""
-import asyncio
 import time
-from datetime import datetime, timezone
 
 import pytest
 

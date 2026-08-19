@@ -1,6 +1,5 @@
 """Tests for report.py"""
 import json
-from pathlib import Path
 
 from ai_watermark_toolkit.report import sha256_text, write_json
 
