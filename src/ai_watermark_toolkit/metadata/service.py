@@ -310,7 +310,12 @@ def _odt(data: bytes, clean: bool) -> MetaReport:
 
 
 def _zip_container(
-    data: bytes, clean: bool, fmt: str, core_path: str, app_path: str | None, custom_dir: str | None,
+    data: bytes,
+    clean: bool,
+    fmt: str,
+    core_path: str,
+    app_path: str | None,
+    custom_dir: str | None,
 ) -> MetaReport:
     rep = MetaReport(format=fmt)
     try:

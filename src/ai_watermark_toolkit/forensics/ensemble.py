@@ -84,7 +84,11 @@ def ensemble_detect(
             r = (kgw_results or {}).get(key.get("key_id"))
             if r is None:
                 r = detect_kgw(
-                    text, key["secret"], gamma=key.get("gamma") or DEFAULT_GAMMA, level=level, context=context,
+                    text,
+                    key["secret"],
+                    gamma=key.get("gamma") or DEFAULT_GAMMA,
+                    level=level,
+                    context=context,
                 )
             z = r["z_score"] or 0.0
             per_key.append(

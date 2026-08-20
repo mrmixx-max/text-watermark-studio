@@ -88,7 +88,9 @@ async def form_clean(
     fold_confusables: str = Form(""),
 ):
     result = text_svc.clean(
-        text, nfkc=nfkc in ("true", "on", "1"), fold_confusables=fold_confusables in ("true", "on", "1"),
+        text,
+        nfkc=nfkc in ("true", "on", "1"),
+        fold_confusables=fold_confusables in ("true", "on", "1"),
     )
     return HTMLResponse(_render(result))
 

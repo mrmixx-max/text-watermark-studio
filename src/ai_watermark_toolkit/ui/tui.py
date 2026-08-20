@@ -372,7 +372,12 @@ class StudioTUI(App):
                 self._out(f"[red]{e}[/]")
                 return
             results["delta_z"] = delta_z(
-                text, after_text, key_id, level=level, context=context, registry=KeyRegistry("data/key_registry.json"),
+                text,
+                after_text,
+                key_id,
+                level=level,
+                context=context,
+                registry=KeyRegistry("data/key_registry.json"),
             )
         ctx = None
         m = _re.search(r"--institutional-rule\s+(.+?)(?:\s+--|\s*$)", p)
@@ -735,7 +740,8 @@ class StudioTUI(App):
         self._out(f"[cyan]Installed:[/] {installed}")
         try:
             with urllib.request.urlopen(  # nosec B310  # hardcoded HTTPS URL to PyPI
-                "https://pypi.org/pypi/text-watermark-studio/json", timeout=15,
+                "https://pypi.org/pypi/text-watermark-studio/json",
+                timeout=15,
             ) as r:
                 import json as _json
 

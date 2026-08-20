@@ -732,7 +732,10 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------- actions
     def open_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, self._tr("dlg.open"), "", "Text files (*.txt *.md *.json);;All files (*)",
+            self,
+            self._tr("dlg.open"),
+            "",
+            "Text files (*.txt *.md *.json);;All files (*)",
         )
         if not path:
             return
@@ -754,7 +757,10 @@ class MainWindow(QMainWindow):
 
     def save_result(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
-            self, self._tr("dlg.save"), "tws-result.json", "JSON (*.json);;All files (*)",
+            self,
+            self._tr("dlg.save"),
+            "tws-result.json",
+            "JSON (*.json);;All files (*)",
         )
         if not path:
             return
@@ -811,7 +817,8 @@ class MainWindow(QMainWindow):
     def sign(self) -> None:
         self._run(
             lambda: self.controller.sign_report_json(
-                self.controller.parse_json(self.results.toPlainText()), self._require_key(),
+                self.controller.parse_json(self.results.toPlainText()),
+                self._require_key(),
             ),
             ok_status=self._tr("status.sign_ok"),
         )
@@ -819,7 +826,8 @@ class MainWindow(QMainWindow):
     def verify(self) -> None:
         self._run(
             lambda: self.controller.verify_report_json(
-                self.controller.parse_json(self.results.toPlainText()), self._require_key(),
+                self.controller.parse_json(self.results.toPlainText()),
+                self._require_key(),
             ),
             ok_status=self._tr("status.verify_ok"),
         )

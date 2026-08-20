@@ -24,7 +24,8 @@ class ConfirmRequest(BaseModel):
 @router.post("/request-upload")
 def request_upload(req: UploadRequest, request: Request):
     return respond(
-        request, svc.request_upload(req.filename, req.content_type, req.size_bytes, req.provider, req.purpose),
+        request,
+        svc.request_upload(req.filename, req.content_type, req.size_bytes, req.provider, req.purpose),
     )
 
 

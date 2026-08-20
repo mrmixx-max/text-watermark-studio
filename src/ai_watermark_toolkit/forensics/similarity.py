@@ -181,7 +181,11 @@ def clear_signature_cache() -> None:
 
 
 def check_similarity(
-    input_text: str, corpus_paths: list[Path], threshold: float = 0.4, top: int = 5, k: int = _K_DEFAULT,
+    input_text: str,
+    corpus_paths: list[Path],
+    threshold: float = 0.4,
+    top: int = 5,
+    k: int = _K_DEFAULT,
 ) -> dict:
     """Compare input_text against every readable file in the corpus.
 

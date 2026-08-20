@@ -156,7 +156,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--once", action="store_true", help="single scan pass, then exit")
     ap.add_argument("--interval", type=float, default=5.0, help="poll seconds (default 5)")
     ap.add_argument(
-        "--kgw", action="store_true", help="also run KGW text detection on text files (requires registered KGW keys)",
+        "--kgw",
+        action="store_true",
+        help="also run KGW text detection on text files (requires registered KGW keys)",
     )
     args = ap.parse_args(argv)
     try:

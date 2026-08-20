@@ -51,7 +51,13 @@ class GraphMemoryService:
         return edge
 
     def ingest_fact(
-        self, subject: str, relation: str, object_: str, subject_type="Entity", object_type="Entity", evidence=None,
+        self,
+        subject: str,
+        relation: str,
+        object_: str,
+        subject_type="Entity",
+        object_type="Entity",
+        evidence=None,
     ):
         self.add_node({"id": subject.lower().replace(" ", "_"), "label": subject, "type": subject_type})
         self.add_node({"id": object_.lower().replace(" ", "_"), "label": object_, "type": object_type})

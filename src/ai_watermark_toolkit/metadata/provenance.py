@@ -281,7 +281,8 @@ def _embed_pdf(data: bytes, key_id: str, secret: str) -> bytes:
 def _detect_pdf(data: bytes, secrets: dict[str, str]) -> DetectResult:
     res = DetectResult(format="pdf", found=False)
     m = re.search(
-        rb"<<\s*/Type\s*/Metadata\s*/Subtype\s*/XML\s*/Length\s+\d+\s*>>\s*stream\s*([\s\S]*?)endstream", data,
+        rb"<<\s*/Type\s*/Metadata\s*/Subtype\s*/XML\s*/Length\s+\d+\s*>>\s*stream\s*([\s\S]*?)endstream",
+        data,
     )
     if m:
         packet = _packet_dict(m.group(1).strip())

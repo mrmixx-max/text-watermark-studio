@@ -285,7 +285,12 @@ def signature_token_stats(tokens: list[str], context_seq: int, key: str, gamma: 
 
 
 def _filter_pairs(
-    pairs: list, key: str, gamma: float, min_share: float, max_filter: int, tokens: list[str] | None = None,
+    pairs: list,
+    key: str,
+    gamma: float,
+    min_share: float,
+    max_filter: int,
+    tokens: list[str] | None = None,
 ) -> dict:
     """Shared signature-filter core over scored pairs (see signature_filter)."""
     stats = _type_stats(pairs, key, gamma)

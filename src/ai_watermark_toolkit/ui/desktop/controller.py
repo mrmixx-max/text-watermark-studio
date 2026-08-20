@@ -180,7 +180,12 @@ class DesktopController:
 
     # ------------------------------------------------------------- embed
     def embed_text(
-        self, text: str, key_id: str, gamma: float | None = None, level: str = "word", context: int = 1,
+        self,
+        text: str,
+        key_id: str,
+        gamma: float | None = None,
+        level: str = "word",
+        context: int = 1,
     ) -> dict:
         """Greenlist-mark the text with a REGISTERED key (mark_greenlist).
 
@@ -290,7 +295,13 @@ class DesktopController:
         walk over a synthetic vocabulary (documented honest limit).
         """
         gen = generate_marked_text(
-            prefix=text or "", key=SAMPLE_KEY, gamma=0.25, bias_strength=2.0, n_tokens=200, seed=int(seed), context=1,
+            prefix=text or "",
+            key=SAMPLE_KEY,
+            gamma=0.25,
+            bias_strength=2.0,
+            n_tokens=200,
+            seed=int(seed),
+            context=1,
         )
         det = detect_kgw(gen["text"], SAMPLE_KEY, 0.25, context=1)
         return {
