@@ -289,6 +289,9 @@ class LocalLLMService:
 
         cfg = self.load()
         base = cfg.get("server_base_url", "http://localhost:11434")
+        # Remove trailing /v1 if present to avoid double-prefix
+        if base.endswith("/v1"):
+            base = base[:-3]
         url = f"{base}{path}"
         req = urllib.request.Request(url, method=method)
         req.add_header("Content-Type", "application/json")
