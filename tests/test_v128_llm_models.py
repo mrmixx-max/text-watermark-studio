@@ -90,13 +90,33 @@ def svc(tmp_path, mock_ollama, monkeypatch):
 
 
 class TestList:
-    def test_lists_all_known_models(self, svc):
+    def test_lists_all_known_models(self, svc, monkeypatch):
+        # Mock the HTTP call to Ollama /api/tags
+        captured = {}
+        class FakeResponse:
+            def read(self):
+                import json
+                return json.dumps({"models": [
+                    {"name": "eurollm-9b:latest", "size": 9_000_000_000},
+                    {"name": "llama3.2:3b", "size": 3_200_000_000},
+                ]}).encode("utf-8")
+            def __enter__(self):
+                return self
+            def __exit__(self, *a):
+                pass
+
+        def fake_urlopen(req, timeout=None):
+            captured["url"] = req.full_url
+            return FakeResponse()
+
+        monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
         models = svc.list_models()
         names = {m["name"] for m in models}
         assert "eurollm-9b:latest" in names
         assert "llama3.2:3b" in names
 
-    def test_model_installed_accepts_latest_suffix(self, svc):
+    def test_model_installed_accepts_latest_suffix(self, svc, monkeypatch):
+        svc.configure(model_variant="eurollm-9b", installed=True)
         assert svc.model_installed("eurollm-9b") is True
         assert svc.model_installed("eurollm-9b:latest") is True
         assert svc.model_installed("qwen99") is False
