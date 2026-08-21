@@ -47,6 +47,7 @@ def test_use_model_updates_config(svc):
 
 def test_configure_and_get_sampling(svc):
     from ai_watermark_toolkit.llm.service import SamplingConfig
+
     cfg = SamplingConfig(temperature=0.5, top_p=0.9)
     svc.configure_sampling(cfg)
     result = svc.get_sampling_config()
@@ -76,8 +77,10 @@ def test_ollama_uses_config_url(svc, monkeypatch):
     class FakeResponse:
         def read(self):
             return b'{"models": []}'
+
         def __enter__(self):
             return self
+
         def __exit__(self, *a):
             pass
 
@@ -99,8 +102,10 @@ def test_ollama_post_with_payload(svc, monkeypatch):
     class FakeResponse:
         def read(self):
             return b'{"status": "ok"}'
+
         def __enter__(self):
             return self
+
         def __exit__(self, *a):
             pass
 
