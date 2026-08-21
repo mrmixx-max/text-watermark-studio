@@ -63,9 +63,11 @@ class TestAuditModule:
         from ai_watermark_toolkit.forensics.audit import AUDIT_LOG, read_audit
 
         AUDIT_LOG.write_text(
-            json.dumps({"event": "ok", "payload": {}, "timestamp": "x"}) + "\n"
+            json.dumps({"event": "ok", "payload": {}, "timestamp": "x"})
+            + "\n"
             + "NOT VALID JSON\n"
-            + json.dumps({"event": "ok2", "payload": {}, "timestamp": "y"}) + "\n",
+            + json.dumps({"event": "ok2", "payload": {}, "timestamp": "y"})
+            + "\n",
             encoding="utf-8",
         )
         entries = read_audit()
@@ -148,10 +150,12 @@ class TestSynthidAdapter:
         img = tmp_path / "img.png"
         img.write_bytes(b"\x89PNG\r\n\x1a\n")
 
-        fake = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="{\"watermarked\": true}", stderr=""
+        fake = subprocess.CompletedProcess(args=[], returncode=0, stdout='{"watermarked": true}', stderr="")
+        monkeypatch.setattr(
+            synthid_mod,
+            "subprocess",
+            types.SimpleNamespace(run=lambda *a, **k: fake, TimeoutExpired=subprocess.TimeoutExpired),
         )
-        monkeypatch.setattr(synthid_mod, "subprocess", types.SimpleNamespace(run=lambda *a, **k: fake, TimeoutExpired=subprocess.TimeoutExpired))
         r = score_synthid(str(img), synthid_dir=str(d))
         assert r["available"] is True
         assert r["exit_code"] == 0
