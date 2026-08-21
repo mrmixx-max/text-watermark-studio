@@ -149,6 +149,7 @@ def test_editor_pane_offscreen(monkeypatch):
     )
     ed.dropEvent(ev)
     import sys
+
     expected = ["C:/tmp/sample.txt"] if sys.platform == "win32" else ["/C:/tmp/sample.txt"]
     assert dropped == expected
 
