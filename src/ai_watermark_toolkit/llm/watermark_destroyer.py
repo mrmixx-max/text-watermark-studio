@@ -31,9 +31,14 @@ from dataclasses import dataclass
 
 # Pass 1: Unicode scrub
 _UNICODE_STRIP = {
-    '\u200B', '\u200C', '\u200D', '\u200E', '\u200F', '\uFEFF',
+    "\u200b",
+    "\u200c",
+    "\u200d",
+    "\u200e",
+    "\u200f",
+    "\ufeff",
 }
-_UNICODE_TAG_RE = re.compile(r'[\U000E0000-\U000E007F]')
+_UNICODE_TAG_RE = re.compile(r"[\U000E0000-\U000E007F]")
 
 
 def scrub_unicode(text: str) -> str:
@@ -43,7 +48,7 @@ def scrub_unicode(text: str) -> str:
         if c in _UNICODE_STRIP or _UNICODE_TAG_RE.match(c):
             continue
         result.append(c)
-    return ''.join(result)
+    return "".join(result)
 
 
 # Pass 2: Synonym replacement
@@ -208,11 +213,11 @@ def pass_synonyms(text: str, rng: random.Random) -> str:
     parts = []
     last_end = 0
     for match in _WORD_RE.finditer(text):
-        parts.append(text[last_end:match.start()])
+        parts.append(text[last_end : match.start()])
         parts.append(_swap_word(match.group(), rng))
         last_end = match.end()
     parts.append(text[last_end:])
-    return ''.join(parts)
+    return "".join(parts)
 
 
 # Pass 3: Transition replacement
@@ -260,26 +265,59 @@ def pass_transitions(text: str) -> str:
 
 # Pass 4: Contraction injection
 _CONTRACTIONS: list[tuple[str, str]] = [
-    ("It is not", "It's not"), ("it is not", "it's not"),
-    ("do not", "don't"), ("does not", "doesn't"), ("did not", "didn't"),
-    ("is not", "isn't"), ("are not", "aren't"), ("was not", "wasn't"),
-    ("were not", "weren't"), ("will not", "won't"), ("would not", "wouldn't"),
-    ("could not", "couldn't"), ("should not", "shouldn't"),
-    ("cannot", "can't"), ("can not", "can't"),
-    ("it is", "it's"), ("that is", "that's"), ("there is", "there's"),
-    ("they are", "they're"), ("we are", "we're"), ("you are", "you're"),
-    ("I am", "I'm"), ("I have", "I've"), ("I will", "I'll"),
-    ("it will", "it'll"), ("they will", "they'll"), ("we will", "we'll"),
-    ("who is", "who's"), ("what is", "what's"), ("let us", "let's"),
-    ("Do not", "Don't"), ("Does not", "Doesn't"), ("Did not", "Didn't"),
-    ("Is not", "Isn't"), ("Are not", "Aren't"), ("Was not", "Wasn't"),
-    ("Will not", "Won't"), ("Would not", "Wouldn't"),
-    ("Could not", "Couldn't"), ("Should not", "Shouldn't"),
-    ("Cannot", "Can't"), ("It is", "It's"), ("That is", "That's"),
-    ("There is", "There's"), ("They are", "They're"),
-    ("We are", "We're"), ("You are", "You're"),
-    ("We will", "We'll"), ("They will", "They'll"), ("It will", "It'll"),
-    ("Who is", "Who's"), ("What is", "What's"), ("Let us", "Let's"),
+    ("It is not", "It's not"),
+    ("it is not", "it's not"),
+    ("do not", "don't"),
+    ("does not", "doesn't"),
+    ("did not", "didn't"),
+    ("is not", "isn't"),
+    ("are not", "aren't"),
+    ("was not", "wasn't"),
+    ("were not", "weren't"),
+    ("will not", "won't"),
+    ("would not", "wouldn't"),
+    ("could not", "couldn't"),
+    ("should not", "shouldn't"),
+    ("cannot", "can't"),
+    ("can not", "can't"),
+    ("it is", "it's"),
+    ("that is", "that's"),
+    ("there is", "there's"),
+    ("they are", "they're"),
+    ("we are", "we're"),
+    ("you are", "you're"),
+    ("I am", "I'm"),
+    ("I have", "I've"),
+    ("I will", "I'll"),
+    ("it will", "it'll"),
+    ("they will", "they'll"),
+    ("we will", "we'll"),
+    ("who is", "who's"),
+    ("what is", "what's"),
+    ("let us", "let's"),
+    ("Do not", "Don't"),
+    ("Does not", "Doesn't"),
+    ("Did not", "Didn't"),
+    ("Is not", "Isn't"),
+    ("Are not", "Aren't"),
+    ("Was not", "Wasn't"),
+    ("Will not", "Won't"),
+    ("Would not", "Wouldn't"),
+    ("Could not", "Couldn't"),
+    ("Should not", "Shouldn't"),
+    ("Cannot", "Can't"),
+    ("It is", "It's"),
+    ("That is", "That's"),
+    ("There is", "There's"),
+    ("They are", "They're"),
+    ("We are", "We're"),
+    ("You are", "You're"),
+    ("We will", "We'll"),
+    ("They will", "They'll"),
+    ("It will", "It'll"),
+    ("Who is", "Who's"),
+    ("What is", "What's"),
+    ("Let us", "Let's"),
 ]
 
 
@@ -292,7 +330,7 @@ def pass_contractions(text: str) -> str:
 
 
 # Pass 5: Burstiness injection
-_SENTENCE_RE = re.compile(r'[.!?]+')
+_SENTENCE_RE = re.compile(r"[.!?]+")
 
 
 def pass_burstiness(text: str, rng: random.Random) -> str:
@@ -308,11 +346,11 @@ def pass_burstiness(text: str, rng: random.Random) -> str:
         if word_count > 25:
             split_at = word_count // 2
             for i in range(word_count // 3, (2 * word_count) // 3):
-                if i < len(words) and words[i].endswith(','):
+                if i < len(words) and words[i].endswith(","):
                     split_at = i + 1
                     break
-            first_half = ' '.join(words[:split_at]).rstrip(',')
-            second_half = ' '.join(words[split_at:])
+            first_half = " ".join(words[:split_at]).rstrip(",")
+            second_half = " ".join(words[split_at:])
             if second_half:
                 second_half = second_half[0].upper() + second_half[1:]
             result.append(first_half)
@@ -333,15 +371,23 @@ def pass_burstiness(text: str, rng: random.Random) -> str:
             final.append(result[i])
             i += 1
 
-    return '. '.join(final) + '.' if final else text
+    return ". ".join(final) + "." if final else text
 
 
 # Pass 6: Human filler injection
 _FILLERS = [
-    "Honestly, ", "The thing is, ", "What's interesting is that ",
-    "If you think about it, ", "Look, ", "Here's the deal: ",
-    "To put it simply, ", "In simple terms, ", "The reality is, ",
-    "At the end of the day, ", "Truth be told, ", "When you break it down, ",
+    "Honestly, ",
+    "The thing is, ",
+    "What's interesting is that ",
+    "If you think about it, ",
+    "Look, ",
+    "Here's the deal: ",
+    "To put it simply, ",
+    "In simple terms, ",
+    "The reality is, ",
+    "At the end of the day, ",
+    "Truth be told, ",
+    "When you break it down, ",
 ]
 
 
@@ -364,7 +410,7 @@ def pass_fillers(text: str, rng: random.Random) -> str:
         else:
             result.append(sentence)
 
-    return '. '.join(result) + '.' if result else text
+    return ". ".join(result) + "." if result else text
 
 
 # Pass 7: AI padding strip
@@ -396,9 +442,19 @@ def pass_strip_ai_padding(text: str) -> str:
 
 # Pass 8: Homoglyph perturbation
 _HOMOGLYPHS = {
-    'a': 'а', 'c': 'с', 'e': 'е', 'o': 'о', 'p': 'р',
-    'x': 'х', 'y': 'у', 'A': 'А', 'C': 'С', 'E': 'Е',
-    'O': 'О', 'P': 'Р', 'X': 'Х',
+    "a": "а",
+    "c": "с",
+    "e": "е",
+    "o": "о",
+    "p": "р",
+    "x": "х",
+    "y": "у",
+    "A": "А",
+    "C": "С",
+    "E": "Е",
+    "O": "О",
+    "P": "Р",
+    "X": "Х",
 }
 
 
@@ -411,9 +467,9 @@ def apply_homoglyphs(text: str) -> str:
             result.append(_HOMOGLYPHS[c])
         else:
             result.append(c)
-        if c != ' ' and rng.random() < 0.05:
-            result.append('\u200C')
-    return ''.join(result)
+        if c != " " and rng.random() < 0.05:
+            result.append("\u200c")
+    return "".join(result)
 
 
 # Master function
@@ -461,8 +517,12 @@ def extract_attribution_features(text: str) -> dict[str, float]:
     words = _PANOPTES_WORD_RE.findall(text.lower())
     if not words:
         return {
-            "long_words": 0.0, "connectors": 0.0, "unique_ratio": 0.0,
-            "short_sentences": 0.0, "structured": 0.0, "digits": 0.0,
+            "long_words": 0.0,
+            "connectors": 0.0,
+            "unique_ratio": 0.0,
+            "short_sentences": 0.0,
+            "structured": 0.0,
+            "digits": 0.0,
             "balanced_lines": 0.0,
         }
 
@@ -486,6 +546,7 @@ def extract_attribution_features(text: str) -> dict[str, float]:
         mean_len = sum(line_lengths) / len(line_lengths)
         variance = sum((l - mean_len) ** 2 for l in line_lengths) / len(line_lengths)
         import math
+
         balanced_lines = min(math.sqrt(variance) / 50.0, 1.0)
     else:
         balanced_lines = 0.5
@@ -517,6 +578,7 @@ def heuristic_ai_score(text: str) -> float:
 # ================================================================
 # TWS Integration Helpers
 # ================================================================
+
 
 def tws_wash_text(text: str, mode: str = "ghostmark", aggressive: bool = False) -> dict:
     """TWS-native wash function combining GhostMark + Panoptes scoring.
