@@ -296,6 +296,44 @@ class LocalLLMService:
             return cfg.get("installed", False)
         return False
 
+    def install_model(self, name: str, progress: callable = None) -> dict:
+        """Pull and install a model via Ollama."""
+        import urllib.request
+        import urllib.error
+
+        cfg = self.load()
+        base = cfg.get("server_base_url", "http://localhost:11434")
+        if base.endswith("/v1"):
+            base = base[:-3]
+
+        # Pull the model
+        try:
+            url = f"{base}/api/pull"
+            req = urllib.request.Request(url, method="POST")
+            req.add_header("Content-Type", "application/json")
+            req.data = json.dumps({"name": name, "stream": False}).encode("utf-8")
+            with urllib.request.urlopen(req, timeout=300) as resp:
+                resp.read()
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise RuntimeError(f"model not found: {name}")
+            raise RuntimeError(f"unreachable: {base}")
+        except (ConnectionError, TimeoutError, OSError):
+            raise RuntimeError(f"unreachable: {base}")
+
+        # Configure as installed
+        cfg["model_variant"] = name
+        cfg["model_family"] = name.split(":")[0] if ":" in name else name
+        cfg["installed"] = True
+        cfg["updated_at"] = datetime.now(timezone.utc).isoformat()
+        self.save(cfg)
+
+        if progress:
+            progress(f"downloading {name}")
+            progress(f"installed {name}")
+
+        return {"installed": True, "model_variant": name}
+
     def _ollama(self, path: str, method: str = "GET", payload: dict | None = None, timeout: float = 5.0) -> dict:
         """Make a raw HTTP request to the Ollama API."""
         import urllib.request
