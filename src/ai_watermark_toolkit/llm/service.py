@@ -286,6 +286,7 @@ class LocalLLMService:
     def _ollama(self, path: str, method: str = "GET", payload: dict | None = None, timeout: float = 5.0) -> dict:
         """Make a raw HTTP request to the Ollama API."""
         import urllib.request
+
         cfg = self.load()
         base = cfg.get("server_base_url", "http://localhost:11434")
         url = f"{base}{path}"
