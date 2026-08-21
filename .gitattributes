@@ -4,7 +4,7 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 
-# Binärdateien nie normalisieren
+# Binary files
 *.png binary
 *.jpg binary
 *.jpeg binary
