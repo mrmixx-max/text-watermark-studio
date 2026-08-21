@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, model_validator
 from ...llm.service import LocalLLMService, SamplingConfig, SAMPLING_PRESETS, SAMPLING_RANGES, SAMPLING_DESCRIPTIONS
+from ...llm.watermark_destroyer import shatter_synthid_text, heuristic_ai_score, extract_attribution_features, tws_wash_text
 from ..response_utils import respond, checkbox_to_bool
 
 router = APIRouter(prefix="/api/llm", tags=["llm"])
@@ -38,6 +39,16 @@ class SamplingRequest(BaseModel):
     stop: list[str] | None = None
     response_format: str | None = None
     preset: str | None = None
+
+
+class WashRequest(BaseModel):
+    text: str
+    mode: str = "ghostmark"
+    aggressive: bool = False
+
+
+class ScoreRequest(BaseModel):
+    text: str
 
 
 @router.get("/status")
@@ -82,3 +93,24 @@ def set_sampling(req: SamplingRequest, request: Request):
 
     svc.configure_sampling(current)
     return respond(request, {"sampling": {k: v for k, v in current.__dict__.items()}})
+
+
+# GhostMark + Panoptes API endpoints
+
+@router.post("/wash")
+def wash_text(req: WashRequest, request: Request):
+    """Wash text using GhostMark 7-pass destroyer + Panoptes scoring."""
+    result = tws_wash_text(req.text, mode=req.mode, aggressive=req.aggressive)
+    return respond(request, result)
+
+
+@router.post("/score")
+def score_text(req: ScoreRequest, request: Request):
+    """Score text using Panoptes attribution features."""
+    features = extract_attribution_features(req.text)
+    score = heuristic_ai_score(req.text)
+    return respond(request, {
+        "ai_score": round(score, 2),
+        "features": features,
+        "verdict": "human" if score < 30 else "uncertain" if score < 60 else "ai",
+    })
