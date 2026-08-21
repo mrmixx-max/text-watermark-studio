@@ -1,8 +1,5 @@
 """Tests for LocalLLMService new methods: list_models, use_model, _ollama."""
 
-import json
-from pathlib import Path
-
 import pytest
 
 from ai_watermark_toolkit.llm.service import LocalLLMService
