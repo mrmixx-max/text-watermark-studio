@@ -271,22 +271,30 @@ class LocalLLMService:
         return SamplingConfig.from_dict(cfg.get("sampling", {}))
 
     def list_models(self) -> list[dict]:
-        """List configured models. Returns installed model info from config."""
-        cfg = self.load()
-        models = []
-        variant = cfg.get("model_variant")
-        if variant:
-            models.append({"name": variant, "installed": cfg.get("installed", False)})
-        return models
+        """List configured models. Tries Ollama /api/tags first, falls back to config."""
+        try:
+            data = self._ollama("/api/tags")
+            return data.get("models", [])
+        except Exception:
+            cfg = self.load()
+            models = []
+            variant = cfg.get("model_variant")
+            if variant:
+                models.append({"name": variant, "installed": cfg.get("installed", False)})
+            return models
 
     def use_model(self, name: str) -> dict:
         """Activate a model by name."""
         return self.configure(model_variant=name)
 
     def model_installed(self, name: str) -> bool:
-        """Check if a specific model is installed."""
+        """Check if a specific model is installed (handles :latest suffix)."""
         cfg = self.load()
-        return cfg.get("model_variant") == name and cfg.get("installed", False)
+        variant = cfg.get("model_variant", "")
+        # Handle :latest suffix
+        if variant == name or variant == f"{name}:latest" or name == f"{variant}:latest":
+            return cfg.get("installed", False)
+        return False
 
     def _ollama(self, path: str, method: str = "GET", payload: dict | None = None, timeout: float = 5.0) -> dict:
         """Make a raw HTTP request to the Ollama API."""
