@@ -1,5 +1,8 @@
-# Normalize line endings: LF im Repo, native bei Checkout
-* text=auto
+# Force LF line endings for Python files
+*.py text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
 
 # Binärdateien nie normalisieren
 *.png binary
