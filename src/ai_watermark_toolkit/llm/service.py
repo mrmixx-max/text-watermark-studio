@@ -270,6 +270,15 @@ class LocalLLMService:
         cfg = self.load()
         return SamplingConfig.from_dict(cfg.get("sampling", {}))
 
+    def list_models(self) -> list[dict]:
+        """List configured models. Returns installed model info from config."""
+        cfg = self.load()
+        models = []
+        variant = cfg.get("model_variant")
+        if variant:
+            models.append({"name": variant, "installed": cfg.get("installed", False)})
+        return models
+
     def status(self) -> dict:
         cfg = self.load()
         cfg["effective_base_url"] = os.getenv("LOCAL_LLM_BASE_URL", cfg["server_base_url"])
