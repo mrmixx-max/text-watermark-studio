@@ -346,7 +346,11 @@ class ModelRouter:
         import urllib.error
         import urllib.request
 
-        base = self._svc.ollama_base()
+        cfg = self._svc.load()
+        base = cfg.get("server_base_url", "http://localhost:11434")
+        # Remove trailing /v1 if present
+        if base.endswith("/v1"):
+            base = base[:-3]
         url = f"{base}/v1/chat/completions"
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
