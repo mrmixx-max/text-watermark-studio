@@ -283,6 +283,11 @@ class LocalLLMService:
         """Activate a model by name."""
         return self.configure(model_variant=name)
 
+    def model_installed(self, name: str) -> bool:
+        """Check if a specific model is installed."""
+        cfg = self.load()
+        return cfg.get("model_variant") == name and cfg.get("installed", False)
+
     def _ollama(self, path: str, method: str = "GET", payload: dict | None = None, timeout: float = 5.0) -> dict:
         """Make a raw HTTP request to the Ollama API."""
         import urllib.request
