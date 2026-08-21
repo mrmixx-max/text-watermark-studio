@@ -148,7 +148,9 @@ def test_editor_pane_offscreen(monkeypatch):
         QPointF(10, 10), Qt.DropAction.CopyAction, mime, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier
     )
     ed.dropEvent(ev)
-    assert dropped == ["/C:/tmp/sample.txt"]
+    import sys
+    expected = ["C:/tmp/sample.txt"] if sys.platform == "win32" else ["/C:/tmp/sample.txt"]
+    assert dropped == expected
 
 
 def test_editor_pane_controller_module_still_qt_free(controller):

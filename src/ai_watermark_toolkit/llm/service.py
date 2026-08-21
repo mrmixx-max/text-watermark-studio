@@ -279,6 +279,10 @@ class LocalLLMService:
             models.append({"name": variant, "installed": cfg.get("installed", False)})
         return models
 
+    def use_model(self, name: str) -> dict:
+        """Activate a model by name."""
+        return self.configure(model_variant=name)
+
     def status(self) -> dict:
         cfg = self.load()
         cfg["effective_base_url"] = os.getenv("LOCAL_LLM_BASE_URL", cfg["server_base_url"])
