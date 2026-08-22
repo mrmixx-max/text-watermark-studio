@@ -17,6 +17,7 @@ from .pipeline import detect_text, run_pipeline
 from .report import write_json
 from .transform.clean import clean_text
 from .transform.dilute import dilute_text
+from .ghostmark_integration import shatter_synthid_text
 
 
 def _resolve_key_arg(args: argparse.Namespace) -> str | None:
@@ -286,6 +287,34 @@ def _register_commands(sub) -> None:
     sim.add_argument("--threshold", type=float, default=0.4, help="similarity threshold for findings (default 0.4)")
     sim.add_argument("--top", type=int, default=5, help="max findings shown (default 5)")
     sim.add_argument("--json", action="store_true", help="machine-readable output")
+
+    # GhostMark: AI watermark stripper (7-pass SynthID destroyer)
+    sh = sub.add_parser(
+        "shatter",
+        help="Strip AI watermarks (7-pass SynthID destroyer: unicode scrub + synonym + transition + contraction + burstiness + filler + padding + homoglyphs)",
+    )
+    sh.add_argument("input", nargs="?", help="input text file")
+    sh.add_argument("--stdin", action="store_true", help="read text from stdin")
+    sh.add_argument("--lang", default="auto", choices=["auto", "de", "en"])
+    sh.add_argument("--seed", type=int, default=None, help="deterministic RNG seed (default: from text length)")
+    sh.add_argument("--json", action="store_true")
+    sh.add_argument("-o", "--output")
+
+    # GhostMark: image metadata stripper
+    si = sub.add_parser(
+        "strip-image",
+        help="Strip metadata from images (JPEG/PNG/BMP/GIF: EXIF, C2PA, XMP, ICC, IPTC)",
+    )
+    si.add_argument("input", help="input image file")
+    si.add_argument("-o", "--output", required=True, help="output image file (must differ from input)")
+
+    # GhostMark: document metadata stripper
+    sd = sub.add_parser(
+        "strip-document",
+        help="Strip metadata from documents (PDF/DOCX/SVG/EPUB/ODT)",
+    )
+    sd.add_argument("input", help="input document file")
+    sd.add_argument("-o", "--output", required=True, help="output document file (must differ from input)")
 
     llm = sub.add_parser("llm", help="manage the local model backend (Ollama)")
     llm_sub = llm.add_subparsers(dest="llm_action", required=True)
@@ -1602,6 +1631,70 @@ def _handle_evade(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_shatter(args: argparse.Namespace) -> int:
+    """Handle the GhostMark 'shatter' command — 7-pass SynthID destroyer."""
+    if args.stdin:
+        text = sys.stdin.read()
+    else:
+        text = Path(args.input).read_text(encoding="utf-8")
+
+    result = shatter_synthid_text(text)
+
+    if args.json:
+        import json as _json
+        out = _json.dumps({"input_chars": len(text), "output_chars": len(result), "result": result}, ensure_ascii=False, indent=2)
+        if args.output:
+            Path(args.output).write_text(out, encoding="utf-8")
+        else:
+            print(out)
+    else:
+        if args.output:
+            Path(args.output).write_text(result, encoding="utf-8")
+        else:
+            print(result)
+    return 0
+
+
+def _handle_strip_image(args: argparse.Namespace) -> int:
+    """Handle the GhostMark 'strip-image' command — metadata stripper."""
+    from .metadata.image_stripper import strip_image_metadata
+    if Path(args.input).resolve() == Path(args.output).resolve():
+        print("ai-wm: error: output path must differ from input path", file=sys.stderr)
+        return 2
+    strip_image_metadata(args.input, args.output)
+    return 0
+
+
+def _handle_strip_document(args: argparse.Namespace) -> int:
+    """Handle the GhostMark 'strip-document' command — metadata stripper."""
+    from .metadata.document_stripper import (
+        strip_pdf_metadata, strip_docx_metadata, strip_svg_metadata,
+        strip_epub_metadata, strip_odt_metadata,
+    )
+    if Path(args.input).resolve() == Path(args.output).resolve():
+        print("ai-wm: error: output path must differ from input path", file=sys.stderr)
+        return 2
+
+    ext = Path(args.input).suffix.lower()
+    input_path = args.input
+    output_path = args.output
+
+    if ext == ".pdf":
+        strip_pdf_metadata(input_path, output_path)
+    elif ext == ".docx":
+        strip_docx_metadata(input_path, output_path)
+    elif ext == ".svg":
+        strip_svg_metadata(input_path, output_path)
+    elif ext == ".epub":
+        strip_epub_metadata(input_path, output_path)
+    elif ext == ".odt":
+        strip_odt_metadata(input_path, output_path)
+    else:
+        print(f"ai-wm: error: unsupported document format '{ext}'", file=sys.stderr)
+        return 2
+    return 0
+
+
 def _handle_serve(args: argparse.Namespace) -> int:
     from uvicorn import run
 
@@ -1639,6 +1732,9 @@ CMD_HANDLERS: dict[str, callable] = {
     "payload": _handle_payload,
     "evade": _handle_evade,
     "serve": _handle_serve,
+    "shatter": _handle_shatter,
+    "strip-image": _handle_strip_image,
+    "strip-document": _handle_strip_document,
 }
 
 
