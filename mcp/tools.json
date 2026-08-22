@@ -786,6 +786,41 @@
       },
       "optional": true,
       "note": "conditional: requires lab/ops subsystem availability at runtime"
+    },
+    {
+      "name": "llm_get_sampling",
+      "method": "GET",
+      "path": "/api/llm/sampling",
+      "description": "Get current LLM sampling parameters (temperature, top_p, top_k, penalties)"
+    },
+    {
+      "name": "llm_set_sampling",
+      "method": "POST",
+      "path": "/api/llm/sampling",
+      "description": "Update LLM sampling parameters",
+      "body_schema": {
+        "temperature": "number",
+        "top_p": "number",
+        "top_k": "integer"
+      }
+    },
+    {
+      "name": "llm_wash",
+      "method": "POST",
+      "path": "/api/llm/wash",
+      "description": "Rewash text through the configured local LLM (anti-watermark pipeline)",
+      "body_schema": {
+        "text": "string"
+      }
+    },
+    {
+      "name": "llm_score",
+      "method": "POST",
+      "path": "/api/llm/score",
+      "description": "Score text AI-likeness via the local LLM",
+      "body_schema": {
+        "text": "string"
+      }
     }
   ]
 }

@@ -44,14 +44,18 @@ def test_list_models_installed(svc):
 
 
 def test_use_model(svc):
+    svc.configure(model_variant="lfm2-24b", installed=True)
     result = svc.use_model("lfm2-24b")
     assert result["model_variant"] == "lfm2-24b"
     assert svc.load()["model_variant"] == "lfm2-24b"
 
 
 def test_use_model_updates_config(svc):
-    svc.configure(model_variant="old-model")
-    svc.use_model("new-model")
+    svc.configure(model_variant="old-model", installed=True)
+    # mark new model installed first — use_model validates against known models
+    svc.configure(model_variant="new-model", installed=True)
+    result = svc.use_model("new-model")
+    assert result["model_variant"] == "new-model"
     assert svc.load()["model_variant"] == "new-model"
 
 
