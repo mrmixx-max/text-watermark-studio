@@ -292,10 +292,7 @@ class LocalLLMService:
         """
         known = {m.get("name", "") for m in self.list_models()}
         base_name = name.split(":")[0]
-        matches = any(
-            n == name or n == f"{name}:latest" or n.split(":")[0] == base_name
-            for n in known
-        )
+        matches = any(n == name or n == f"{name}:latest" or n.split(":")[0] == base_name for n in known)
         if not matches and not self.model_installed(name):
             raise ValueError(f"model_not_installed: {name}")
         return self.configure(model_variant=name, installed=True)

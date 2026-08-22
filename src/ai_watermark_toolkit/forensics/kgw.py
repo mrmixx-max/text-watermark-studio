@@ -269,14 +269,8 @@ def _count_green(tokens: list[str], key: str, gamma: float, context: int = 1) ->
     if len(tokens) < 2:
         return 0
     if context == 1:
-        return sum(
-            1 for prev, tok in zip(tokens, islice(tokens, 1, None)) if green_token(tok, prev, key, gamma)
-        )
-    return sum(
-        1
-        for i in range(1, len(tokens))
-        if green_token(tokens[i], tokens[max(0, i - context) : i], key, gamma)
-    )
+        return sum(1 for prev, tok in zip(tokens, islice(tokens, 1, None)) if green_token(tok, prev, key, gamma))
+    return sum(1 for i in range(1, len(tokens)) if green_token(tokens[i], tokens[max(0, i - context) : i], key, gamma))
 
 
 def signature_token_stats(tokens: list[str], context_seq: int, key: str, gamma: float = DEFAULT_GAMMA) -> dict:

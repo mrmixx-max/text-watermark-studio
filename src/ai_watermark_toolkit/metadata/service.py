@@ -59,7 +59,8 @@ _PROVENANCE_ATTR_RES = tuple(
 _HTML_META_TAG = re.compile(r"<meta\b[^>]*>", re.IGNORECASE)
 _HTML_META_NAME = re.compile(r"name=[\"']([^\"']+)", re.IGNORECASE)
 _HTML_JSONLD_BLOCK = re.compile(
-    r"<script\b[^>]*application/ld\+json[^>]*>[\s\S]*?</script>", re.IGNORECASE,
+    r"<script\b[^>]*application/ld\+json[^>]*>[\s\S]*?</script>",
+    re.IGNORECASE,
 )
 _HTML_DATA_AI_ATTR = re.compile(r"\sdata-ai[\w-]*=['\"][^'\"]*['\"]", re.IGNORECASE)
 
