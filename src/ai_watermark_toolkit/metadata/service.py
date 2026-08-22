@@ -41,6 +41,36 @@ _AI_META_NAMES = re.compile(
     re.IGNORECASE,
 )
 
+# --- Precompiled patterns for the per-tag/per-line scrub callbacks below. ---
+# These run once per matched tag (SVG/HTML) or per tag name (OOXML), so the
+# patterns are built here at import time instead of being re-interpolated
+# inside the loop bodies.
+_SVG_METADATA_BLOCK = re.compile(r"<metadata[\s\S]*?</metadata>", re.IGNORECASE)
+_SVG_RDF_BLOCK = re.compile(r"<rdf:RDF[\s\S]*?</rdf:RDF>", re.IGNORECASE)
+_SVG_TAG = re.compile(r"<[a-zA-Z][^>]*>")
+# provenance-carrying attributes, single- then double-quoted form, applied in
+# the same sequential order as the original inline loop (behaviour-identical)
+_PROVENANCE_ATTR_RES = tuple(
+    re.compile(pat, re.IGNORECASE)
+    for attr in ("data-ai-origin", "data-provenance", "data-ai-model", "content-credentials")
+    for pat in (rf"\s{attr}='[^']*'", rf'\s{attr}="[^"]*"')
+)
+
+_HTML_META_TAG = re.compile(r"<meta\b[^>]*>", re.IGNORECASE)
+_HTML_META_NAME = re.compile(r"name=[\"']([^\"']+)", re.IGNORECASE)
+_HTML_JSONLD_BLOCK = re.compile(
+    r"<script\b[^>]*application/ld\+json[^>]*>[\s\S]*?</script>", re.IGNORECASE,
+)
+_HTML_DATA_AI_ATTR = re.compile(r"\sdata-ai[\w-]*=['\"][^'\"]*['\"]", re.IGNORECASE)
+
+# (compiled tag pattern, replacement) for the OOXML/ODF metadata scrub
+_XML_META_TAG_RES = tuple(
+    (re.compile(rf"<{tag}[^>]*>[^<]*</{tag}>", re.IGNORECASE), f"<{tag}></{tag}>")
+    for tag in ("cp:lastModifiedBy", "dc:creator", "cp:revision", "meta:generator", "meta:user-defined")
+)
+
+_MD_FRONTMATTER_KEY = re.compile(r"\s*([\w-]+)\s*:")
+
 
 @dataclass
 class MetaReport:
@@ -250,18 +280,17 @@ def _jpeg(data: bytes, clean: bool) -> MetaReport:
 def _svg(data: bytes, clean: bool) -> MetaReport:
     rep = MetaReport(format="svg")
     text = data.decode("utf-8", "replace")
-    new_text = re.sub(r"<metadata[\s\S]*?</metadata>", "", text, flags=re.IGNORECASE)
-    new_text = re.sub(r"<rdf:RDF[\s\S]*?</rdf:RDF>", "", new_text, flags=re.IGNORECASE)
+    new_text = _SVG_METADATA_BLOCK.sub("", text)
+    new_text = _SVG_RDF_BLOCK.sub("", new_text)
 
     # attributes carrying provenance
     def _strip_attrs(m):
         tag = m.group(0)
-        for attr in ("data-ai-origin", "data-provenance", "data-ai-model", "content-credentials"):
-            tag = re.sub(rf"\s{attr}='[^']*'", "", tag, flags=re.IGNORECASE)
-            tag = re.sub(rf'\s{attr}="[^"]*"', "", tag, flags=re.IGNORECASE)
+        for attr_re in _PROVENANCE_ATTR_RES:
+            tag = attr_re.sub("", tag)
         return tag
 
-    new_text = re.sub(r"<[a-zA-Z][^>]*>", _strip_attrs, new_text)
+    new_text = _SVG_TAG.sub(_strip_attrs, new_text)
     if new_text != text:
         rep.actions.append("removed_svg_metadata_and_ai_attrs")
         rep.removed_bytes = len(text.encode()) - len(new_text.encode())
@@ -528,22 +557,20 @@ def _html(data: bytes, clean: bool) -> MetaReport:
     def _meta_sub(m):
         tag = m.group(0)
         if _AI_META_NAMES.search(tag):
-            rep.removed_keys.append(
-                re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE).group(1)
-                if re.search(r'name=["\']([^"\']+)', tag, re.IGNORECASE)
-                else "meta",
-            )
+            # single search instead of the previous search-twice idiom
+            name = _HTML_META_NAME.search(tag)
+            rep.removed_keys.append(name.group(1) if name else "meta")
             rep.actions.append("removed_ai_meta_tag")
             return ""
         return tag
 
-    new = re.sub(r"<meta\b[^>]*>", _meta_sub, new, flags=re.IGNORECASE)
+    new = _HTML_META_TAG.sub(_meta_sub, new)
     # JSON-LD with provenance keys
-    new = re.sub(r"<script\b[^>]*application/ld\+json[^>]*>[\s\S]*?</script>", "", new, flags=re.IGNORECASE)
+    new = _HTML_JSONLD_BLOCK.sub("", new)
     if "<script" in text and "application/ld+json" in text:
         rep.actions.append("removed_jsonld_provenance_block")
     # data-ai* attributes
-    new = re.sub(r"\sdata-ai[\w-]*=['\"][^'\"]*['\"]", "", new, flags=re.IGNORECASE)
+    new = _HTML_DATA_AI_ATTR.sub("", new)
     if new != text:
         rep.removed_bytes = len(text.encode()) - len(new.encode())
     if clean:

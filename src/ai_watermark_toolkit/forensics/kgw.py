@@ -31,6 +31,7 @@ import hashlib
 import math
 import random
 import re
+from itertools import islice
 
 # Default greenlist fraction (KGW gamma). Keep in sync with the generator.
 DEFAULT_GAMMA = 0.25
@@ -152,6 +153,12 @@ def _unit_interval(h: str) -> float:
     return int(h[:8], 16) / 0xFFFFFFFF
 
 
+# Hot path: bind the sha256 constructor once (skips the hashlib.new dispatch)
+# and normalize over the raw digest instead of the 64-char hexdigest string.
+_sha256 = hashlib.sha256
+_UINT32_MAX = 0xFFFFFFFF
+
+
 def green_token(token: str, context, key: str, gamma: float = DEFAULT_GAMMA) -> bool:
     """KGW greenlist membership over a context window: PRF(key, *context, token) < gamma.
 
@@ -160,10 +167,17 @@ def green_token(token: str, context, key: str, gamma: float = DEFAULT_GAMMA) -> 
     hashes (key, *context, token). For a single-token context the digest is
     byte-identical to the historical (key, prev, token) hash, so all existing
     c=1 call sites keep producing the exact same greenlist decisions.
+
+    Implementation note: the digest is read as its first 4 big-endian bytes,
+    which is numerically identical to int(hexdigest()[:8], 16) — the hex
+    round-trip is skipped, not the arithmetic.
     """
-    ctx = list(context) if isinstance(context, (list, tuple)) else [context]
-    digest = hashlib.sha256((f"{key}:" + ":".join(ctx) + f":{token}").encode("utf-8")).hexdigest()
-    return _unit_interval(digest) < gamma
+    if type(context) is str:
+        payload = f"{key}:{context}:{token}"
+    else:
+        payload = f"{key}:" + ":".join(context) + f":{token}"
+    digest = _sha256(payload.encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], "big") / _UINT32_MAX < gamma
 
 
 def _summarize_z(green: int, n: int, gamma: float) -> dict:
@@ -241,6 +255,28 @@ def _type_stats(pairs: list, key: str, gamma: float) -> dict:
 def _scored_pairs(tokens: list[str], context_seq: int) -> list:
     """(token, context) pairs exactly as detect_kgw scores a token list."""
     return [(tokens[i], tokens[max(0, i - context_seq) : i]) for i in range(1, len(tokens))]
+
+
+def _count_green(tokens: list[str], key: str, gamma: float, context: int = 1) -> int:
+    """Green count over the scored stream — single source of truth.
+
+    Every token from index 1 on is scored against its `context` predecessors.
+    Shared by detect_kgw, mark_greenlist and embed_kgw so the three paths can
+    never drift apart. For the dominant c=1 case the predecessor is passed as
+    a bare str (no per-token slice allocation); green_token hashes a
+    single-element context identically either way.
+    """
+    if len(tokens) < 2:
+        return 0
+    if context == 1:
+        return sum(
+            1 for prev, tok in zip(tokens, islice(tokens, 1, None)) if green_token(tok, prev, key, gamma)
+        )
+    return sum(
+        1
+        for i in range(1, len(tokens))
+        if green_token(tokens[i], tokens[max(0, i - context) : i], key, gamma)
+    )
 
 
 def signature_token_stats(tokens: list[str], context_seq: int, key: str, gamma: float = DEFAULT_GAMMA) -> dict:
@@ -459,7 +495,7 @@ def detect_kgw(
 
         pairs = list(_iter_scored(text, key, gamma, level, context))
         return _apply_signature_filter(pairs, n, key, gamma)
-    green = sum(1 for i in range(1, len(tokens)) if green_token(tokens[i], tokens[max(0, i - context) : i], key, gamma))
+    green = _count_green(tokens, key, gamma, context)
     return _summarize_z(green, n, gamma)
 
 
@@ -629,15 +665,28 @@ def mark_greenlist(
     def _last_bpe(word: str) -> str:
         return _bpe_subwords_cached(word)[-1]
 
-    def _is_green(cand: str, ctx: list[str]) -> bool:
-        if level == "bpe":
-            return green_token(_first_bpe(cand), _last_bpe(ctx[-1]), key, gamma)
-        # word level: hash over the (up to c) preceding lowercased words
-        return green_token(cand.lower(), [w.lower() for w in ctx], key, gamma)
+    is_bpe = level == "bpe"
+
+    def _ctx_surface(ctx: list[str]):
+        """Precompute the position-invariant hash context once per position.
+
+        The candidate loop below can test hundreds of words against the SAME
+        context, so the context surface (last BPE subword, or the lowercased
+        window) is built once here instead of per candidate. A single-token
+        window is passed as a bare str — green_token hashes it identically.
+        """
+        if is_bpe:
+            return _last_bpe(ctx[-1])
+        low = [w.lower() for w in ctx]
+        return low[0] if len(low) == 1 else low
+
+    def _is_green_at(cand: str, surface) -> bool:
+        return green_token(_first_bpe(cand) if is_bpe else cand.lower(), surface, key, gamma)
 
     parts = _SPLIT_RE.split(text)
     replaced = 0
     subs_raw: list[tuple[int, str, str]] = []  # (index, original, replacement)
+    n_fallback = len(fallback)
     # Rolling window of the last `context` finalized (post-substitution) words.
     # BPE keeps a window of 1 (single predecessor word).
     win = collections.deque(maxlen=context if level == "word" else 1)
@@ -649,23 +698,24 @@ def mark_greenlist(
         if not win:
             win.append(lower)
             continue
-        ctx = list(win)
-        if _is_green(token, ctx):
+        surface = _ctx_surface(list(win))
+        if _is_green_at(token, surface):
             win.append(lower)
             continue
         # not green -> substitute a green word (prefer a same-class word)
-        cands = pool.get(lower, [])
         green_pick = None
-        for c in cands:
-            if _is_green(c, ctx):
+        for c in pool.get(lower, []):
+            if _is_green_at(c, surface):
                 green_pick = c
                 break
-        if green_pick is None:
-            # any fallback word that is green for (context, key)
-            # Use a random start index instead of shuffle for O(1) instead of O(n)
-            start = rng.randrange(len(fallback)) if fallback else 0
-            for c in fallback[start:] + fallback[:start]:
-                if _is_green(c, ctx):
+        if green_pick is None and n_fallback:
+            # Any fallback word that is green for (context, key). Scan starts
+            # at a random offset and wraps via modular indexing — no list
+            # concatenation, so this is O(1) extra space per substitution.
+            start = rng.randrange(n_fallback)
+            for j in range(n_fallback):
+                c = fallback[start + j - n_fallback]
+                if _is_green_at(c, surface):
                     green_pick = c
                     break
         if green_pick is not None:
@@ -708,15 +758,7 @@ def mark_greenlist(
     else:
         tokens_after = tokenize(new_text, level=level)
         n = max(0, len(tokens_after) - 1)
-        green_now = (
-            sum(
-                1
-                for i in range(1, len(tokens_after))
-                if green_token(tokens_after[i], tokens_after[max(0, i - context) : i], key, gamma)
-            )
-            if n
-            else 0
-        )
+        green_now = _count_green(tokens_after, key, gamma, context)
         total_tokens = len(tokens_after)
     return {
         "text": new_text,
@@ -775,11 +817,7 @@ def embed_kgw(
     new_text = "".join(parts)
     tokens_after = tokenize(new_text)
     n = max(0, len(tokens_after) - 1)
-    green_now = (
-        sum(1 for i in range(1, len(tokens_after)) if green_token(tokens_after[i], tokens_after[i - 1], key, gamma))
-        if n
-        else 0
-    )
+    green_now = _count_green(tokens_after, key, gamma, 1)
     return {
         "text": new_text,
         "replacements": replaced,
