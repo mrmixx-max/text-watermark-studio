@@ -93,15 +93,23 @@ class TestList:
     def test_lists_all_known_models(self, svc, monkeypatch):
         # Mock the HTTP call to Ollama /api/tags
         captured = {}
+
         class FakeResponse:
             def read(self):
                 import json
-                return json.dumps({"models": [
-                    {"name": "eurollm-9b:latest", "size": 9_000_000_000},
-                    {"name": "llama3.2:3b", "size": 3_200_000_000},
-                ]}).encode("utf-8")
+
+                return json.dumps(
+                    {
+                        "models": [
+                            {"name": "eurollm-9b:latest", "size": 9_000_000_000},
+                            {"name": "llama3.2:3b", "size": 3_200_000_000},
+                        ]
+                    }
+                ).encode("utf-8")
+
             def __enter__(self):
                 return self
+
             def __exit__(self, *a):
                 pass
 
