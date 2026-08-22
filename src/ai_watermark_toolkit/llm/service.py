@@ -284,8 +284,21 @@ class LocalLLMService:
             return models
 
     def use_model(self, name: str) -> dict:
-        """Activate a model by name."""
-        return self.configure(model_variant=name)
+        """Activate a model by name.
+
+        Raises ``ValueError('model_not_installed: ...')`` if the model is not
+        known to the local Ollama instance (checked via /api/tags) and not
+        already marked installed in config.
+        """
+        known = {m.get("name", "") for m in self.list_models()}
+        base_name = name.split(":")[0]
+        matches = any(
+            n == name or n == f"{name}:latest" or n.split(":")[0] == base_name
+            for n in known
+        )
+        if not matches and not self.model_installed(name):
+            raise ValueError(f"model_not_installed: {name}")
+        return self.configure(model_variant=name, installed=True)
 
     def model_installed(self, name: str) -> bool:
         """Check if a specific model is installed (handles :latest suffix)."""
@@ -302,22 +315,38 @@ class LocalLLMService:
         import urllib.error
 
         cfg = self.load()
-        base = cfg.get("server_base_url", "http://localhost:11434")
-        if base.endswith("/v1"):
-            base = base[:-3]
+        base = self._ollama_base()
 
         # Pull the model
         try:
             url = f"{base}/api/pull"
             req = urllib.request.Request(url, method="POST")
             req.add_header("Content-Type", "application/json")
-            req.data = json.dumps({"name": name, "stream": False}).encode("utf-8")
+            req.data = json.dumps({"name": name, "stream": True}).encode("utf-8")
             with urllib.request.urlopen(req, timeout=300) as resp:
-                resp.read()
+                # Ollama streams NDJSON progress lines; a JSON error body
+                # (e.g. {"error": "model not found"}) may arrive instead.
+                raw = resp.read().decode("utf-8", errors="replace")
+            for line in raw.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(event, dict) and event.get("error"):
+                    raise RuntimeError(f"model not found: {name} ({event['error']})")
+                if progress and isinstance(event, dict):
+                    status = event.get("status")
+                    if status:
+                        progress(status)
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 raise RuntimeError(f"model not found: {name}")
             raise RuntimeError(f"unreachable: {base}")
+        except RuntimeError:
+            raise
         except (ConnectionError, TimeoutError, OSError):
             raise RuntimeError(f"unreachable: {base}")
 
@@ -334,16 +363,25 @@ class LocalLLMService:
 
         return {"installed": True, "model_variant": name}
 
-    def _ollama(self, path: str, method: str = "GET", payload: dict | None = None, timeout: float = 5.0) -> dict:
-        """Make a raw HTTP request to the Ollama API."""
-        import urllib.request
+    def _ollama_base(self) -> str:
+        """Resolve the Ollama base URL: ``OLLAMA_BASE_URL`` env wins over config."""
+        import os
 
+        env = os.environ.get("OLLAMA_BASE_URL")
+        if env:
+            return env.rstrip("/")
         cfg = self.load()
         base = cfg.get("server_base_url", "http://localhost:11434")
         # Remove trailing /v1 if present to avoid double-prefix
         if base.endswith("/v1"):
             base = base[:-3]
-        url = f"{base}{path}"
+        return base
+
+    def _ollama(self, path: str, method: str = "GET", payload: dict | None = None, timeout: float = 5.0) -> dict:
+        """Make a raw HTTP request to the Ollama API."""
+        import urllib.request
+
+        url = f"{self._ollama_base()}{path}"
         req = urllib.request.Request(url, method=method)
         req.add_header("Content-Type", "application/json")
         if payload:
