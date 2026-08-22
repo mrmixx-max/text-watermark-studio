@@ -13,6 +13,8 @@ import re
 import zipfile
 from pathlib import Path
 
+from .image_stripper import strip_image_metadata
+
 
 def strip_pdf_metadata(input_path: str | Path, output_path: str | Path | None = None) -> bytes:
     """Strip metadata from PDF. Returns cleaned bytes."""
@@ -120,7 +122,11 @@ def _strip_epub(raw: bytes) -> bytes:
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zout:
             for item in zin.namelist():
                 # Skip digital signatures and encryption metadata
-                if item.startswith("META-INF/signatures") or item.startswith("META-INF/encryption") or item.startswith("META-INF/rights"):
+                if (
+                    item.startswith("META-INF/signatures")
+                    or item.startswith("META-INF/encryption")
+                    or item.startswith("META-INF/rights")
+                ):
                     continue
 
                 data = zin.read(item)

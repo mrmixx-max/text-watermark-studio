@@ -11,7 +11,6 @@ from __future__ import annotations
 import io
 import struct
 from pathlib import Path
-from typing import BinaryIO
 
 
 def strip_image_metadata(input_path: str | Path, output_path: str | Path | None = None) -> bytes:
@@ -78,13 +77,13 @@ def _strip_jpeg(raw: bytes) -> bytes:
 
         # SOI — always keep
         if marker == 0xD8:
-            out.write(raw[i:i + 2])
+            out.write(raw[i : i + 2])
             i += 2
             continue
 
         # EOI — always keep
         if marker == 0xD9:
-            out.write(raw[i:i + 2])
+            out.write(raw[i : i + 2])
             i += 2
             continue
 
@@ -92,8 +91,8 @@ def _strip_jpeg(raw: bytes) -> bytes:
         if marker == 0xDA:
             # Copy SOS header first
             if i + 4 <= len(raw):
-                length = struct.unpack(">H", raw[i + 2:i + 4])[0]
-                out.write(raw[i:i + 2 + length])
+                length = struct.unpack(">H", raw[i + 2 : i + 4])[0]
+                out.write(raw[i : i + 2 + length])
                 i += 2 + length
             # Copy scan data until next non-0xFF byte or EOI
             while i < len(raw):
@@ -106,7 +105,7 @@ def _strip_jpeg(raw: bytes) -> bytes:
         # Get segment length
         if i + 4 > len(raw):
             break
-        length = struct.unpack(">H", raw[i + 2:i + 4])[0]
+        length = struct.unpack(">H", raw[i + 2 : i + 4])[0]
 
         # Drop tracking segments
         if marker in (0xE1, 0xE2, 0xEB, 0xED):
@@ -133,12 +132,12 @@ def _strip_png(raw: bytes) -> bytes:
 
     i = 8
     while i + 12 <= len(raw):
-        length = struct.unpack(">I", raw[i:i + 4])[0]
-        chunk_type = raw[i + 4:i + 8]
+        length = struct.unpack(">I", raw[i : i + 4])[0]
+        chunk_type = raw[i + 4 : i + 8]
 
         # Keep only critical rendering chunks
         if chunk_type in (b"IHDR", b"PLTE", b"IDAT", b"IEND", b"tRNS"):
-            out.write(raw[i:i + 12 + length])
+            out.write(raw[i : i + 12 + length])
 
         i += 12 + length
 
@@ -168,4 +167,4 @@ def _strip_gif_trailing_bytes(raw: bytes) -> bytes:
     trailer_pos = raw.rfind(b"\x3b")
     if trailer_pos == -1:
         return raw
-    return raw[:trailer_pos + 1]
+    return raw[: trailer_pos + 1]

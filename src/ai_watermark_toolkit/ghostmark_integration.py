@@ -13,9 +13,8 @@ Fixes applied to original Python port:
 
 from __future__ import annotations
 
-import random
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # ═══════════════════════════════════════════════════════════════
 # UNICODE SCRUB (Layer 1)
@@ -63,6 +62,7 @@ def scrub_unicode(text: str, aggressive: bool = False) -> str:
 # SEEDABLE RNG (Rust LCG port)
 # ═══════════════════════════════════════════════════════════════
 
+
 @dataclass
 class LcgRng:
     """LCG random number generator matching GhostMark's Rust implementation.
@@ -70,6 +70,7 @@ class LcgRng:
     Uses parameters: state = state.wrapping_mul(1664525).wrapping_add(1013904223)
     Seed: text_len ^ 0xDEAD (Rust) or 0xCAFE (homoglyphs)
     """
+
     state: int = 0
 
     @classmethod
@@ -247,6 +248,7 @@ def pass_synonyms(text: str, rng: LcgRng) -> str:
 
     Uses LCG RNG for deterministic selection. Preserves word case.
     """
+
     def _swap_word(word: str) -> str:
         lower = word.lower()
         if lower not in _SYNONYMS:
@@ -267,7 +269,7 @@ def pass_synonyms(text: str, rng: LcgRng) -> str:
     parts = []
     last_end = 0
     for match in _WORD_RE.finditer(text):
-        parts.append(text[last_end:match.start()])
+        parts.append(text[last_end : match.start()])
         parts.append(_swap_word(match.group()))
         last_end = match.end()
     parts.append(text[last_end:])
@@ -313,6 +315,7 @@ _TRANSITIONS: list[tuple[str, str]] = [
 
 def _case_preserving_replace(text: str, pattern: str, replacement: str) -> str:
     """Replace pattern with replacement, preserving case of first char."""
+
     def _replace_match(m: re.Match) -> str:
         original = m.group()
         if original.isupper():
@@ -579,6 +582,7 @@ def apply_homoglyphs(text: str) -> str:
 # ═══════════════════════════════════════════════════════════════
 # SHATTER SYNTHID (Master Function)
 # ═══════════════════════════════════════════════════════════════
+
 
 def shatter_synthid_text(input_text: str) -> str:
     """Master: multi-pass statistical humanizer to destroy AI watermarks.
