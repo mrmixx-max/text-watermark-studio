@@ -1642,7 +1642,10 @@ def _handle_shatter(args: argparse.Namespace) -> int:
 
     if args.json:
         import json as _json
-        out = _json.dumps({"input_chars": len(text), "output_chars": len(result), "result": result}, ensure_ascii=False, indent=2)
+
+        out = _json.dumps(
+            {"input_chars": len(text), "output_chars": len(result), "result": result}, ensure_ascii=False, indent=2
+        )
         if args.output:
             Path(args.output).write_text(out, encoding="utf-8")
         else:
@@ -1658,6 +1661,7 @@ def _handle_shatter(args: argparse.Namespace) -> int:
 def _handle_strip_image(args: argparse.Namespace) -> int:
     """Handle the GhostMark 'strip-image' command — metadata stripper."""
     from .metadata.image_stripper import strip_image_metadata
+
     if Path(args.input).resolve() == Path(args.output).resolve():
         print("ai-wm: error: output path must differ from input path", file=sys.stderr)
         return 2
@@ -1668,9 +1672,13 @@ def _handle_strip_image(args: argparse.Namespace) -> int:
 def _handle_strip_document(args: argparse.Namespace) -> int:
     """Handle the GhostMark 'strip-document' command — metadata stripper."""
     from .metadata.document_stripper import (
-        strip_pdf_metadata, strip_docx_metadata, strip_svg_metadata,
-        strip_epub_metadata, strip_odt_metadata,
+        strip_pdf_metadata,
+        strip_docx_metadata,
+        strip_svg_metadata,
+        strip_epub_metadata,
+        strip_odt_metadata,
     )
+
     if Path(args.input).resolve() == Path(args.output).resolve():
         print("ai-wm: error: output path must differ from input path", file=sys.stderr)
         return 2
