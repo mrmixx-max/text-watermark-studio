@@ -1,14 +1,16 @@
 ; Inno Setup script — Text Watermark Studio (Windows desktop app)
 ; Compile after the PyInstaller build (expects dist\tws-desktop.exe):
 ;   iscc packaging\tws-setup.iss          -> dist\TWS-Setup.exe
-; Inno Setup 6 (choco install innosetup). No icon asset yet -> default icon.
+; Inno Setup 6. SetupIconFile = generated app icon (DNA-text + droplet).
 
 #define MyAppName "Text Watermark Studio"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.4.3"
 #define MyAppPublisher "Erik Gieske"
 #define MyAppExeName "tws-desktop.exe"
+#define MyAppIcon "packaging\tws-icon.ico"
 
 [Setup]
+SetupIconFile={#MyAppIcon}
 AppId={{9F6E4C21-7D8B-4A3E-B5C2-0F1D9E8A7C33}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}

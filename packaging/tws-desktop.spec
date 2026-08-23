@@ -71,5 +71,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,              # no icon asset yet -> default PyInstaller icon
+    icon=r'C:\Users\webma\Projects\text-watermark-studio\packaging\tws-icon.ico',  # generated icon
 )
